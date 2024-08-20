@@ -19,7 +19,7 @@ services:
       - USER_NAME=lab-user #optional
       - LOG_STDOUT=true #optional
     volumes:
-      - ../config:/config:Z
+      - ../lab-node-0001:/lab-node-0001:Z
     ports:
       - 2222:2222
     restart: unless-stopped

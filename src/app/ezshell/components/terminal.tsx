@@ -34,15 +34,29 @@ export default function EZXTerminal(): JSX.Element {
     fitAddon.fit();
     term.write('eZLabs \x1B[1;3;31mlab-node-001\x1B[0m $ ')
 
+    term.onResize((e) => {
+      console.log(e)
+    })
+
     term.onKey((e) => {
       newMessage.type = 'command'
       newMessage.data = `${e.key}`
       socket.emit(newMessage.type, newMessage);
     })
+
+    socket.on('terminal-output', (data) => {
+      term.write(data);
+    });
+
     socket.on('stdout', (data) => {
       term.write(data);
     });
     term.clear();
+
+    return () => {
+      term.dispose();
+      socket.disconnect();
+    };
   }, [])
   return (
     <div ref={terminalRef} className="bg-transparent"></div>

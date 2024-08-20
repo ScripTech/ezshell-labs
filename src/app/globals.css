@@ -8,6 +8,22 @@
   height: calc(100vh - 4rem) !important;
 }
 
+.xterm .xterm-viewport {
+  overflow: hidden !important;
+}
+
+.terminal-container {
+  position: relative;
+}
+
+.terminal-ide {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 100px;
+  bottom: 8px;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
