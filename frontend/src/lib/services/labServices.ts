@@ -10,7 +10,14 @@ import matter from "gray-matter";
 
 export async function getExerciseData(id: string) {
 
-  const postsDirectory = "D:\\DevOps\\ezetsulabs\\ezshell-terminal\\storage\\exercises\\ez1-01"
+  const postsDirectory = "./storage/exercises/ez1-01";
+
+  // console.log(path.basename.toString())
+  // fs.readdir(postsDirectory, (err, files) => {
+  //   files.forEach((file) => {
+  //     console.log(file);
+  //   });
+  // });
 
   const fullPath = path.join(postsDirectory, `${id}.md`);
   const fileContents = fs.readFileSync(fullPath, "utf8");

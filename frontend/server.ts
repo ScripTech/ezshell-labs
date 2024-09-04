@@ -2,9 +2,11 @@ import { createServer } from "http";
 import { parse } from "url";
 import next from "next";
 import ssh2 from "ssh2";
-
+const cors = require("cors");
 const http = require("http");
-const server = http.createServer((req: any, res: any) => {
+
+
+const httpServer = http.createServer((req: any, res: any) => {
   // Handle HTTP requests if needed
 });
 
@@ -27,7 +29,15 @@ app.prepare().then(() => {
 });
 
 const { Server } = require("socket.io");
-const io = new Server(server);
+
+const io = new Server(httpServer, {
+  cors: {
+    // origin: "http://localhost:3000"
+    origin: "*"
+  }
+});
+
+// Enable CORS for requests from localhost:3000
 
 io.on("connection", (socket: any) => {
   console.log("A user connected");
@@ -64,11 +74,7 @@ io.on("connection", (socket: any) => {
   });
 
 
-  // Handle chat messages
-  socket.on("chat message", (message: any) => {
-    io.emit("chat message", message); // Broadcast the message to all connected clients
-  });
-
+  // Handle command messages
   socket.on("command", (message: any) => {
     io.emit("command", message)
   })
@@ -79,6 +85,6 @@ io.on("connection", (socket: any) => {
   });
 });
 
-server.listen(3001, () => {
+httpServer.listen(3001, "0.0.0.0", () => {
   console.log("WebSocket server listening on port 3001");
 });
