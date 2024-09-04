@@ -1,0 +1,31 @@
+{
+  "name": "ezshell-backend",
+  "version": "1.0.0",
+  "description": "This is the backend of ezshell app @ eZetsu",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "dev": "ts-node-dev src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "keywords": [
+    "ezshell",
+    "zetsu",
+    "devops"
+  ],
+  "author": "Edilson D Mucanze",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/ssh2": "^1.15.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-ssh": "^13.2.0",
+    "socket.io": "^4.7.5",
+    "ssh2": "^1.15.0"
+  }
+}

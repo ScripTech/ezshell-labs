@@ -28,63 +28,63 @@ app.prepare().then(() => {
   );
 });
 
-const { Server } = require("socket.io");
+// const { Server } = require("socket.io");
 
-const io = new Server(httpServer, {
-  cors: {
-    // origin: "http://localhost:3000"
-    origin: "*"
-  }
-});
+// const io = new Server(httpServer, {
+//   cors: {
+//     // origin: "http://localhost:3000"
+//     origin: "*"
+//   }
+// });
 
-// Enable CORS for requests from localhost:3000
+// // Enable CORS for requests from localhost:3000
 
-io.on("connection", (socket: any) => {
-  console.log("A user connected");
+// io.on("connection", (socket: any) => {
+//   console.log("A user connected");
 
-  const conn = new ssh2.Client();
+//   const conn = new ssh2.Client();
 
-  conn.on("ready", () => {
-    console.log("Client connected");
-    socket.emit("data", "\r\n*** SSH CONNECTION ESTABLISHED ***\r\n");
-    conn.shell((err, stream) => {
-      if (err)
-        return socket.emit(
-          "data",
-          "\r\n*** SSH SHELL ERROR: " + err.message + " ***\r\n"
-        );
-      socket.on("command", (data: any) => {
-        stream.write(data.data);
-      });
-      stream.on("data", (d:any) => {
-        socket.emit("stdout", d.toString("binary"));
-      });
-      stream.on("close", () => {
-        conn.end();
-      });
-    });
-  });
-
-
-  conn.connect({
-    host: "localhost",
-    port: 2222,
-    username: "lab-user",
-    password: "password",
-  });
+//   conn.on("ready", () => {
+//     console.log("Client connected");
+//     socket.emit("data", "\r\n*** SSH CONNECTION ESTABLISHED ***\r\n");
+//     conn.shell((err, stream) => {
+//       if (err)
+//         return socket.emit(
+//           "data",
+//           "\r\n*** SSH SHELL ERROR: " + err.message + " ***\r\n"
+//         );
+//       socket.on("command", (data: any) => {
+//         stream.write(data.data);
+//       });
+//       stream.on("data", (d:any) => {
+//         socket.emit("stdout", d.toString("binary"));
+//       });
+//       stream.on("close", () => {
+//         conn.end();
+//       });
+//     });
+//   });
 
 
-  // Handle command messages
-  socket.on("command", (message: any) => {
-    io.emit("command", message)
-  })
+//   conn.connect({
+//     host: "localhost",
+//     port: 2222,
+//     username: "lab-user",
+//     password: "password",
+//   });
 
-  socket.on("disconnect", () => {
-    conn.end();
-    console.log("A user disconnected");
-  });
-});
 
-httpServer.listen(3001, "0.0.0.0", () => {
-  console.log("WebSocket server listening on port 3001");
-});
+//   // Handle command messages
+//   socket.on("command", (message: any) => {
+//     io.emit("command", message)
+//   })
+
+//   socket.on("disconnect", () => {
+//     conn.end();
+//     console.log("A user disconnected");
+//   });
+// });
+
+// httpServer.listen(3001, "0.0.0.0", () => {
+//   console.log("WebSocket server listening on port 3001");
+// });
