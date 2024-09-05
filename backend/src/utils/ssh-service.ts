@@ -17,7 +17,7 @@ export async function validateFileExistence(
   username: string
 ): Promise<boolean> {
   try {
-    const result = await ssh.execCommand(`test -f /home/${username}/python`);
+    const result = await ssh.execCommand(`test -f /home/${username}/python/mensagem`);
     return result.code === 0;
   } catch (error) {
     console.error("Exercise 1 - File not created:", error);
@@ -27,7 +27,7 @@ export async function validateFileExistence(
 
 export async function validateFileContent(username: string): Promise<boolean> {
   try {
-    const result = await ssh.execCommand(`cat /home/${username}/python`);
+    const result = await ssh.execCommand(`cat /home/${username}/python/mensagem`);
     return result.stdout.trim() === "eKuroZetsu @ DevOps Automation";
   } catch (error) {
     console.error("Exercise 1 - Invalid content", error);
