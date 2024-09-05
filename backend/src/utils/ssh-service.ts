@@ -5,10 +5,10 @@ export const ssh = new NodeSSH();
 export async function connectSSH() {
   await ssh.connect({
     // host: "challenge-environment",
-    host: "openssh-server",
+    host: process.env.LAB_SSH_HOST,
     port: 2222,
-    username: "lab-user",
-    password: "password",
+    username: process.env.LAB_SSH_USERNAME || "lab-user",
+    password: process.env.LAB_SSH_PASSWORD || "password",
     // privateKey: "/path/to/validator_key",
   });
 }
@@ -17,20 +17,20 @@ export async function validateFileExistence(
   username: string
 ): Promise<boolean> {
   try {
-    const result = await ssh.execCommand(`test -f /home/${username}/filename`);
+    const result = await ssh.execCommand(`test -f /home/${username}/python`);
     return result.code === 0;
   } catch (error) {
-    console.error("SSH execution error:", error);
+    console.error("Exercise 1 - File not created:", error);
     return false;
   }
 }
 
 export async function validateFileContent(username: string): Promise<boolean> {
   try {
-    const result = await ssh.execCommand(`cat /home/${username}/filename`);
-    return result.stdout.trim() === "hello world";
+    const result = await ssh.execCommand(`cat /home/${username}/python`);
+    return result.stdout.trim() === "eKuroZetsu @ DevOps Automation";
   } catch (error) {
-    console.error("SSH execution error:", error);
+    console.error("Exercise 1 - Invalid content", error);
     return false;
   }
 }

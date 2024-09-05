@@ -2,6 +2,9 @@ import express from "express";
 import { Server } from "socket.io";
 import { ValidationController } from "./controllers/validationController";
 import ssh2 from 'ssh2';
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const cors = require("cors");
 const app = express();
@@ -22,7 +25,7 @@ httpSocketServer.on("connection", (socket) => {
   conn.connect({
     host: process.env.LAB_SSH_HOST,
     port: 2222,
-    username: process.env.LAB_SSH_USERNAME,
+    username: process.env.LAB_SSH_USERNAME || "lab-user",
     password: "password",
   });
 

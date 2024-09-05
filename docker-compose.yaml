@@ -10,6 +10,7 @@ services:
     environment:
       - LAB_SSH_HOST=openssh-server
       - LAB_SSH_USERNAME=lab-user
+      - LAB_SSH_PASSWORD=password
       - SSH_PRIVATE_KEY=key
     ports:
       - 3001:3001
@@ -35,6 +36,7 @@ services:
       - LOG_STDOUT=true #optional
     volumes:
       - ../lab-node-0001:/lab-node-0001:Z
+      - ../lab-node-0001/home/lab-user:/home/lab-user:Z
     ports:
       - 2222:2222
     restart: unless-stopped

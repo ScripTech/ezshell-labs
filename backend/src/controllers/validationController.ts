@@ -9,25 +9,28 @@ export class ValidationController {
   }
 
   handleValidation = async (socket: Socket, username: string) => {
+
+    console.log("start handling exercise validation");
+
     socket.emit("validation-step", {
-      step: "file-existence",
+      step: "File Existence",
       status: "loading",
     });
     const fileExists = await this.validationService.validateFileExistence(
       username
     );
     socket.emit("validation-step", {
-      step: "file-existence",
-      status: fileExists ? "success" : "error",
+      step: "File Existence",
+      status: fileExists ? "success" : "failed",
     });
 
-    socket.emit("validation-step", { step: "file-content", status: "loading" });
+    socket.emit("validation-step", { step: "File Content", status: "loading" });
     const contentValid = await this.validationService.validateFileContent(
       username
     );
     socket.emit("validation-step", {
-      step: "file-content",
-      status: contentValid ? "success" : "error",
+      step: "File Content",
+      status: contentValid ? "success" : "failed",
     });
 
     const result = await this.validationService.validateChallenge(username);
