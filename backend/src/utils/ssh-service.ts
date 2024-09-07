@@ -13,6 +13,16 @@ export async function connectSSH() {
   });
 }
 
+export async function executeCommand(command: string) {
+ try {
+   const result = await ssh.execCommand(command);
+   return result.stdout.trim();
+ } catch (error: any) {
+  console.error("Error while executing command!", error);
+  return `Ups! Fatal error while executing command. Error: ${error}`;
+ }
+}
+
 export async function validateFileExistence(
   username: string
 ): Promise<boolean> {

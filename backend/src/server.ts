@@ -3,6 +3,7 @@ import { Server } from "socket.io";
 import { ValidationController } from "./controllers/validationController";
 import ssh2 from 'ssh2';
 import dotenv from "dotenv";
+import { NetworkConfigValidationController } from './controllers/exercises/NetworkConfigValidationController';
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ const httpSocketServer = new Server({
 });
 
 const validationController = new ValidationController();
+const networkConfigValidationController = new NetworkConfigValidationController();
+
+
 
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected");
@@ -60,6 +64,20 @@ httpSocketServer.on("connection", (socket) => {
     console.log("A user disconnected");
   });
 
+
+  // question validation block
+
+  socket.on("validate-exercise", (id) => {
+    switch (id) {
+      case "question-1-network-config":
+          networkConfigValidationController.handleValidation(socket, id);
+        break;
+        default:
+        break;
+    }
+  });
+
+  // end block
 
   socket.on("validate", (username) => {
     validationController.handleValidation(socket, username);

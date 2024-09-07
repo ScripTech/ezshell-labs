@@ -8,8 +8,7 @@ import React from 'react'
 import EZXTerminal from './components/terminal'
 import { getExerciseData } from '@/lib/services/labServices'
 import { Button } from '@/components/ui/button'
-import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationEllipsis, PaginationNext } from '@/components/ui/pagination'
-import { CheckCheckIcon, LoaderCircleIcon, LucideXCircle } from 'lucide-react'
+import { CheckCheckIcon, LucideXCircle } from 'lucide-react'
 import { io } from 'socket.io-client'
 import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import QuestionNavigator from './components/lab-exercise-navigation'
@@ -47,6 +46,8 @@ const EZSShellView = () => {
       setExercise(data.exerciseHtml);
       setExerciseHint(data.exerciseHintHtml)
     })
+
+    setValidationStatus([])
   }, [searchParams]);
 
 
@@ -55,8 +56,8 @@ const EZSShellView = () => {
   const checkExerciseAnswer = async (questionId: string) => {
     if (!hasCheckAnswer){
       // Emit a validation request to the backend
-      socket.emit(`validate-${questionId}`, "lab-user");
-      socket.on(`validation-${questionId}-steps`, (data: validationResult) => {
+      socket.emit(`validate-exercise`, questionId);
+      socket.on(`validation-${questionId}-step`, (data: validationResult) => {
         console.log(data)
         setValidationStatus(prevStatus => {
           // Remove old status for the current step
