@@ -12,6 +12,8 @@ import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, Pagi
 import { CheckCheckIcon, LoaderCircleIcon, LucideXCircle } from 'lucide-react'
 import { io } from 'socket.io-client'
 import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
+import QuestionNavigator from './components/lab-exercise-navigation'
+import { useSearchParams } from 'next/navigation'
 
 const socket = io('http://localhost:3001');
 
@@ -22,22 +24,27 @@ type validationResult = {
 }
 
 const EZSShellView = () => {
+
+  const searchParams = useSearchParams();
+  // const [question, setQuestion] = React.useState<string>("question_1_network_config")
   const [termPanelSize, setTerminalPanelSize] = React.useState<number>(25)
   const [exerciseNotes, setExercise] = React.useState("... loading data");
 
   const [hasCheckAnswer, sethasCheckAnswer] = React.useState<boolean>(false)
   const [isCorrect, setIsCorrect] = React.useState<boolean | null>(true)
 
-  const getExercise = async () => {
-    const exerciseData = await getExerciseData("createing-files-linux");
+  const getExercise = async (id: string) => {
+    const exerciseData = await getExerciseData(id);
     return exerciseData
   }
 
+  // Here i'm navigating to get the correct exercise question
   React.useEffect(() => {
-    getExercise().then((data) => {
+    const question = searchParams.get('question');
+    getExercise(question ?? "question_1_network_config").then((data) => {
       setExercise(data.contentHtml);
     })
-  }, [])
+  }, [searchParams]);
 
 
   const [validationStatus, setValidationStatus] = React.useState<validationResult[]>([]);
@@ -84,21 +91,7 @@ const EZSShellView = () => {
         <ResizablePanel className='h-[calc(100vh_-_theme(spacing.20))] px-4 pt-2 rounded-md'>
           <div className="border-b pb-2 mb-2">
             <div className="">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious href="#" />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#" isActive>
-                      1
-                    </PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext href="#" />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <QuestionNavigator />
             </div>
           </div>
           <Tabs defaultValue="shell-content" className="w-full">
@@ -165,7 +158,7 @@ const EZSShellView = () => {
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel className='h-[calc(100vh_-_theme(spacing.16))] bg-background'
+        <ResizablePanel className='h-[calc(100vh_-_theme(spacing.8))] bg-background'
           collapsible={false}
           defaultSize={55}
           minSize={55}

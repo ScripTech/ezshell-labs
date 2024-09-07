@@ -10,7 +10,7 @@ import matter from "gray-matter";
 
 export async function getExerciseData(id: string) {
 
-  const postsDirectory = "./storage/exercises/ez1-01";
+  const postsDirectory = "./storage/exercises";
 
   // console.log(path.basename.toString())
   // fs.readdir(postsDirectory, (err, files) => {
