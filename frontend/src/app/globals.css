@@ -24,6 +24,13 @@
   bottom: 8px;
 }
 
+.prose :where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))::before {
+    content: "" !important;
+}
+.prose :where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))::after {
+    content: "" !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

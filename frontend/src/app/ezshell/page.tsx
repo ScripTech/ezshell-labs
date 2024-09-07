@@ -26,9 +26,10 @@ type validationResult = {
 const EZSShellView = () => {
 
   const searchParams = useSearchParams();
-  // const [question, setQuestion] = React.useState<string>("question_1_network_config")
+  const [question, setQuestion] = React.useState<string>("question_1_network_config")
   const [termPanelSize, setTerminalPanelSize] = React.useState<number>(25)
-  const [exerciseNotes, setExercise] = React.useState("... loading data");
+  const [exerciseNotes, setExercise] = React.useState("What about a coffe while we load data....");
+  const [exerciseHint, setExerciseHint] = React.useState("No hint for you on this question.....");
 
   const [hasCheckAnswer, sethasCheckAnswer] = React.useState<boolean>(false)
   const [isCorrect, setIsCorrect] = React.useState<boolean | null>(true)
@@ -40,20 +41,22 @@ const EZSShellView = () => {
 
   // Here i'm navigating to get the correct exercise question
   React.useEffect(() => {
-    const question = searchParams.get('question');
-    getExercise(question ?? "question_1_network_config").then((data) => {
-      setExercise(data.contentHtml);
+    const _question = searchParams.get('question');
+    setQuestion(_question ?? "question_1_network_config");
+    getExercise(_question ?? "question_1_network_config").then((data) => {
+      setExercise(data.exerciseHtml);
+      setExerciseHint(data.exerciseHintHtml)
     })
   }, [searchParams]);
 
 
   const [validationStatus, setValidationStatus] = React.useState<validationResult[]>([]);
 
-  const checkExerciseAnswer = async () => {
+  const checkExerciseAnswer = async (questionId: string) => {
     if (!hasCheckAnswer){
       // Emit a validation request to the backend
-      socket.emit('validate', "lab-user");
-      socket.on("validation-step", (data: validationResult) => {
+      socket.emit(`validate-${questionId}`, "lab-user");
+      socket.on(`validation-${questionId}-steps`, (data: validationResult) => {
         console.log(data)
         setValidationStatus(prevStatus => {
           // Remove old status for the current step
@@ -63,7 +66,15 @@ const EZSShellView = () => {
           return updatedStatus;
         });
       })
-      socket.on("validation-complete", (data: { success: string, message: string}) => {
+
+      socket.on(`validation-${questionId}-complete`, (data: { success: string, message: string}) => {
+        console.log(data)
+        if(data.success){
+          sethasCheckAnswer(true)
+        }
+      })
+
+      socket.on(`validation-lab-complete`, (data: { success: string, message: string}) => {
         console.log(data)
         if(data.success){
           sethasCheckAnswer(true)
@@ -96,7 +107,7 @@ const EZSShellView = () => {
           </div>
           <Tabs defaultValue="shell-content" className="w-full">
             <TabsList>
-              <TabsTrigger value="shell-content" className='text-sm'>Exercicio 1</TabsTrigger>
+              <TabsTrigger value="shell-content" className='text-sm'>Exercicio</TabsTrigger>
               <TabsTrigger value="hint-area" className='text-sm'>Help Zone</TabsTrigger>
             </TabsList>
             <TabsContent value="shell-content">
@@ -114,16 +125,6 @@ const EZSShellView = () => {
                           </span>
                         </li>
                       ))}
-                      {/* <ul>
-                        <li className='flex space-x-2 items-center'>
-                          <span>File created</span>
-                          <span><LoaderCircleIcon className="h-4 w-4 ml-2 animate-spin" /></span>
-                        </li>
-                        <li className='flex space-x-2 items-center'>
-                          <span>Valid file content</span>
-                          <span><LoaderCircleIcon className="h-4 w-4 ml-2 animate-spin" /></span>
-                        </li>
-                      </ul> */}
                     </div>
                     <div className="mt-8 space-x-4">
                       {
@@ -133,13 +134,13 @@ const EZSShellView = () => {
                           <span>
                             <CheckCheckIcon className="h-5 w-5 ml-2 text-green-700" />
                           </span>
-                        </Button> : <Button type='button' variant={'outline'} className='border-red-700' onClick={() => checkExerciseAnswer()}>
+                        </Button> : <Button type='button' variant={'outline'} className='border-red-700' onClick={() => checkExerciseAnswer(question)}>
                           Avaliar resposta
                           <span>
                             <LucideXCircle className="h-5 w-5 ml-2 text-red-700" />
                           </span>
                         </Button>
-                      ) : <Button type='button' variant={'outline'} onClick={checkExerciseAnswer} >
+                      ) : <Button type='button' variant={'outline'} onClick={() => checkExerciseAnswer(question)} >
                           Avaliar resposta
                         <span>
                           <CheckCheckIcon className="h-5 w-5 ml-2" />
@@ -152,7 +153,7 @@ const EZSShellView = () => {
             </TabsContent>
             <TabsContent value="hint-area">
               <div className="p-3">
-                No hint for you on this question.
+                <div className='prose text-sm' dangerouslySetInnerHTML={{ __html: exerciseHint }} />
               </div>
             </TabsContent>
           </Tabs>
