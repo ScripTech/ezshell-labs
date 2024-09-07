@@ -7,8 +7,8 @@ export async function connectSSH() {
     // host: "challenge-environment",
     host: process.env.LAB_SSH_HOST,
     port: 2222,
-    username: process.env.LAB_SSH_USERNAME || "lab-user",
-    password: process.env.LAB_SSH_PASSWORD || "password",
+    username: process.env.LAB_SSH_USERNAME ?? "lab-user",
+    password: process.env.LAB_SSH_PASSWORD ?? "password",
     // privateKey: "/path/to/validator_key",
   });
 }
