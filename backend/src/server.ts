@@ -1,9 +1,9 @@
 import express from "express";
 import { Server } from "socket.io";
 import { ValidationController } from "./controllers/validationController";
-import ssh2 from 'ssh2';
+import ssh2 from "ssh2";
 import dotenv from "dotenv";
-import { NetworkConfigValidationController } from './controllers/exercises/NetworkConfigValidationController';
+import { NetworkConfigValidationController } from "./controllers/exercises/NetworkConfigValidationController";
 import { UserGroupManagementController } from "./controllers/exercises/UserGroupManagementController";
 
 dotenv.config();
@@ -14,14 +14,14 @@ const port = process.env.SERVER_PORT || 3001;
 
 const httpSocketServer = new Server({
   cors: {
-    origin: "*"
-  }
+    origin: "*",
+  },
 });
 
 const validationController = new ValidationController();
-const networkConfigValidationController = new NetworkConfigValidationController();
+const networkConfigValidationController =
+  new NetworkConfigValidationController();
 const userGroupMnt = new UserGroupManagementController();
-
 
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected");
@@ -65,44 +65,18 @@ httpSocketServer.on("connection", (socket) => {
     console.log("A user disconnected");
   });
 
-
   // question validation block
 
-  socket.on("validate-exercise", (id) => {
+  socket.on("validate-exercise", async (id) => {
     switch (id) {
       case "question-1-network-config":
         networkConfigValidationController.handleValidation(socket, id);
         break;
       case "question-4-user-group-management":
-        userGroupMnt.handleUserValidation(socket, id, {
-          user: "harry",
+        userGroupMnt.handleValidations(socket, id, {
           group: "sysadm",
+          users: ["natasha"]
         });
-
-        let user1 = setInterval(() => {
-          userGroupMnt.handleUserValidation(socket, id, {
-            user: "natasha",
-            group: "sysadm",
-          });
-          clearInterval(user1);
-        }, 1000);
-
-        let user2 = setInterval(() => {
-          userGroupMnt.handleUserValidation(socket, id, {
-            user: "sarah",
-            group: "sysadm",
-          });
-          clearInterval(user2)
-        }, 1500);
-
-
-        let group = setInterval(() => {
-          userGroupMnt.handleGroupValidation(socket, id, {
-            group: "sysadm",
-          });
-          clearInterval(group);
-        }, 1500);
-
         break;
       default:
         break;
