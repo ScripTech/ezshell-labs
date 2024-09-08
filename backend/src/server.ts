@@ -4,6 +4,7 @@ import { ValidationController } from "./controllers/validationController";
 import ssh2 from 'ssh2';
 import dotenv from "dotenv";
 import { NetworkConfigValidationController } from './controllers/exercises/NetworkConfigValidationController';
+import { UserGroupManagementController } from "./controllers/exercises/UserGroupManagementController";
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ const httpSocketServer = new Server({
 
 const validationController = new ValidationController();
 const networkConfigValidationController = new NetworkConfigValidationController();
-
+const userGroupMnt = new UserGroupManagementController();
 
 
 httpSocketServer.on("connection", (socket) => {
@@ -28,7 +29,7 @@ httpSocketServer.on("connection", (socket) => {
   const conn = new ssh2.Client();
   conn.connect({
     host: process.env.LAB_SSH_HOST,
-    port: 2222,
+    port: 22,
     username: process.env.LAB_SSH_USERNAME || "lab-user",
     password: "password",
   });
@@ -70,9 +71,40 @@ httpSocketServer.on("connection", (socket) => {
   socket.on("validate-exercise", (id) => {
     switch (id) {
       case "question-1-network-config":
-          networkConfigValidationController.handleValidation(socket, id);
+        networkConfigValidationController.handleValidation(socket, id);
         break;
-        default:
+      case "question-4-user-group-management":
+        userGroupMnt.handleUserValidation(socket, id, {
+          user: "harry",
+          group: "sysadm",
+        });
+
+        let user1 = setInterval(() => {
+          userGroupMnt.handleUserValidation(socket, id, {
+            user: "natasha",
+            group: "sysadm",
+          });
+          clearInterval(user1);
+        }, 1000);
+
+        let user2 = setInterval(() => {
+          userGroupMnt.handleUserValidation(socket, id, {
+            user: "sarah",
+            group: "sysadm",
+          });
+          clearInterval(user2)
+        }, 1500);
+
+
+        let group = setInterval(() => {
+          userGroupMnt.handleGroupValidation(socket, id, {
+            group: "sysadm",
+          });
+          clearInterval(group);
+        }, 1500);
+
+        break;
+      default:
         break;
     }
   });

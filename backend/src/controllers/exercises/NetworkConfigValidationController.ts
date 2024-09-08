@@ -42,23 +42,23 @@ export class NetworkConfigValidationController {
 
     //
     socket.emit(`validation-${questionId}-step`, {
-      step: "Gateway 172.25.X.254",
+      step: "Gateway",
       status: "loading",
     });
     const isValidGateway = await this.service.validateGateway();
     socket.emit(`validation-${questionId}-step`, {
-      step: "Gateway 172.25.X.254",
+      step: "Gateway",
       status: isValidGateway ? "success" : "failed",
     });
 
     //
     socket.emit(`validation-${questionId}-step`, {
-      step: "DNS 172.25.254.254",
+      step: "DNS",
       status: "loading",
     });
     const isCorrectDNS = await this.service.validateDNS();
     socket.emit(`validation-${questionId}-step`, {
-      step: "DNS 172.25.254.254",
+      step: "DNS",
       status: isCorrectDNS ? "success" : "failed",
     });
 

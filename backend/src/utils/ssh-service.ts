@@ -6,7 +6,7 @@ export async function connectSSH() {
   await ssh.connect({
     // host: "challenge-environment",
     host: process.env.LAB_SSH_HOST,
-    port: 2222,
+    port: 22,
     username: process.env.LAB_SSH_USERNAME ?? "lab-user",
     password: process.env.LAB_SSH_PASSWORD ?? "password",
     // privateKey: "/path/to/validator_key",

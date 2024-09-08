@@ -8,7 +8,7 @@ import React from 'react'
 import EZXTerminal from './components/terminal'
 import { getExerciseData } from '@/lib/services/labServices'
 import { Button } from '@/components/ui/button'
-import { CheckCheckIcon, LucideXCircle } from 'lucide-react'
+import { CheckCheckIcon, LoaderCircle, LucideXCircle } from 'lucide-react'
 import { io } from 'socket.io-client'
 import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import QuestionNavigator from './components/lab-exercise-navigation'
@@ -87,7 +87,7 @@ const EZSShellView = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'loading':
-        return <FaSpinner className="spin" />;
+        return <LoaderCircle className="spin animate-spin h-4 w-4" />;
       case 'success':
         return <FaCheckCircle style={{ color: 'green' }} />;
       case 'failed':

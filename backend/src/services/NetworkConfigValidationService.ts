@@ -9,15 +9,15 @@ export class NetworkConfigValidationService {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand("ip addr show | grep 'inet 172.25.'");
-    return result.includes("172.25.X.11/24");
+    const result = await executeCommand("ip addr show | grep 'inet 192.168.'");
+    return result.includes("192.168.251.128/24");
   }
 
   async validateNetmask(): Promise<boolean> {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand("ip addr show | grep 'inet 172.25.'");
+    const result = await executeCommand("ip addr show | grep 'inet 192.168.'");
     return result.includes("/24");
   }
 
@@ -26,7 +26,7 @@ export class NetworkConfigValidationService {
       await connectSSH();
     }
     const result = await executeCommand("ip route | grep default");
-    return result.includes("172.25.X.254");
+    return result.includes("192.168.251.128");
   }
 
   async validateDNS(): Promise<boolean> {
@@ -34,7 +34,7 @@ export class NetworkConfigValidationService {
       await connectSSH();
     }
     const result = await executeCommand("cat /etc/resolv.conf");
-    return result.includes("nameserver 172.25.254.254");
+    return result.includes("nameserver 192.168.251.2");
   }
 
   async validateHostname(): Promise<boolean> {
@@ -42,7 +42,7 @@ export class NetworkConfigValidationService {
       await connectSSH();
     }
     const result = await executeCommand("hostname");
-    return result.trim() === "openssh-server";
+    return result.trim() === "ezetsu.lab.local";
   }
 
   async validateNetworkConfig(): Promise<{ success: boolean; message: string }> {
