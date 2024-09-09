@@ -11,7 +11,7 @@ dotenv.config();
 
 const cors = require("cors");
 const app = express();
-const port = process.env.SERVER_PORT || 3001;
+const port = process.env.SERVER_PORT ?? 3001;
 
 const httpSocketServer = new Server({
   cors: {
@@ -32,7 +32,7 @@ httpSocketServer.on("connection", (socket) => {
   conn.connect({
     host: process.env.LAB_SSH_HOST,
     port: 22,
-    username: process.env.LAB_SSH_USERNAME || "lab-user",
+    username: process.env.LAB_SSH_USERNAME ?? "lab-user",
     password: "password",
   });
 
