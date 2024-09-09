@@ -5,6 +5,7 @@ import ssh2 from "ssh2";
 import dotenv from "dotenv";
 import { NetworkConfigValidationController } from "./controllers/exercises/NetworkConfigValidationController";
 import { UserGroupManagementController } from "./controllers/exercises/UserGroupManagementController";
+import { YumRepositoryValidationController } from "./controllers/exercises/YumRepositoryValidationController";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ const validationController = new ValidationController();
 const networkConfigValidationController =
   new NetworkConfigValidationController();
 const userGroupMnt = new UserGroupManagementController();
+const yumManagement = new YumRepositoryValidationController();
 
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected");
@@ -75,8 +77,11 @@ httpSocketServer.on("connection", (socket) => {
       case "question-4-user-group-management":
         userGroupMnt.handleValidations(socket, id, {
           group: "sysadm",
-          users: ["natasha"]
+          users: ["natasha"],
         });
+        break;
+      case "question-2-yum-repository":
+        yumManagement.handleValidation(socket, id);
         break;
       default:
         break;
