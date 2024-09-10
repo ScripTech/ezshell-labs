@@ -8,13 +8,35 @@ services:
     container_name: backend-service
     hostname: backend-service
     environment:
-      - LAB_SSH_HOST=openssh-server
+      - LAB_SSH_HOST=shell-node
+      - LAB_SSH_PORT=22
       - LAB_SSH_USERNAME=lab-user
       - LAB_SSH_PASSWORD=password
       - SSH_PRIVATE_KEY=key
+      - SERVER_PORT=3001
     ports:
       - 3001:3001
     restart: unless-stopped
+
+  shell-node:
+    build:
+      context: ./shell-node
+      dockerfile: Dockerfile
+      args:
+        - SSH_USER=lab-user
+        - SSH_PASSWORD=password
+        - RootPassword=password
+    container_name: shell-lab
+    hostname: shell-lab
+    privileged: true
+    environment:
+      - USER_NAME=lab-user
+    ports:
+      - 82:82
+      - 8080:80
+      - 2222:22
+    restart: unless-stopped
+
 
   # OpenSSH server
   openssh-server:
@@ -38,5 +60,5 @@ services:
       - ../lab-node-0001:/lab-node-0001:Z
       - ../lab-node-0001/home/lab-user:/home/lab-user:Z
     ports:
-      - 2222:2222
+      - 2223:2222
     restart: unless-stopped
