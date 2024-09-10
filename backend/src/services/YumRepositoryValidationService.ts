@@ -9,7 +9,7 @@ export class YumRepositoryValidationService {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand("yum repolist | grep 'BaseOS'");
+    const result = await executeCommand("yum repolist | grep 'DevOps-BaseOS'");
     return result.includes("BaseOS");
   }
 
@@ -17,7 +17,7 @@ export class YumRepositoryValidationService {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand("yum repolist | grep 'AppStream'");
+    const result = await executeCommand("yum repolist | grep 'DevOps-AppStream'");
     return result.includes("AppStream");
   }
 
@@ -25,7 +25,7 @@ export class YumRepositoryValidationService {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand("cat /etc/yum.repos.d/*.repo");
+    const result = await executeCommand("cat /etc/yum.repos.d/devops.repo");
     return result.includes("http://content.example.com/rhel8.0/x86_64/dvd/BaseOs") &&
            result.includes("http://content.example.com/rhel8.0/x86_64/dvd/Appstream");
   }
