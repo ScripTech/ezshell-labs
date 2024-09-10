@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import { NetworkConfigValidationController } from "./controllers/exercises/NetworkConfigValidationController";
 import { UserGroupManagementController } from "./controllers/exercises/UserGroupManagementController";
 import { YumRepositoryValidationController } from "./controllers/exercises/YumRepositoryValidationController";
+import { SELinuxManagementController } from "./controllers/exercises/SELinuxManagementController";
+import { CollaborativeDirectoryControllerV1 } from "./controllers/exercises/CollaborativeDirectoryControllerV1";
 
 dotenv.config();
 
@@ -24,6 +26,8 @@ const networkConfigValidationController =
   new NetworkConfigValidationController();
 const userGroupMnt = new UserGroupManagementController();
 const yumManagement = new YumRepositoryValidationController();
+const selinuxMnt = new SELinuxManagementController();
+const collabDirV1 = new CollaborativeDirectoryControllerV1();
 
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected");
@@ -74,14 +78,20 @@ httpSocketServer.on("connection", (socket) => {
       case "question-1-network-config":
         networkConfigValidationController.handleValidation(socket, id);
         break;
+      case "question-2-yum-repository":
+        yumManagement.handleValidation(socket, id);
+        break;
+      case "question-3-selinux-port":
+        selinuxMnt.handleValidation(socket, id);
+        break;
       case "question-4-user-group-management":
         userGroupMnt.handleValidations(socket, id, {
           group: "sysadm",
           users: ["natasha"],
         });
         break;
-      case "question-2-yum-repository":
-        yumManagement.handleValidation(socket, id);
+      case "question-5-collaborative-directory":
+        collabDirV1.handleValidation(socket, id);
         break;
       default:
         break;

@@ -160,7 +160,7 @@ const EZSShellView = () => {
           </Tabs>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel className='h-[calc(100vh_-_theme(spacing.8))] bg-background'
+        <ResizablePanel className='h-[calc(100vh_-_theme(spacing.12))] bg-background'
           collapsible={false}
           defaultSize={55}
           minSize={55}
