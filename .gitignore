@@ -38,3 +38,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 backend/.env
+snyk-macos-arm64
+.vscode/settings.json

@@ -1,14 +1,14 @@
 ### Configuring Autofs for NFS Home Directories
 
-Configure autofs to automount the home directories of netuserX user:
+Configure autofs to automount the home directories of nfsuser user:
 
-* netuserX home directory is exported via NFS from classroom.example.com (172.25.254.254)
+* nfsuser home directory is exported via NFS from ezetsu.nfslab.com
 * NFS-exports directory is `/netdir` for netuser
-* netuserX's home directory is `classroom.example.com:/home/guests/netuserX`
+* nfsuser's home directory is `ezetsu.nfslab.com:/home/guests/nfsuser`
 * Home directories must be writable by their users
-* Password for netuser is `ablerate`
+* Password for netuser is `kurozetsu`
 
 <!-- #### Expected Result
-  - Autofs configured to mount netuserX's home directory
-  - Home directory accessible and writable by netuserX
+  - Autofs configured to mount nfsuser's home directory
+  - Home directory accessible and writable by nfsuser
   - Automounting works correctly -->

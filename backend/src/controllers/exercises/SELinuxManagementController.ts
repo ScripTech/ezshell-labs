@@ -33,7 +33,7 @@ export class SELinuxManagementController {
       step: "Curl Service to get status",
       status: "loading",
     });
-    const curlService = await this.service.validateSemanagePort(82);
+    const curlService = await this.service.validateByCurlTheService(82);
     socket.emit(`validation-${questionId}-step`, {
       step: "Curl Service to get status",
       status: curlService ? "success" : "failed",

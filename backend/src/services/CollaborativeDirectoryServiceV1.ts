@@ -26,11 +26,11 @@ export class CollaborativeDirectoryServiceV1 {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand(`l -l ${path} | grep ${group}`);
+    const result = await ssh.execCommand(`sudo ls -ld ${path} | grep ${group}`);
     return (
-      !result.includes("No such file or directory") &&
-      result.includes(`${group}`) &&
-      result.includes(`rwxrwx---`)
+      result.code === 0 &&
+      result.stdout.trim().includes(`${group}`) &&
+      result.stdout.trim().includes(`drwxrws--`)
     );
   }
 }
