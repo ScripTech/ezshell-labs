@@ -40,3 +40,5 @@ next-env.d.ts
 backend/.env
 snyk-macos-arm64
 .vscode/settings.json
+frontend/src/components/login-form.tsx
+frontend/drizzle/*
