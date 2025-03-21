@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CircleUser, Menu, Search, Terminal } from "lucide-react"
+import { CircleUser, Menu, Terminal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -10,10 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export default function BaseHomeLayout({ children }: any) {
+  const router = useRouter()
+  const { data: session, status } = useSession()
+  const userName = session?.user?.name || 'Anonymous'
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky top-0 flex h-12 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -59,31 +64,30 @@ export default function BaseHomeLayout({ children }: any) {
         </Sheet>
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
           <div className="ml-auto flex-1 sm:flex-initial">
-            <div>Anonymos</div>
-            {/* <form className="">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                />
-              </div>
-            </form> */}
+            <div>{userName}</div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
-                <CircleUser className="h-5 w-5" />
+                {session?.user?.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={userName}
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <CircleUser className="h-5 w-5" />
+                )}
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="mt-2 w-64">
               <DropdownMenuLabel>Minha conta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Configurações</DropdownMenuItem>
-              <DropdownMenuItem>Suporte</DropdownMenuItem>
-              <DropdownMenuItem>Sair</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/account/profile')}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => signOut()} className="stext-red-500 hover:font-semibold bg-red-500 bg-opacity-30s cursor-pointer">
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
