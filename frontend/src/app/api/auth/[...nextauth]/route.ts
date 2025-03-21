@@ -9,6 +9,10 @@ export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt" as const, // Ensure the strategy is of type 'SessionStrategy'
   },
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
+  },
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID ?? "",
