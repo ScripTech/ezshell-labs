@@ -8,6 +8,8 @@ import { toast } from 'sonner'
 import Image from 'next/image'
 import { LabsEmptyPlaceholder } from '../components/labs-empty-placeholder'
 import { ArrowRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default function LabDetailsPage() {
   const params = useParams()
@@ -34,7 +36,21 @@ export default function LabDetailsPage() {
   }, [params.id])
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="container mx-auto py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="aspect-video relative mb-8 rounded-lg overflow-hidden">
+              <Skeleton className="h-6 w-64 mb-4" />
+              <Skeleton className="h-full mb-2" />
+          </div>
+          <div className="prose max-w-none">
+            <Skeleton className="h-4 mb-4" />
+            <Skeleton className="h-4 mb-4" />
+            <Skeleton className="h-5 w-3/4 mb-2" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!lab) {
@@ -52,7 +68,6 @@ export default function LabDetailsPage() {
         }
       />
     )
-    // return <div><LabsEmptyPlaceholder title="You are not enrolled " description='' /></div>
   }
 
 

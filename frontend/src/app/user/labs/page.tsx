@@ -3,16 +3,15 @@
 import { Separator } from "@radix-ui/react-separator";
 import { LabsEmptyPlaceholder } from "./components/labs-empty-placeholder";
 import { Lab } from "@/types/labs";
-import { useState } from "react";
-import { getUserLabSessions } from "@/services/labs.service";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import React from "react";
 import { AvailableLabsComponent } from "./components/available-labs";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UserLabs() {
   const [isLoading, setIsLoading] = useState(true)
   const [availableLabs, setAvailableLabs] = useState<Lab[]>([])
-  const [isEnrolling, setIsEnrolling] = useState(false)
 
   const fetchAvailableLabs = async () => {
     try {
@@ -28,7 +27,7 @@ export default function UserLabs() {
     }
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchAvailableLabs()
   }, [])
 
@@ -47,8 +46,19 @@ export default function UserLabs() {
       </div>
       <Separator className="my-4" />
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900" />
+        <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader className="p-4">
+                <Skeleton className="h-52 object-cover transition-transform group-hover:scale-105" />
+              </CardHeader>
+              <CardContent className="px-4">
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-5 w-3/2 mb-2" />
+                <Skeleton className="h-5 w-3/2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
       {!isLoading && (
