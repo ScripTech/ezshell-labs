@@ -85,7 +85,7 @@ export default function LabDetailsPage() {
         throw new Error('Failed to enroll in lab')
       }
 
-      const data = await response.json()
+      // const data = await response.json()
       setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
       toast.success('Successfully enrolled in lab')
       router.push(`/user/labs/${labId}/workspace`)
