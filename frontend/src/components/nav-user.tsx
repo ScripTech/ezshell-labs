@@ -3,6 +3,7 @@
 import {
   BadgeCheck,
   Bell,
+  CircleUser,
   LogOut,
   Sparkles,
 } from "lucide-react"
@@ -28,11 +29,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { CaretSortIcon, ComponentPlaceholderIcon } from "@radix-ui/react-icons"
+import { signOut } from "next-auth/react"
 
 export function NavUser({
   user,
 }: {
-  user: {
+  readonly user: {
     name: string
     email: string
     avatar: string
@@ -51,7 +53,9 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  <CircleUser className="h-5 w-5" />
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>
@@ -70,7 +74,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg"><CircleUser className="h-5 w-5" /></AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.name}</span>
@@ -81,29 +85,29 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
+                <Sparkles className="h-4 w-4" />
+                <span className="px-2">Upgrade to Pro</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <BadgeCheck />
-                Account
+                <BadgeCheck className="h-4 w-4" />
+                <span className="px-2">Account</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <ComponentPlaceholderIcon />
-                Billing
+                <ComponentPlaceholderIcon className="h-4 w-4" />
+                <span className="px-2">Billing</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Bell />
-                Notifications
+                <Bell className="h-4 w-4" />
+                <span className="px-2">Notifications</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut />
-              Log out
+            <DropdownMenuItem className="cursor-pointer " onClick={() => signOut()}>
+              <LogOut className="h-4 w-4 text-red-400" />
+              <span className="px-2 text-red-400">Log Out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -16,12 +16,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { CaretSortIcon, PlusIcon } from "@radix-ui/react-icons"
+import { CaretSortIcon, GearIcon, PlusIcon } from "@radix-ui/react-icons"
+import { SquareTerminal } from "lucide-react"
 
 export function TeamSwitcher({
   teams,
 }: {
-  teams: {
+  readonly teams: {
     name: string
     logo: React.ElementType
     plan: string
@@ -43,14 +44,14 @@ export function TeamSwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeTeam.logo className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-accent text-sidebar-primary-foreground">
+                <SquareTerminal className="size-5"/>
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {activeTeam.name}
+                  Auza Labs
                 </span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                <span className="truncate text-xs">Tenant: {activeTeam.name}</span>
               </div>
               <CaretSortIcon className="ml-auto" />
             </SidebarMenuButton>
@@ -74,15 +75,16 @@ export function TeamSwitcher({
                   <team.logo className="size-4 shrink-0" />
                 </div>
                 {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                {/* <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut> */}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 p-2">
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                <PlusIcon className="size-4" />
+                <GearIcon className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add team</div>
+              <div className="font-medium">Adminstration</div>
+
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
