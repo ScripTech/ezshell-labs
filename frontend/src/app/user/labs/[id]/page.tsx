@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { Lab } from '@/types/labs'
 import { Button } from '@/components/ui/button'
@@ -9,10 +9,10 @@ import Image from 'next/image'
 import { LabsEmptyPlaceholder } from '../components/labs-empty-placeholder'
 import { ArrowRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent } from '@/components/ui/card'
 
 export default function LabDetailsPage() {
   const params = useParams()
+  const router = useRouter()
   const [lab, setLab] = useState<Lab | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEnrolling, setIsEnrolling] = useState(false)
@@ -70,18 +70,32 @@ export default function LabDetailsPage() {
     )
   }
 
+  const handleEnrollment = async (labId: string) => {
+    try {
+      setIsEnrolling(true)
+      const response = await fetch('/api/labs/enroll', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ labId }),
+      })
 
-    const handleEnrollment = async (labId: string) => {
-      try {
-        setIsEnrolling(true)
-
-        toast.success('Successfully enrolled in lab')
-      } catch (error) {
-        toast.error('Failed to enroll in lab')
-      } finally {
-        setIsEnrolling(false)
+      if (!response.ok) {
+        throw new Error('Failed to enroll in lab')
       }
+
+      const data = await response.json()
+      setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
+      toast.success('Successfully enrolled in lab')
+      router.push(`/user/labs/${labId}/workspace`)
+    } catch (error) {
+      console.error('Enrollment error:', error)
+      toast.error('Failed to enroll in lab')
+    } finally {
+      setIsEnrolling(false)
     }
+  }
 
   return (
     <div className="container mx-auto py-8">

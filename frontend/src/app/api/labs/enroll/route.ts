@@ -1,47 +1,64 @@
 import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { labSessions, labs } from '@/db/schemas'
+import { eq } from 'drizzle-orm'
 import { authOptions } from '../../auth/[...nextauth]/route'
+import { labs, labEnrollments } from '@/db/schemas/LabSchema'
 import { nanoid } from 'nanoid'
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = session?.user?.id;
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { labId } = await req.json()
+    const { labId } = await request.json()
 
-    const [labSession] = await db.insert(labSessions)
-      .values({
-        id: nanoid(),
-        userId: session.user.id,
-        labId,
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 30 * 60 * 1000),
-        isActive: true,
-      })
-      .returning()
+    // Check if user is already enrolled
+    const existingEnrollment = await db.query.labEnrollments.findFirst({
+      where: (enrollments, { and, eq }) =>
+        and(eq(enrollments.userId, userId), eq(enrollments.labId, labId)),
+    });
 
-    // Fetch the lab with enrollment status
+    if (existingEnrollment) {
+      return NextResponse.json(
+        { error: 'Already enrolled in this lab' },
+        { status: 400 }
+      )
+    }
+
+    // Get lab details to verify it exists
     const lab = await db.query.labs.findFirst({
-      where: (labs, { eq }) => eq(labs.id, labId),
-      with: {
-        sessions: {
-          where: (sessions: any, { eq }: any) => eq(sessions.userId, session?.user?.id),
-        },
-      },
+      where: eq(labs.id, labId),
     })
 
+    if (!lab) {
+      return NextResponse.json(
+        { error: 'Lab not found' },
+        { status: 404 }
+      )
+    }
+
+    // Create new enrollment
+    const [enrollment] = await db
+      .insert(labEnrollments)
+      .values({
+        id: nanoid(),
+        userId: userId,
+        labId: labId,
+        status: "enrolled",
+        progress: 0,
+        enrolledAt: new Date(),
+      })
+      .returning();
+
     return NextResponse.json({
-      ...labSession,
+      ...enrollment,
       lab: {
         ...lab,
         isEnrolled: true,
-        progress: { completed: 0, total: 100 },
       },
     })
   } catch (error) {
