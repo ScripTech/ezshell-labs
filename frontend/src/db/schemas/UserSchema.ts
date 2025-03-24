@@ -80,12 +80,3 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 );
-
-export const labSessions = pgTable('lab_session', {
-  id: text('id').primaryKey(),
-  userId: text('userId').references(() => users.id, { onDelete: 'cascade' }),
-  startTime: timestamp('start_time').defaultNow(),
-  endTime: timestamp('end_time'),
-  isActive: boolean('is_active').default(true),
-})
-

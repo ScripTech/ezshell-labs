@@ -1,16 +1,21 @@
 'use client'
 
-import { Separator } from "@radix-ui/react-separator"
-import { LabsEmptyPlaceholder } from "./components/labs-empty-placeholder"
-import { UserLabs } from "./components/user-labs"
-import { useEffect, useState } from "react"
-import { LabSession } from "@/types/labs"
-import { getUserLabSessions } from "@/services/labs.service"
-import { toast } from "sonner"
+import { Separator } from "@radix-ui/react-separator";
+import { LabsEmptyPlaceholder } from "./components/labs-empty-placeholder";
+import { Lab, LabSession } from "@/types/labs";
+import { useState } from "react";
+import { getUserLabSessions } from "@/services/labs.service";
+import { toast } from "sonner";
+import React from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-export default function Dashboard() {
+
+export default function UserLabs() {
   const [labs, setLabs] = useState<LabSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [availableLabs, setAvailableLabs] = useState<Lab[]>([])
+  const [isEnrolling, setIsEnrolling] = useState(false)
 
   const handleLoadingLabs = async () => {
     try {
@@ -24,9 +29,43 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
+  const fetchAvailableLabs = async () => {
+    try {
+      const response = await fetch('/api/labs/available')
+      if (!response.ok) throw new Error('Failed to fetch labs')
+      const data = await response.json()
+      setAvailableLabs(data)
+    } catch (error) {
+      toast.error('Failed to load available labs')
+    }
+  }
+
+  const handleEnrollment = async (labId: string) => {
+    try {
+      setIsEnrolling(true)
+      const response = await fetch('/api/labs/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ labId }),
+      })
+
+      if (!response.ok) throw new Error('Failed to enroll')
+
+      const newLab = await response.json()
+      setLabs(prev => [...prev, newLab])
+      toast.success('Successfully enrolled in lab')
+    } catch (error) {
+      toast.error('Failed to enroll in lab')
+    } finally {
+      setIsEnrolling(false)
+    }
+  }
+
+  React.useEffect(() => {
     handleLoadingLabs()
+    fetchAvailableLabs()
   }, [])
+
 
   return (
     <div className="h-full flex-col border-none p-0 data-[state=active]:flex">
@@ -39,17 +78,37 @@ export default function Dashboard() {
             Your favorite shell lab playground.
           </p>
         </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>Enroll in Lab</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Available Labs</DialogTitle>
+              <DialogDescription>
+                Select a lab to enroll in
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              {availableLabs.map((lab) => (
+                <Button
+                  key={lab.id}
+                  variant="outline"
+                  className="w-full justify-start"
+                  disabled={isEnrolling}
+                  onClick={() => handleEnrollment(lab.id)}
+                >
+                  {lab.name}
+                </Button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       <Separator className="my-4" />
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900" />
-        </div>
-      ) : labs.length > 0 ? (
-        <UserLabs labs={labs} />
-      ) : (
-        <LabsEmptyPlaceholder />
-      )}
+      {/* should show labs component if least 1 lab is feched on empty placehold*/}
+      {/* <UserLabsComponent data={labs}/> */}
+      <LabsEmptyPlaceholder/>
     </div>
   )
 }

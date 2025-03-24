@@ -1,10 +1,11 @@
 import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { labSessions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { authOptions } from '../auth/[...nextauth]/route'
+import { labSessions } from '@/db/schemas'
 
+// Used to get List of labs
 export async function GET() {
   const session = await getServerSession(authOptions);
 

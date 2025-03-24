@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { labSessions } from '@/db/schema'
+import { labSessions } from '@/db/schemas'
 import { eq } from 'drizzle-orm'
 import { authOptions } from '../../auth/[...nextauth]/route'
 

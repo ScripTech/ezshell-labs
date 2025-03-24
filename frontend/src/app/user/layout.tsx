@@ -15,8 +15,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { signOut, useSession } from "next-auth/react";
-import { useRouter, } from "next/navigation";
+import {useSession } from "next-auth/react";
 
 export default function UserLayout({
   children,
@@ -25,11 +24,7 @@ export default function UserLayout({
   children: React.ReactNode;
 }>) {
 
-
-  const router = useRouter()
   const { data: session } = useSession()
-  const userName = session?.user?.name ?? 'Anonymous'
-
 
   return (
     <SidebarProvider>
