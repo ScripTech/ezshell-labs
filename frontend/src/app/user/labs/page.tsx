@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { AvailableLabsComponent } from "./components/available-labs";
 
 
 export default function UserLabs() {
@@ -106,9 +107,21 @@ export default function UserLabs() {
         </Dialog>
       </div>
       <Separator className="my-4" />
-      {/* should show labs component if least 1 lab is feched on empty placehold*/}
-      {/* <UserLabsComponent data={labs}/> */}
-      <LabsEmptyPlaceholder/>
+      {isLoading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900" />
+        </div>
+      )}
+      {!isLoading && availableLabs.length > 0 && (
+        <AvailableLabsComponent
+          data={availableLabs}
+          onEnroll={handleEnrollment}
+          isEnrolling={isEnrolling}
+        />
+      )}
+      {!isLoading && availableLabs.length === 0 && (
+        <LabsEmptyPlaceholder />
+      )}
     </div>
   )
 }
