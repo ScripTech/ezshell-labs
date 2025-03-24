@@ -5,7 +5,14 @@ import { NextRequestWithAuth } from 'next-auth/middleware'
 
 // 1. Specify protected and public routes
 const protectedRoutes = ['/dashboard']
-const publicRoutes = ["/auth/login", "/auth/signup"];
+const publicRoutes = ["/", "/test"];
+
+const authPublicPages = [
+  "/auth/login",
+  "/auth/signup",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
 
 export default async function middleware(req: NextRequestWithAuth) {
   const token = await getToken({ req });
@@ -17,10 +24,20 @@ export default async function middleware(req: NextRequestWithAuth) {
   const isPublicRoute = publicRoutes.includes(path);
 
   // Allow access to auth-related paths and static files
-  const isAuthPage = req.nextUrl.pathname.startsWith("/auth");
+  const isAuthPage = authPublicPages.includes(path);
 
-  if (isAuthPage || isPublicRoute) {
+  if (isPublicRoute) {
     return NextResponse.next();
+  }
+
+  if (isAuthPage && !isAuthenticated) {
+    return NextResponse.next();
+  }
+
+  // redirect to dashboard if authenticated and is in login page
+  if (isAuthPage && isAuthenticated) {
+    const redirectUrl = new URL("/user/dashboard", req.url);
+    return NextResponse.redirect(redirectUrl);
   }
 
   // Redirect unauthenticated users to login
