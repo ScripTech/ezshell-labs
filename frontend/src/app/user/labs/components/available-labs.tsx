@@ -7,22 +7,22 @@ import { Button } from "@/components/ui/button"
 import { Clock, Terminal, Users, CheckCircle2, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { Progress } from "@/components/ui/progress"
+import { useRouter } from "next/navigation"
 
 interface AvailableLabsProps {
   data: Lab[]
-  onEnroll: (labId: string) => void
   onContinue?: (labId: string) => void
-  isEnrolling: boolean
 }
 
 export function AvailableLabsComponent({
   data,
-  onEnroll,
   onContinue,
-  isEnrolling
 }: Readonly<AvailableLabsProps>) {
+  const router = useRouter()
 
-  console.log(data)
+  const handleLabDetails = (labId: string) => {
+    router.push(`/user/labs/${labId}`)
+  }
 
   return (
     <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -96,10 +96,9 @@ export function AvailableLabsComponent({
             ) : (
               <Button
                 className="w-full"
-                onClick={() => onEnroll(lab.id)}
-                disabled={isEnrolling}
+                onClick={() => handleLabDetails(lab.id)}
               >
-                Start Lab
+                Enroll to Lab
               </Button>
             )}
           </CardFooter>
