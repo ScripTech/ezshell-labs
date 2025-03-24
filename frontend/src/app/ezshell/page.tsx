@@ -26,7 +26,7 @@ const EZSShellView = () => {
 
   const searchParams = useSearchParams();
   const [question, setQuestion] = React.useState<string>("question_1_network_config")
-  const [termPanelSize, setTerminalPanelSize] = React.useState<number>(25)
+  const [termPanelSize, setTerminalPanelSize] = React.useState<number>(55)
   const [exerciseNotes, setExercise] = React.useState("What about a coffe while we load data....");
   const [exerciseHint, setExerciseHint] = React.useState("No hint for you on this question.....");
 
@@ -163,7 +163,7 @@ const EZSShellView = () => {
         <ResizablePanel className='h-[calc(100vh_-_theme(spacing.12))] bg-background'
           collapsible={false}
           defaultSize={55}
-          minSize={55}
+          minSize={termPanelSize}
           maxSize={63}
           onResize={(e) => {
             setTerminalPanelSize(e)

@@ -35,7 +35,7 @@ export default function layout({ children }: any) {
             <span className="sr-only">eAlgoritimo Inc</span>
           </Link>
           <Link
-            href="/"
+            href="/user/labs"
             className="text-foreground transition-colors hover:text-foreground text-nowrap"
           >
             eZShell Labs

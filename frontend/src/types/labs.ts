@@ -26,6 +26,14 @@ export type Lab = {
   };
 };
 
+export interface LabEnrollment {
+  id: string;
+  status: "enrolled" | "in_progress" | "completed";
+  progress: number;
+  enrolledAt: Date;
+  completedAt: Date;
+}
+
 export type LabSession = {
   id: string;
   userId: string;

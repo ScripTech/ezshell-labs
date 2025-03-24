@@ -20,9 +20,10 @@ export default function LabDetailsPage() {
   useEffect(() => {
     const fetchLabDetails = async () => {
       try {
-        const response = await fetch(`/api/labs/${params.id}`)
+        const response = await fetch(`/api/labs/${ params.id }`)
         if (!response.ok) throw new Error('Failed to fetch lab details')
         const data = await response.json()
+        data.isEnrolled = data.enrollment?.status === 'enrolled'
         setLab(data)
       } catch (error) {
         toast.error('Failed to load lab details')
@@ -33,7 +34,8 @@ export default function LabDetailsPage() {
     }
 
     fetchLabDetails()
-  }, [params.id])
+  }, [params.id, router])
+
 
   if (isLoading) {
     return (
@@ -88,7 +90,7 @@ export default function LabDetailsPage() {
       // const data = await response.json()
       setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
       toast.success('Successfully enrolled in lab')
-      router.push(`/user/labs/${labId}/workspace`)
+      router.push(`/ezshell?lab=${labId}&question=question-1-network-config`)
     } catch (error) {
       console.error('Enrollment error:', error)
       toast.error('Failed to enroll in lab')
@@ -114,11 +116,12 @@ export default function LabDetailsPage() {
           <p className="text-lg mb-4 text-white">{lab.description}</p>
           {/* Add more lab details here */}
         </div>
+
         {lab.isEnrolled ? (
           <Button
             size="lg"
             className="mt-8"
-            onClick={() => {}}
+            onClick={() => router.push(`/ezshell?lab=${ lab.id }&question=question-1-network-config`)}
           >
             Continue Lab
             <ArrowRight className="ml-2 h-4 w-4" />
