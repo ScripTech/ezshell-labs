@@ -2,18 +2,17 @@
 
 import { Separator } from "@radix-ui/react-separator";
 import { LabsEmptyPlaceholder } from "./components/labs-empty-placeholder";
-import { Lab, LabSession } from "@/types/labs";
+import { Lab } from "@/types/labs";
 import { useState } from "react";
-import { getUserLabSessions } from "@/services/labs.service";
+import { enrollInLab, getUserLabSessions } from "@/services/labs.service";
 import { toast } from "sonner";
 import React from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AvailableLabsComponent } from "./components/available-labs";
 
-
 export default function UserLabs() {
-  const [labs, setLabs] = useState<LabSession[]>([])
+  const [labs, setLabs] = useState<Lab[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [availableLabs, setAvailableLabs] = useState<Lab[]>([])
   const [isEnrolling, setIsEnrolling] = useState(false)
@@ -37,6 +36,7 @@ export default function UserLabs() {
       const data = await response.json()
       setAvailableLabs(data)
     } catch (error) {
+      console.log(error)
       toast.error('Failed to load available labs')
     }
   }
@@ -44,16 +44,14 @@ export default function UserLabs() {
   const handleEnrollment = async (labId: string) => {
     try {
       setIsEnrolling(true)
-      const response = await fetch('/api/labs/enroll', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ labId }),
-      })
-
-      if (!response.ok) throw new Error('Failed to enroll')
-
-      const newLab = await response.json()
-      setLabs(prev => [...prev, newLab])
+      // const enrolledLab = await enrollInLab(labId)
+      // setLabs(prevLabs =>
+      //   prevLabs.map(lab =>
+      //     lab.id === labId
+      //       ? { ...lab, isEnrolled: true, progress: { completed: 0, total: 100 } }
+      //       : lab
+      //   )
+      // )
       toast.success('Successfully enrolled in lab')
     } catch (error) {
       toast.error('Failed to enroll in lab')
@@ -112,7 +110,7 @@ export default function UserLabs() {
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900" />
         </div>
       )}
-      {!isLoading && availableLabs.length > 0 && (
+      {!isLoading && (
         <AvailableLabsComponent
           data={availableLabs}
           onEnroll={handleEnrollment}

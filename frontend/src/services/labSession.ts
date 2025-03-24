@@ -1,6 +1,6 @@
 import { eq, and, gt } from 'drizzle-orm'
 import { db } from '@/db'
-import { labSessions } from '@/db/schema'
+import { labSessions } from '@/db/schemas'
 import { LabSessionSchema } from '@/db/schemas/LabSessionSchema'
 import { nanoid } from 'nanoid'
 

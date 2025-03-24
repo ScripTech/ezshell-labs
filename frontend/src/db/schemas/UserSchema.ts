@@ -6,7 +6,6 @@ import {
   primaryKey,
   integer,
   pgEnum,
-  boolean,
 } from "drizzle-orm/pg-core";
 
 
@@ -17,13 +16,14 @@ export const userBuiltRoleEnum = pgEnum("user_role", [
   "clientUser",
 ]);
 
-export const users = pgTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name'),
-  email: text('email').unique(),
-  emailVerified: timestamp('emailVerified'),
-  image: text('image'),
-})
+export const users = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name"),
+  email: text("email").unique(),
+  emailVerified: timestamp("emailVerified"),
+  image: text("image"),
+  role: userBuiltRoleEnum("role").default("user").notNull(),
+});
 
 interface Account {
   userId: string;
