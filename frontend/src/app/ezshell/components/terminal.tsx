@@ -19,101 +19,118 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
   const terminalInstance = React.useRef<any>(null)
   const socketRef = React.useRef<any>(null)
 
-  const connectToTerminal = React.useCallback(async () => {
-    try {
-      const { Terminal } = await import('xterm')
+  React.useEffect(() => {
+    let isMounted = true
 
-      setIsConnecting(true)
-      // Cleanup previous instance if exists
+    const connectToTerminal = async () => {
+      try {
+        const { Terminal } = await import('xterm')
+
+        if (!isMounted) return
+
+        setIsConnecting(true)
+
+        // Cleanup previous instance if exists
+        if (terminalInstance.current) {
+          terminalInstance.current.dispose()
+        }
+        if (socketRef.current) {
+          socketRef.current.disconnect()
+        }
+
+        const term = new Terminal({
+          cursorBlink: true,
+        })
+        terminalInstance.current = term
+
+        if (!terminalRef.current) return
+
+        term.loadAddon(fitAddon)
+        term.open(terminalRef.current)
+        fitAddon.fit()
+
+        // Create new socket connection
+        const newSocket = io('http://localhost:3001', {
+          timeout: 5000,
+          reconnection: false
+        })
+        socketRef.current = newSocket
+
+        newSocket.on('connect', () => {
+          console.log('connected to ssh host')
+          setIsConnecting(false)
+          setRetryCount(0)
+          setError('')
+
+          term.clear()
+          term.write('\x1B[1;32m✓\x1B[0m Connected to lab environment\r\n')
+        })
+
+        newSocket.on('connect_error', (err) => {
+          console.error('Connection error:', err)
+          if (retryCount < MAX_RETRIES) {
+            setRetryCount(prev => prev + 1)
+            setTimeout(() => {
+              if (isMounted) {
+                connectToTerminal()
+              }
+            }, RETRY_DELAY)
+          } else {
+            setError('Connection failed. Please check if the server is running.')
+            setIsConnecting(false)
+          }
+        })
+
+        term.onResize((e) => {
+          console.log(e)
+        })
+
+        term.onKey((e) => {
+          const newMessage = {
+            type: 'command',
+            data: `${e.key}`
+          };
+          newSocket.emit(newMessage.type, newMessage);
+        })
+
+        newSocket.on('terminal-output', (data) => {
+          term.write(data);
+        });
+
+        newSocket.on('stdout', (data) => {
+          term.write(data);
+        });
+      } catch (error) {
+        if (!isMounted) return
+
+        console.error('Terminal connection error:', error)
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(prev => prev + 1)
+          setTimeout(() => {
+            if (isMounted) {
+              connectToTerminal()
+            }
+          }, RETRY_DELAY)
+        } else {
+          setError('Connection failed. Please check if the server is running.')
+          setIsConnecting(false)
+        }
+      }
+    }
+
+    connectToTerminal()
+
+    // Cleanup function
+    return () => {
+      isMounted = false
       if (terminalInstance.current) {
         terminalInstance.current.dispose()
       }
       if (socketRef.current) {
         socketRef.current.disconnect()
       }
-
-      const term = new Terminal({
-        cursorBlink: true,
-      })
-      terminalInstance.current = term
-
-      if (!terminalRef.current) return
-
-      term.loadAddon(fitAddon)
-      term.open(terminalRef.current)
-      fitAddon.fit()
-
-      // Create new socket connection
-      const newSocket = io('http://localhost:3001', {
-        timeout: 5000,
-        reconnection: false
-      })
-      socketRef.current = newSocket
-
-      newSocket.on('connect', () => {
-        console.log('connected to ssh host')
-        setIsConnecting(false)
-        setRetryCount(0)
-        setError('')
-
-        term.clear()
-        term.write('\x1B[1;32m✓\x1B[0m Connected to lab environment\r\n')
-      })
-
-      newSocket.on('connect_error', (err) => {
-        console.error('Connection error:', err)
-        if (retryCount < MAX_RETRIES) {
-          setRetryCount(prev => prev + 1)
-          setTimeout(() => {
-            connectToTerminal()
-          }, RETRY_DELAY)
-        } else {
-          setError('Connection failed. Please check if the server is running.')
-          setIsConnecting(false)
-        }
-      })
-
-      term.onResize((e) => {
-        console.log(e)
-      })
-
-      term.onKey((e) => {
-        const newMessage = {
-          type: 'command',
-          data: `${e.key}`
-        };
-        newSocket.emit(newMessage.type, newMessage);
-      })
-
-      newSocket.on('terminal-output', (data) => {
-        term.write(data);
-      });
-
-      newSocket.on('stdout', (data) => {
-        term.write(data);
-      });
-
-      return () => {
-        term.dispose()
-        newSocket.disconnect()
-      }
-    } catch (error) {
-      console.error('Terminal connection error:', error)
-      if (retryCount < MAX_RETRIES) {
-        setRetryCount(prev => prev + 1)
-        setTimeout(() => {
-          connectToTerminal()
-        }, RETRY_DELAY)
-      } else {
-        setError('Connection failed. Please check if the server is running.')
-        setIsConnecting(false)
-      }
     }
-  }, [questionId, retryCount])
-
-  React.useEffect(() => {
-    connectToTerminal()
-  }, [connectToTerminal, questionId])
+  }, [questionId]) // Only depend on questionId
 
   if (isConnecting || error) {
     return (
