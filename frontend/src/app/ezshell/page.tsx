@@ -1,16 +1,15 @@
 "use client"
 
-import 'react'
+import React from 'react'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from '@/components/ui/scroll-area'
-import React from 'react'
 import EZXTerminal from './components/terminal'
 import { getExerciseData } from '@/lib/services/labServices'
 import { Button } from '@/components/ui/button'
 import { CheckCheckIcon, LoaderCircle, LucideXCircle } from 'lucide-react'
 import { io } from 'socket.io-client'
-import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
+import { FaCheckCircle } from 'react-icons/fa';
 import QuestionNavigator from './components/lab-exercise-navigation'
 import { useSearchParams } from 'next/navigation'
 
@@ -26,8 +25,8 @@ const EZSShellView = () => {
 
   const searchParams = useSearchParams();
   const [question, setQuestion] = React.useState<string>("question_1_network_config")
-  const [termPanelSize, setTerminalPanelSize] = React.useState<number>(55)
-  const [exerciseNotes, setExercise] = React.useState("What about a coffe while we load data....");
+  const [termPanelSize, setTermPanelSize] = React.useState<number>(55)
+  const [exerciseNotes, setExerciseNotes] = React.useState("What about a coffe while we load data....");
   const [exerciseHint, setExerciseHint] = React.useState("No hint for you on this question.....");
 
   const [hasCheckAnswer, sethasCheckAnswer] = React.useState<boolean>(false)
@@ -43,7 +42,7 @@ const EZSShellView = () => {
     const _question = searchParams.get('question');
     setQuestion(_question ?? "question_1_network_config");
     getExercise(_question ?? "question_1_network_config").then((data) => {
-      setExercise(data.exerciseHtml);
+      setExerciseNotes(data.exerciseHtml);
       setExerciseHint(data.exerciseHintHtml)
     })
 
@@ -163,10 +162,10 @@ const EZSShellView = () => {
         <ResizablePanel className='h-[calc(100vh_-_theme(spacing.12))] bg-background'
           collapsible={false}
           defaultSize={55}
-          minSize={termPanelSize}
+          minSize={55}
           maxSize={63}
           onResize={(e) => {
-            setTerminalPanelSize(e)
+            setTermPanelSize(e)
           }}
         >
           <ScrollArea>
