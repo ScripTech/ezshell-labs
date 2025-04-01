@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, Terminal, Users, CheckCircle2, ArrowRight } from "lucide-react"
 import Image from "next/image"
-import { Progress } from "@/components/ui/progress"
 import { useRouter } from "next/navigation"
 
 interface AvailableLabsProps {
@@ -71,18 +70,6 @@ export function AvailableLabsComponent({
                 <span>{lab.enrolledCount} Users</span>
               </div>
             </div>
-            {/* {lab.isEnrolled && lab.progress && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Progress</span>
-                  <span>{Math.round((lab.progress.completed / lab.progress.total) * 100)}%</span>
-                </div>
-                <Progress
-                  value={(lab.progress.completed / lab.progress.total) * 100}
-                  className="h-2"
-                />
-              </div>
-            )} */}
           </CardContent>
           <CardFooter className="p-4 pt-0">
             {lab.isEnrolled ? (
