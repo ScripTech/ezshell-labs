@@ -36,7 +36,7 @@ const autofsConfig = new AutofsConfigurationController();
 const basicController = new BasicValidationController();
 
 httpSocketServer.on("connection", (socket) => {
-  console.log("Client connected");
+  console.log("Client connected to Socket server");
 
   const conn = new ssh2.Client();
   conn.connect({
@@ -45,6 +45,10 @@ httpSocketServer.on("connection", (socket) => {
     username: process.env.LAB_SSH_USERNAME ?? "lab-user",
     password: process.env.LAB_SSH_PASSWORD ?? "password",
   });
+
+  conn.on("connect", () => {
+    console.log("Connecting to SSH server...");
+  })
 
   conn.on("ready", () => {
     console.log("SSH CONNECTION ESTABLISHED");
