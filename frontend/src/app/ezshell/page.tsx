@@ -22,8 +22,9 @@ type validationResult = {
 }
 
 const EZSShellView = () => {
+  const searchParams = useSearchParams()
+  const questionId = searchParams.get('question') || ''
 
-  const searchParams = useSearchParams();
   const [question, setQuestion] = React.useState<string>("")
   const [termPanelSize, setTermPanelSize] = React.useState<number>(55)
   const [exerciseNotes, setExerciseNotes] = React.useState("What about a coffe while we load data....");
@@ -33,16 +34,16 @@ const EZSShellView = () => {
   const [hasCheckAnswer, sethasCheckAnswer] = React.useState<boolean>(false)
   const [isCorrect, setIsCorrect] = React.useState<boolean | null>(false)
 
-  // Here i'm navigating to get the correct exercise question
+  const socketRef = React.useRef(socket);
+
   React.useEffect(() => {
-    const initializeLabQuestion = async () => {
+    const handleRouteChange = async () => {
       try {
         setIsLoading(true)
         const labId = searchParams.get('lab') ?? 'EX200'
         let questionId = searchParams.get('question')
 
         if (!questionId) {
-          // Get the first question if none specified
           questionId = await getFirstLabQuestion(labId)
         }
 
@@ -51,44 +52,54 @@ const EZSShellView = () => {
         const data = await getExerciseData(labId, questionId)
         setExerciseNotes(data.exerciseHtml)
         setExerciseHint(data.exerciseHintHtml)
+        sethasCheckAnswer(false)
+        setValidationStatus([])
       } catch (error) {
-        console.error('Failed to initialize lab:', error)
-        setExerciseNotes('Failed to load exercise content')
-        setExerciseHint('No hints available')
+        console.error('Failed to update exercise:', error)
       } finally {
         setIsLoading(false)
-        setValidationStatus([])
       }
     }
 
-    initializeLabQuestion()
-  }, [searchParams]);
+    handleRouteChange()
+
+    return () => {
+      const currentQuestion = searchParams.get('question')
+      if (currentQuestion) {
+        socketRef.current.off(`validation-${currentQuestion}-step`)
+        socketRef.current.off(`validation-${currentQuestion}-complete`)
+      }
+    }
+  }, [searchParams])
+
+  React.useEffect(() => {
+    return () => {
+      socketRef.current.disconnect()
+    }
+  }, [])
 
   const [validationStatus, setValidationStatus] = React.useState<validationResult[]>([]);
 
   const checkExerciseAnswer = async (questionId: string) => {
     if (!hasCheckAnswer){
-      // Emit a validation request to the backend
-      socket.emit(`validate-exercise`, questionId);
-      socket.on(`validation-${questionId}-step`, (data: validationResult) => {
+      socketRef.current.emit(`validate-exercise`, questionId);
+      socketRef.current.on(`validation-${questionId}-step`, (data: validationResult) => {
         console.log(data)
         setValidationStatus(prevStatus => {
-          // Remove old status for the current step
           const updatedStatus = prevStatus.filter(status => status.step !== data.step);
-          // Add new status for the current step
           updatedStatus.push(data);
           return updatedStatus;
         });
       })
 
-      socket.on(`validation-${questionId}-complete`, (data: { success: string, message: string}) => {
+      socketRef.current.on(`validation-${questionId}-complete`, (data: { success: string, message: string}) => {
         console.log(data)
         if(data.success){
           sethasCheckAnswer(true)
         }
       })
 
-      socket.on(`validation-lab-complete`, (data: { success: string, message: string}) => {
+      socketRef.current.on(`validation-lab-complete`, (data: { success: string, message: string}) => {
         console.log(data)
         if(data.success){
           sethasCheckAnswer(true)
@@ -119,7 +130,7 @@ const EZSShellView = () => {
   }
 
   return (
-    <div className="">
+    <div className="container-shell">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel className='h-[calc(100vh_-_theme(spacing.20))] px-4 pt-2 rounded-md'>
           <div className="border-b pb-2 mb-2">
@@ -206,7 +217,7 @@ const EZSShellView = () => {
         >
           <ScrollArea>
             <div className={`p-2 w-[calc(55vw)]`}>
-                <EZXTerminal />
+                <EZXTerminal questionId={questionId} />
               </div>
           </ScrollArea>
         </ResizablePanel>

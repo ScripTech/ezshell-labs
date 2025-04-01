@@ -54,6 +54,8 @@ const QuestionNavigator = () => {
     const newQuestion = questions[page - 1]
     const params = new URLSearchParams(searchParams)
     params.set('question', newQuestion.id)
+
+    // Use shallow routing to prevent full page reload
     router.push(`${pathname}?${params.toString()}`)
     setCurrentPage(page)
   }
