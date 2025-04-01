@@ -5,7 +5,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from '@/components/ui/scroll-area'
 import EZXTerminal from './components/terminal'
-import { getExerciseData } from '@/lib/services/labServices'
+import { getExerciseData, getFirstLabQuestion } from '@/lib/services/labServices'
 import { Button } from '@/components/ui/button'
 import { CheckCheckIcon, LoaderCircle, LucideXCircle } from 'lucide-react'
 import { io } from 'socket.io-client'
@@ -24,31 +24,45 @@ type validationResult = {
 const EZSShellView = () => {
 
   const searchParams = useSearchParams();
-  const [question, setQuestion] = React.useState<string>("question_1_network_config")
+  const [question, setQuestion] = React.useState<string>("")
   const [termPanelSize, setTermPanelSize] = React.useState<number>(55)
   const [exerciseNotes, setExerciseNotes] = React.useState("What about a coffe while we load data....");
   const [exerciseHint, setExerciseHint] = React.useState("No hint for you on this question.....");
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const [hasCheckAnswer, sethasCheckAnswer] = React.useState<boolean>(false)
-  const [isCorrect, setIsCorrect] = React.useState<boolean | null>(true)
-
-  const getExercise = async (id: string) => {
-    const exerciseData = await getExerciseData(id);
-    return exerciseData
-  }
+  const [isCorrect, setIsCorrect] = React.useState<boolean | null>(false)
 
   // Here i'm navigating to get the correct exercise question
   React.useEffect(() => {
-    const _question = searchParams.get('question');
-    setQuestion(_question ?? "question_1_network_config");
-    getExercise(_question ?? "question_1_network_config").then((data) => {
-      setExerciseNotes(data.exerciseHtml);
-      setExerciseHint(data.exerciseHintHtml)
-    })
+    const initializeLabQuestion = async () => {
+      try {
+        setIsLoading(true)
+        const labId = searchParams.get('lab') ?? 'EX200'
+        let questionId = searchParams.get('question')
 
-    setValidationStatus([])
+        if (!questionId) {
+          // Get the first question if none specified
+          questionId = await getFirstLabQuestion(labId)
+        }
+
+        setQuestion(questionId)
+
+        const data = await getExerciseData(labId, questionId)
+        setExerciseNotes(data.exerciseHtml)
+        setExerciseHint(data.exerciseHintHtml)
+      } catch (error) {
+        console.error('Failed to initialize lab:', error)
+        setExerciseNotes('Failed to load exercise content')
+        setExerciseHint('No hints available')
+      } finally {
+        setIsLoading(false)
+        setValidationStatus([])
+      }
+    }
+
+    initializeLabQuestion()
   }, [searchParams]);
-
 
   const [validationStatus, setValidationStatus] = React.useState<validationResult[]>([]);
 
@@ -96,6 +110,14 @@ const EZSShellView = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LoaderCircle className="animate-spin h-6 w-6" />
+      </div>
+    )
+  }
+
   return (
     <div className="">
       <ResizablePanelGroup direction="horizontal">
@@ -128,24 +150,38 @@ const EZSShellView = () => {
                     </div>
                     <div className="mt-8 space-x-4">
                       {
-                      hasCheckAnswer ? (
-                        isCorrect ? <Button type='button' variant={'outline'} className='border-green-700'>
-                          Resposta correcta
-                          <span>
-                            <CheckCheckIcon className="h-5 w-5 ml-2 text-green-700" />
-                          </span>
-                        </Button> : <Button type='button' variant={'outline'} className='border-red-700' onClick={() => checkExerciseAnswer(question)}>
-                          Avaliar resposta
-                          <span>
-                            <LucideXCircle className="h-5 w-5 ml-2 text-red-700" />
-                          </span>
-                        </Button>
-                      ) : <Button type='button' variant={'outline'} onClick={() => checkExerciseAnswer(question)} >
-                          Avaliar resposta
-                        <span>
-                          <CheckCheckIcon className="h-5 w-5 ml-2" />
-                        </span>
-                      </Button>
+                        (() => {
+                          if (hasCheckAnswer) {
+                            if (isCorrect) {
+                              return (
+                                <Button type='button' variant={'outline'} className='border-green-700 bg-green-900/50'>
+                                  Resposta correcta
+                                  <span>
+                                    <CheckCheckIcon className="h-5 w-5 ml-2 text-green-700" />
+                                  </span>
+                                </Button>
+                              );
+                            } else {
+                              return (
+                                <Button type='button' variant={'outline'} className='border-red-700' onClick={() => checkExerciseAnswer(question)}>
+                                  Avaliar resposta
+                                  <span>
+                                    <LucideXCircle className="h-5 w-5 ml-2 text-red-700" />
+                                  </span>
+                                </Button>
+                              );
+                            }
+                          } else {
+                            return (
+                              <Button type='button' variant={'outline'} onClick={() => checkExerciseAnswer(question)} >
+                                Avaliar resposta
+                                <span>
+                                  <CheckCheckIcon className="h-5 w-5 ml-2" />
+                                </span>
+                              </Button>
+                            );
+                          }
+                        })()
                       }
                     </div>
                   </div>

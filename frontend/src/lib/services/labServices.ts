@@ -1,63 +1,137 @@
 'use server'
 
-import fs from 'fs';
+import fs from 'fs'
+import path from "path"
+import { remark } from "remark"
+import html from "remark-html"
+import matter from "gray-matter"
 
-import path from "path";
-import { remark } from "remark";
-import html from "remark-html";
-import matter from "gray-matter";
-import { metadata } from '../../app/layout';
-import { questions } from '@/app/ezshell/components/lab-exercises';
-
-
-export interface LabExercises {
-  id: string,
-  exerciseHtml: string,
-  exerciseHintHtml: string,
+export interface LabExercise {
+  id: string
+  exerciseHtml: string
+  exerciseHintHtml: string
   metadata?: any
+  labId: string
 }
 
-export async function getExerciseData(id: string) {
+export interface LabQuestion {
+  id: string
+  labId: string
+  title: string
+  order: number
+  metadata: {
+    title: string
+    order: number
+    description?: string
+    [key: string]: any
+  }
+}
 
-  const exerciseDirectory = "./storage/exercises";
-  const hintsDirectory = "./storage/hints";
-  // console.log(path.basename.toString())
-  // fs.readdir(exerciseDirectory, (err, files) => {
-  //   files.forEach((file) => {
-  //     console.log(file);
-  //   });
-  // });
+export async function getExerciseData(labId: string, questionId: string): Promise<LabExercise> {
+  const labsDirectory = path.join(process.cwd(), 'storage', 'labs')
+  const labPath = path.join(labsDirectory, labId)
 
-  // here i'm get the hint
-  const index = questions.findIndex((q) => q.file === id);
-  const hintId = questions[index].hint;
+  // Validate lab exists
+  if (!fs.existsSync(labPath)) {
+    throw new Error(`Lab ${labId} not found`)
+  }
 
-  const fullPath_exercise = path.join(exerciseDirectory, `${id}.md`);
-  const fileExerciseContent = fs.readFileSync(fullPath_exercise, "utf8");
+  // Get all questions for the lab
+  const questions = fs.readdirSync(labPath)
+    .filter(file => file.endsWith('.md'))
+    .map(file => path.parse(file).name)
 
-  const fullPath_exercise_hint = path.join(hintsDirectory, `${hintId}.md`);
-  const fileExerciseContentHint = fs.readFileSync(fullPath_exercise_hint, "utf8");
+  // Find the matching question
+  const questionFile = questions.find(q => q === questionId)
+  if (!questionFile) {
+    throw new Error(`Question ${questionId} not found in lab ${labId}`)
+  }
 
-  // Use gray-matter to parse the post metadata section
-  const matterExercise = matter(fileExerciseContent);
-  const matterExerciseHint = matter(fileExerciseContentHint);
+  // Read and process the question content
+  const questionPath = path.join(labPath, `${questionFile}.md`)
+  const fileContent = fs.readFileSync(questionPath, 'utf8')
 
-  // Use remark to convert markdown into HTML string
-  const processedExerciseContent = await remark()
+  // Parse frontmatter and content
+  const { data: metadata, content } = matter(fileContent)
+
+  // Convert markdown to HTML
+  const processedContent = await remark()
     .use(html)
-    .process(matterExercise.content);
+    .process(content)
 
-  const processedExerciseHintContent = await remark()
-    .use(html)
-    .process(matterExerciseHint.content);
+  // Get hint content if available
+  let hintHtml = ''
+  if (metadata.hint) {
+    const hintPath = path.join(labPath, `hints`, `${metadata.hint}.md`)
+    if (fs.existsSync(hintPath)) {
+      const hintContent = fs.readFileSync(hintPath, 'utf8')
+      const processedHint = await remark()
+        .use(html)
+        .process(matter(hintContent).content)
+      hintHtml = processedHint.toString()
+    }
+  }
 
-  const exerciseHtml = processedExerciseContent.toString();
-  const exerciseHintHtml = processedExerciseHintContent.toString();
+  return {
+    id: questionId,
+    labId,
+    exerciseHtml: processedContent.toString(),
+    exerciseHintHtml: hintHtml,
+    metadata: {
+      ...metadata,
+      title: metadata.title || `Question ${metadata.order || 1}`,
+      order: metadata.order || 1
+    }
+  }
+}
 
-  const exerciseData: LabExercises = {
-    id: id,
-    exerciseHtml: exerciseHtml,
-    exerciseHintHtml: exerciseHintHtml,
-  };
-  return exerciseData;
+export async function getLabQuestions(labId: string): Promise<LabQuestion[]> {
+  const labPath = path.join(process.cwd(), 'storage', 'labs', labId)
+
+  if (!fs.existsSync(labPath)) {
+    throw new Error(`Lab ${labId} not found`)
+  }
+
+  const questions = fs.readdirSync(labPath)
+    .filter(file => file.endsWith('.md'))
+    .map(file => {
+      const fullPath = path.join(labPath, file)
+      const fileContents = fs.readFileSync(fullPath, 'utf8')
+      const { data: metadata } = matter(fileContents)
+
+      return {
+        id: path.parse(file).name,
+        labId,
+        title: metadata.title || `Question ${metadata.order || 1}`,
+        order: metadata.order || 1,
+        metadata: {
+          ...metadata,
+          title: metadata.title || `Question ${metadata.order || 1}`,
+          order: metadata.order || 1
+        }
+      }
+    })
+    .sort((a, b) => a.order - b.order)
+
+  return questions
+}
+
+export async function getFirstLabQuestion(labId: string): Promise<string> {
+  const labPath = path.join(process.cwd(), 'storage', 'labs', labId)
+
+  if (!fs.existsSync(labPath)) {
+    throw new Error(`Lab ${labId} not found`)
+  }
+
+  // Get all .md files and sort them alphabetically
+  const questions = fs.readdirSync(labPath)
+    .filter(file => file.endsWith('.md'))
+    .sort((a, b) => a.localeCompare(b))
+
+  if (questions.length === 0) {
+    throw new Error(`No questions found for lab ${labId}`)
+  }
+
+  // Return the first question ID without the .md extension
+  return path.parse(questions[0]).name
 }
