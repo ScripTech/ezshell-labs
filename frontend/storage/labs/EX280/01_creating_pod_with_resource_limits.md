@@ -1,8 +1,23 @@
-# Creating a Pod with Resource Limits
+---
+title: "Creating Pods with Resource Limits"
+order: 1
+description: "Configure pod resource requests and limits in OpenShift"
+difficulty: "medium"
+points: 12
+hint: "pod-resources-hint"
+validationSteps:
+  - "Verify pod creation"
+  - "Check resource limits"
+  - "Validate QoS class"
+  - "Test pod scheduling"
+  - "Monitor resource usage"
+---
+
+### Creating a Pod with Resource Limits
 
 **Question**: Using the `oc` command-line tool, create a pod named "my-pod" in the "default" namespace, using the "nginx:latest" image, with CPU limits set to 0.5 cores and memory limits set to 512Mi.
 
-**Answer**:  
+**Answer**:
 To create a pod with specific resource limits in OpenShift, use the `oc run` command with the `--limits` flag. Here’s the command:
 
 ```bash
@@ -17,7 +32,7 @@ oc run my-pod --image=nginx:latest --namespace=default --limits='cpu=500m,memory
 
 After running this command, OpenShift deploys the pod with the specified constraints.
 
-**Additional Notes**:  
+**Additional Notes**:
 - Resource limits prevent overconsumption of cluster resources.
 - Verify the pod with `oc get pods` and inspect limits with `oc describe pod my-pod`.
 - Use `--requests` for minimum resource requirements (e.g., `--requests='cpu=250m,memory=256Mi'`).

@@ -1,19 +1,30 @@
-# Data Backup and Recovery
+---
+title: "Data Backup and Recovery"
+order: 20
+description: "Implement backup and restore procedures for OpenShift"
+difficulty: "hard"
+points: 15
+hint: "backup-recovery-hint"
+validationSteps:
+  - "Verify etcd backup"
+  - "Check resource exports"
+  - "Test restore procedure"
+  - "Validate data integrity"
+  - "Monitor backup status"
+---
 
-**Question**: Implement backup and recovery for persistent volumes in OpenShift.
+### Data Backup and Recovery
 
-**Answer**:  
-1. **Tool**: Velero  
-   - Install Velero and configure S3 storage.  
-2. **Backup**:  
+**Question**: Perform an etcd backup and explain the restore process.
+
+**Answer**:
+1. **Backup etcd**:
    ```bash
-   velero backup create my-backup --include-namespaces=my-namespace
-   ```  
-3. **Recovery**:  
-   ```bash
-   velero restore create --from-backup my-backup
+   oc get etcd -o yaml > etcd-backup.yaml
+   oc exec -it etcd-0 -- etcdctl snapshot save /tmp/etcd-backup.db
    ```
 
-**Additional Notes**:  
-- Schedule with `velero schedule create`.  
-- Test restores periodically.
+2. **Backup Important Resources**:
+   ```bash
+   oc get all -A -o yaml > cluster-backup.yaml
+   ```
