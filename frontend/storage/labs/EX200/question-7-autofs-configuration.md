@@ -1,4 +1,19 @@
-### Configuring Autofs for NFS Home Directories
+---
+title: "Automounter Configuration"
+order: 7
+description: "Configure autofs to mount remote NFS shares"
+difficulty: "hard"
+points: 15
+hint: "autofs-hint"
+validationSteps:
+  - "Verify autofs installation"
+  - "Check configuration files"
+  - "Test automatic mounting"
+  - "Validate unmount timeout"
+  - "Check mount permissions"
+---
+
+### Configuring AutoFS
 
 Configure autofs to automount the home directories of nfsuser user:
 
@@ -8,7 +23,9 @@ Configure autofs to automount the home directories of nfsuser user:
 * Home directories must be writable by their users
 * Password for netuser is `kurozetsu`
 
-<!-- #### Expected Result
-  - Autofs configured to mount nfsuser's home directory
-  - Home directory accessible and writable by nfsuser
-  - Automounting works correctly -->
+
+#### Expected Result
+- Automatic mounting on access
+- Correct timeout behavior
+- Proper permissions preserved
+****

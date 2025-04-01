@@ -1,11 +1,31 @@
-### Configuring VDO Filesystem
+---
+title: "VDO Storage Configuration"
+order: 19
+description: "Create and configure VDO storage with deduplication"
+difficulty: "hard"
+points: 15
+hint: "vdo-config-hint"
+validationSteps:
+  - "Verify VDO installation"
+  - "Check VDO volume"
+  - "Test deduplication"
+  - "Validate compression"
+  - "Check mount options"
+---
+### Configuring VDO Storage
 
-* Create a VDO disk on /dev/vdd
-* Create a vdo1 volume on the whole disk with a 10GB thin-provisioned logical address size
-* Format with xfs filesystem
-* Configure for permanent mount
+Create a VDO volume with these specifications:
 
-<!-- #### Expected Result
-  - VDO disk created on /dev/vdd
-  - vdo1 volume created with specified parameters
-  - Formatted with xfs and configured for permanent mount -->
+* Device: /dev/vdd
+* VDO volume name: vdo_storage
+* Logical size: 10GB
+* Enable deduplication and compression
+* Mount at /vdo_data with XFS filesystem
+* Persistent mount configuration
+
+#### Expected Result
+- VDO volume created and configured
+- Deduplication active
+- Compression enabled
+- Filesystem mounted and accessible
+- Configuration persists after reboot

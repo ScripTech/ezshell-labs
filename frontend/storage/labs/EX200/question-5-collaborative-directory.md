@@ -1,13 +1,28 @@
-### Creating a collaborative directory
+---
+title: "Collaborative Directory Setup"
+order: 5
+description: "Create and configure a shared directory with specific permissions"
+difficulty: "medium"
+points: 10
+hint: "collab-dir-hint"
+validationSteps:
+  - "Verify directory creation"
+  - "Check group ownership"
+  - "Validate SGID bit"
+  - "Test file creation permissions"
+  - "Verify collaborative access"
+---
 
-* Create a directory `/shared/sysadm` with the following characteristics:
-  - Group ownership of `/shared/sysadm` is `sysadm`
-  - The directory should be readable, writable, and accessible to members of `sysadm`, but not to any other user
-  - Files created in `/shared/sysadm` automatically have group ownership set to the `sysadm` group
+### Creating a Collaborative Directory
 
-**Note:** It is understood that root has access to all files and directories on the system.
+Create a collaborative directory `/shared_projects` with the following specifications:
 
-<!-- #### Expected Result
-  - Directory `/shared/sysadm` created with correct permissions
-  - Group ownership set to `sysadm`
-  - Automatic group ownership for new files -->
+* Group ownership: developers
+* SGID bit set
+* Full access for group members
+* Read-only for others
+
+#### Expected Result
+- Directory exists with correct permissions
+- New files inherit group ownership
+- Group members can create and modify files

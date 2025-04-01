@@ -1,3 +1,17 @@
+---
+title: "LVM Configuration"
+order: 15
+description: "Create and configure Logical Volume Management"
+difficulty: "hard"
+points: 15
+hint: "lvm-config-hint"
+validationSteps:
+  - "Verify physical volumes"
+  - "Check volume group"
+  - "Validate logical volumes"
+  - "Test filesystem mount"
+  - "Check persistence"
+---
 ### Creating an LVM
 
 Create an LVM named "wshare" from the "wgroup" volume group with the following specifications:
@@ -8,7 +22,8 @@ Create an LVM named "wshare" from the "wgroup" volume group with the following s
 * Mount it under "/mnt/wshare"
 * It should auto mount after the next reboot
 
-<!-- #### Expected Result
-  - LVM "wshare" created with specified parameters
-  - Mounted at "/mnt/wshare" with ext4 filesystem
-  - Configured for auto-mount on reboot -->
+#### Expected Result
+- LVM structure created correctly
+- Filesystem mounted and accessible
+- Mount persists across reboots
+- Proper permissions set

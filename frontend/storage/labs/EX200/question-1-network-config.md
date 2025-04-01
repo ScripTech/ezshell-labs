@@ -1,13 +1,28 @@
-### Configuring TCP/IP and Hostname
+---
+title: "Network Configuration"
+order: 1
+description: "Configure network interfaces and routing"
+difficulty: "medium"
+points: 10
+hint: "network-config-hint"
+validationSteps:
+  - "Check network interface configuration"
+  - "Verify IP addressing"
+  - "Test network connectivity"
+---
 
-Configure TCP/IP and hostname as follows:
+### Network Configuration
 
-* IP ADDRESS = 192.168.251.128
-* NETMASK = /24
-* GATEWAY = 192.168.251.2
-* DNS = 192.168.251.2
-* Hostname = ezetsu.lab.local
+Configure the network interface `eth0` with the following specifications:
 
-<!-- #### Expected Result
-- Network configuration applied with the given parameters
-- Hostname set to serverX.example.com -->
+- IP Address: 192.168.1.100
+- Netmask: 255.255.255.0
+- Gateway: 192.168.1.1
+- DNS: 8.8.8.8
+
+## Tasks:
+
+1. Configure the network interface
+2. Make the configuration persistent
+3. Test connectivity to the gateway
+4. Verify DNS resolution
