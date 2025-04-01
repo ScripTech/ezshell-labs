@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import { CircleUser, Menu, Search, Terminal } from "lucide-react"
+import { CircleUser, Menu, Terminal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"

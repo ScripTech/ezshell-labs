@@ -162,7 +162,7 @@ const EZSShellView = () => {
         <ResizablePanel className='h-[calc(100vh_-_theme(spacing.12))] bg-background'
           collapsible={false}
           defaultSize={55}
-          minSize={55}
+          minSize={termPanelSize}
           maxSize={63}
           onResize={(e) => {
             setTermPanelSize(e)
