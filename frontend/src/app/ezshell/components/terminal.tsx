@@ -61,9 +61,8 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
           setIsConnecting(false)
           setRetryCount(0)
           setError('')
-
+          // term.write('\x1B[1;32m✓\x1B[0m Connected to lab environment\r\n')
           term.clear()
-          term.write('\x1B[1;32m✓\x1B[0m Connected to lab environment\r\n')
         })
 
         newSocket.on('connect_error', (err) => {
