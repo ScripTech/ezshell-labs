@@ -34,3 +34,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+
+
+Task 1: Setting up a Podman Host
+Task 2: Working with Standard Images
+Task 3: Managing Images
+Task 4: Managing Containers
+Task 5: Using Dockerfile
+Task 6: Using OpenShift Single Node Cluster
+Task 7: Running Applications in OpenShift
+Task 8: Decoupling Information
+Task 9: Using S2I
+Task 10: Troubleshooting
