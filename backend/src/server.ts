@@ -11,6 +11,7 @@ import { CollaborativeDirectoryControllerV1 } from "./controllers/exercises/Coll
 import { CronJobController } from "./controllers/exercises/CronJobController";
 import { AutofsConfigurationController } from "./controllers/exercises/AutofsConfigurationController";
 import { BasicValidationController } from "./controllers/exercises/BasicValidationController";
+import { EX280OCPDeploymentController } from './controllers/labs/ex280/EX280OCPDeploymentController';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ const collabDirV1 = new CollaborativeDirectoryControllerV1();
 const cronJob = new CronJobController();
 const autofsConfig = new AutofsConfigurationController();
 const basicController = new BasicValidationController();
+const ex280DeploymentController = new EX280OCPDeploymentController();
 
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected to Socket server");
@@ -138,6 +140,12 @@ httpSocketServer.on("connection", (socket) => {
       case "question-18-configure-tuned-profile":
         basicController.handleTunedProfileValidation(socket, id);
         break;
+
+      // EX280 cases
+      case "ex280-question-1-ocp-deployment":
+        ex280DeploymentController.handleValidation(socket, id);
+        break;
+
       default:
         break;
     }
