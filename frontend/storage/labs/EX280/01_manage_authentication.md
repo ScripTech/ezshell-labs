@@ -1,6 +1,6 @@
 ---
 title: "Managing User Authentication"
-order: 5
+order: 1
 description: "Configure HTPasswd authentication provider"
 difficulty: "hard"
 points: 25

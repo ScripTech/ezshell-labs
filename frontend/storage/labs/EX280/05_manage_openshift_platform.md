@@ -1,6 +1,6 @@
 ---
 title: "Managing OpenShift Platform Resources"
-order: 1
+order: 5
 description: "Configure cluster resource quotas and limits"
 difficulty: "hard"
 points: 20
