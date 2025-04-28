@@ -1,5 +1,5 @@
 import { IValidationResult, IValidationService } from '../../interfaces/IValidationService';
-import { executeCommand } from '../../utils/ssh-service';
+import { connectSSH, ssh, executeCommand } from "../../utils/ssh-service";
 
 export class OCPDeploymentValidationService implements IValidationService {
   private readonly validationSteps = [
@@ -11,6 +11,9 @@ export class OCPDeploymentValidationService implements IValidationService {
   ];
 
   async validate(): Promise<IValidationResult> {
+    if (!ssh.isConnected()) {
+      await connectSSH();
+    }
     try {
       // Example validation for OCP deployment
       const clusterStatus = await executeCommand('oc status');
