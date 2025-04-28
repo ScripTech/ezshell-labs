@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import { CheckCheckIcon, LoaderCircle, LucideXCircle } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import QuestionNavigator from './lab-exercise-navigation'
-import { ScrollArea } from '@radix-ui/react-scroll-area'
 import { FaCheckCircle } from 'react-icons/fa'
 import React from 'react'
 import { getExerciseData, getFirstLabQuestion } from '@/lib/services/labServices'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 
 type validationResult = {
@@ -72,7 +72,8 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
 
 
   const checkExerciseAnswer = async (questionId: string) => {
-    if (!hasCheckAnswer) {
+    if (true) {
+      alert('Validando resposta...')
       socketRef.current.emit(`validate-exercise`, questionId);
       socketRef.current.on(`validation-${ questionId }-step`, (data: validationResult) => {
         console.log(data)
@@ -185,10 +186,12 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
             </div>
           </ScrollArea>
         </TabsContent>
-        <TabsContent value="hint-area">
-          <div className="p-3">
-            <div className='prose text-sm' dangerouslySetInnerHTML={{ __html: exerciseHint }} />
-          </div>
+        <TabsContent value="hint-area" className="h-full">
+          <ScrollArea className="h-[calc(100vh-250px)]">
+            <div className="p-3">
+              <div className='prose text-sm' dangerouslySetInnerHTML={{ __html: exerciseHint }} />
+            </div>
+          </ScrollArea>
         </TabsContent>
       </Tabs>
     </>

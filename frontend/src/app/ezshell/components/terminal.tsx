@@ -133,11 +133,11 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
 
   if (isConnecting || error) {
     return (
-      <div className="h-full flex flex-col items-center justify-center space-y-4 bg-black/95 text-green-500 font-mono">
+      <div className="h-[calc(100vh_-_theme(spacing.12))] flex flex-col items-center justify-center space-y-4 bg-black/95 text-green-500 font-mono">
         <div className="flex items-center space-x-2">
           {isConnecting && <Loader2 className="h-6 w-6 animate-spin" />}
           <span className="text-lg">
-            {error || (retryCount > 0 ? `Retrying (${retryCount}/${MAX_RETRIES})` : 'Connecting to Lab')}
+            {error || (retryCount > 0 ? `Retrying terminal connection (${retryCount}/${MAX_RETRIES})` : 'Connecting to Lab')}
           </span>
         </div>
       </div>
