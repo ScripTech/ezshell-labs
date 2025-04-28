@@ -72,9 +72,9 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
 
 
   const checkExerciseAnswer = async (questionId: string) => {
-    if (true) {
-      alert('Validando resposta...')
-      socketRef.current.emit(`validate-exercise`, questionId);
+    if (!hasCheckAnswer) {
+      const labId = searchParams.get('lab') ?? 'EX200';
+      socketRef.current.emit('validate-exercise', { labId, questionId });
       socketRef.current.on(`validation-${ questionId }-step`, (data: validationResult) => {
         console.log(data)
         setValidationStatus(prevStatus => {

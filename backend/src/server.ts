@@ -12,12 +12,16 @@ import { CronJobController } from "./controllers/exercises/CronJobController";
 import { AutofsConfigurationController } from "./controllers/exercises/AutofsConfigurationController";
 import { BasicValidationController } from "./controllers/exercises/BasicValidationController";
 import { EX280OCPDeploymentController } from './controllers/labs/ex280/EX280OCPDeploymentController';
+import { EX200ValidationHandler } from "./handlers/EX200ValidationHandler";
+import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
+import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
 
 dotenv.config();
 
 const cors = require("cors");
 const app = express();
 const port = Number.parseInt(process.env.SERVER_PORT!) ?? 3001;
+const host = Number.parseInt(process.env.SERVER_WSHOST!) ?? 'localhost';
 
 const httpSocketServer = new Server({
   cors: {
@@ -26,8 +30,7 @@ const httpSocketServer = new Server({
 });
 
 const validationController = new ValidationController();
-const networkConfigValidationController =
-  new NetworkConfigValidationController();
+const networkConfigValidationController = new NetworkConfigValidationController();
 const userGroupMnt = new UserGroupManagementController();
 const yumManagement = new YumRepositoryValidationController();
 const selinuxMnt = new SELinuxManagementController();
@@ -36,6 +39,28 @@ const cronJob = new CronJobController();
 const autofsConfig = new AutofsConfigurationController();
 const basicController = new BasicValidationController();
 const ex280DeploymentController = new EX280OCPDeploymentController();
+
+// Initialize handlers
+const ex200Handler = new EX200ValidationHandler(
+  networkConfigValidationController,
+  userGroupMnt,
+  yumManagement,
+  selinuxMnt,
+  collabDirV1,
+  cronJob,
+  autofsConfig,
+  basicController
+);
+
+const ex280Handler = new EX280ValidationHandler(
+  ex280DeploymentController
+);
+
+// Initialize factory
+const validationHandlerFactory = new LabValidationHandlerFactory(
+  ex200Handler,
+  ex280Handler
+);
 
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected to Socket server");
@@ -85,69 +110,12 @@ httpSocketServer.on("connection", (socket) => {
 
   // question validation block
 
-  socket.on("validate-exercise", async (id) => {
-    switch (id) {
-      case "question-1-network-config":
-        networkConfigValidationController.handleValidation(socket, id);
-        break;
-      case "question-2-yum-repository":
-        yumManagement.handleValidation(socket, id);
-        break;
-      case "question-14-configure-yum-repository":
-        yumManagement.handleValidation(socket, id);
-        break;
-      case "question-3-selinux-port":
-        selinuxMnt.handleValidation(socket, id);
-        break;
-      case "question-4-user-group-management":
-        userGroupMnt.handleValidations(socket, id, {
-          group: "sysadm",
-          users: ["natasha"],
-        });
-        break;
-      case "question-5-collaborative-directory":
-        collabDirV1.handleValidation(socket, id);
-        break;
-      case "question-6-cron-job":
-        cronJob.handleValidation(socket, id, {
-          user: "natasha",
-          cronjob: '*/1\t*\t*\t*\t*\tlogger "EX200 Testing"',
-        });
-        break;
-      case "question-7-autofs-configuration":
-        autofsConfig.handleValidation(socket, id);
-        break;
-      case "question-8-create-tar-archive":
-        basicController.handleTarValidation(socket, id);
-        break;
-      case "question-9-file-permissions":
-        basicController.handleFilePermissionsValidation(socket, id);
-        break;
-      case "question-10-time-synchronization":
-        basicController.handleTimeSynchronizationValidation(socket, id);
-        break;
-      case "question-11-find-user-files":
-        break;
-      case "question-12-string-search":
-        basicController.handleStringSearchValidation(socket, id);
-        break;
-      case "question-13-create-user":
-        userGroupMnt.handleUserIDValidation(socket, id, {
-          user: "appservice",
-          id: "2334",
-        });
-        break;
-      case "question-18-configure-tuned-profile":
-        basicController.handleTunedProfileValidation(socket, id);
-        break;
-
-      // EX280 cases
-      case "ex280-question-1-ocp-deployment":
-        ex280DeploymentController.handleValidation(socket, id);
-        break;
-
-      default:
-        break;
+  socket.on("validate-exercise", async ({ labId, questionId }) => {
+    const handler = validationHandlerFactory.getHandler(labId);
+    if (handler) {
+      await handler.handleValidation(socket, questionId);
+    } else {
+      console.log(`No handler found for lab: ${labId}`);
     }
   });
 
@@ -164,8 +132,6 @@ httpSocketServer.on("connection", (socket) => {
 
 httpSocketServer.listen(
   app.listen(port, () => {
-    console.log(
-      `WebSocket validation API listening at http://localhost:${port}`
-    );
+    console.log(`WebSocket validation API listening at http://${host}:${port}`);
   })
 );
