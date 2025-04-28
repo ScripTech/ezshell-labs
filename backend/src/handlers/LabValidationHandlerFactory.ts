@@ -3,7 +3,7 @@ import { EX200ValidationHandler } from "./EX200ValidationHandler";
 import { EX280ValidationHandler } from "./EX280ValidationHandler";
 
 export class LabValidationHandlerFactory {
-  private handlers: Map<string, ILabValidationHandler>;
+  private readonly handlers: Map<string, ILabValidationHandler>;
 
   constructor(
     ex200Handler: EX200ValidationHandler,
