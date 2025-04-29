@@ -56,8 +56,8 @@ export class AuthenticationManagementService implements IValidationService {
     const details = {
       htpasswdSecret: await this.validateHtpasswdSecret(),
       oauthConfig: await this.validateOAuthConfig(),
-      adminUser: await this.validateUserExists('labadmin'),
-      adminUserRole: await this.validateClusterAdminRole('labadmin'),
+      adminUser: await this.validateUserExists('admin-user'),
+      adminUserRole: await this.validateClusterAdminRole('admin-user'),
       devUser: await this.validateUserExists('dev-user'),
       devProject: await this.validateProjectExists('dev-project'),
       devUserRole: await this.validateProjectAdminRole('dev-user', 'dev-project')
@@ -121,7 +121,7 @@ export class AuthenticationManagementService implements IValidationService {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand(`oc get rolebinding -n ${project} -o yaml | grep ${username}`);
+    const result = await executeCommand(`oc get rolebinding -n ${project} -o wide | grep ${username}`);
     return result.includes('admin') && result.includes(username);
   }
 

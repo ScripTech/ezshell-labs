@@ -85,14 +85,14 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
       })
 
       socketRef.current.on(`validation-${ questionId }-complete`, (data: { success: string, message: string }) => {
-        console.log(data)
         if (data.success) {
           sethasCheckAnswer(true)
+          setIsCorrect(true)
         }
       })
 
       socketRef.current.on(`validation-lab-complete`, (data: { success: string, message: string }) => {
-        console.log(data)
+        console.log("lab complete", data)
         if (data.success) {
           sethasCheckAnswer(true)
         }
@@ -143,9 +143,13 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                   <li key={index} className='flex space-x-2 items-center' style={{ marginBottom: '8px' }}>
                     {getStatusIcon(status.status)}
                     <span style={{ marginLeft: '8px' }}>
-                      {status.step}: <span style={{ color: status.status === 'success' ? 'green' : 'red' }}>
-                        {status.status === 'success' ? 'Passed' : 'Failed'}
-                      </span>
+                      {status.step}
+                      {
+                        status.status === 'success' ? (<span style={{ color: 'green' }}> - Passed</span>) : (<></>)
+                      }
+                      {
+                        status.status === 'failed' ? (<span style={{ color: 'red' }}> - Failed</span>) : (<></>)
+                      }
                     </span>
                   </li>
                 ))}

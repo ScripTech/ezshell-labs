@@ -4,7 +4,7 @@ set -eo pipefail
 # Constants
 LOG_FILE="/tmp/lab-reset.log"
 SCRIPT_NAME=$(basename "$0")
-
+PROTECTED_USER="labadmin"  # Add protected user constant
 # Functions
 log() {
     local message="$1"
@@ -22,11 +22,6 @@ check_prerequisites() {
         error_exit "This script must be run from the root of the lab directory."
     fi
 
-    # # Check if not running as root
-    # if [ "$EUID" -eq 0 ]; then
-    #     error_exit "This script should not be run with root privileges."
-    # fi
-
     # Check if oc CLI is available
     if ! command -v oc >/dev/null 2>&1; then
        error_exit "OpenShift CLI (oc) is not installed or not in PATH"
@@ -36,11 +31,22 @@ check_prerequisites() {
     if ! oc whoami >/dev/null 2>&1; then
         error_exit "Not logged into OpenShift cluster"
     fi
+
+    current_user=$(oc whoami)
+    if [[ "$current_user" != "$PROTECTED_USER" ]]; then
+        error_exit "This script must be run as $PROTECTED_USER user"
+    fi
 }
 
 delete_user_resources() {
     local user="$1"
     local namespace="$2"
+
+    # Skip if trying to delete protected user's resources
+    if [[ "$user" == "$PROTECTED_USER" ]]; then
+        log "Skipping protected user cluster resources: $PROTECTED_USER"
+        return
+    fi
 
     log "Processing resources for user: $user in namespace: $namespace"
 
@@ -109,8 +115,9 @@ main() {
     log "Starting lab environment reset"
     check_prerequisites
 
-    # Get list of non-system users
-    users=$(oc get users -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true)
+    # Get list of non-system users, excluding protected user
+    users=$(oc get users -o jsonpath='{.items[*].metadata.name}' 2>/dev/null | \
+           tr ' ' '\n' | grep -v "^${PROTECTED_USER}" | grep -v "^system:" || true)
 
     for user in $users; do
         if [[ ! "$user" =~ ^system: ]]; then
