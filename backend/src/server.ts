@@ -11,10 +11,10 @@ import { CollaborativeDirectoryControllerV1 } from "./controllers/exercises/Coll
 import { CronJobController } from "./controllers/exercises/CronJobController";
 import { AutofsConfigurationController } from "./controllers/exercises/AutofsConfigurationController";
 import { BasicValidationController } from "./controllers/exercises/BasicValidationController";
-import { EX280OCPDeploymentController } from './controllers/labs/ex280/EX280OCPDeploymentController';
 import { EX200ValidationHandler } from "./handlers/EX200ValidationHandler";
 import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
 import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
+import { AuthenticationManagementController, EX280OCPDeploymentController } from "./controllers/labs/ex280";
 
 dotenv.config();
 
@@ -38,8 +38,9 @@ const collabDirV1 = new CollaborativeDirectoryControllerV1();
 const cronJob = new CronJobController();
 const autofsConfig = new AutofsConfigurationController();
 const basicController = new BasicValidationController();
-const ex280DeploymentController = new EX280OCPDeploymentController();
 
+const ex280DeploymentController = new EX280OCPDeploymentController();
+const authController = new AuthenticationManagementController()
 // Initialize handlers
 const ex200Handler = new EX200ValidationHandler(
   networkConfigValidationController,
@@ -52,9 +53,7 @@ const ex200Handler = new EX200ValidationHandler(
   basicController
 );
 
-const ex280Handler = new EX280ValidationHandler(
-  ex280DeploymentController
-);
+const ex280Handler = new EX280ValidationHandler(authController);
 
 // Initialize factory
 const validationHandlerFactory = new LabValidationHandlerFactory(

@@ -1,19 +1,18 @@
 import { Socket } from 'socket.io';
 import { ILabValidationHandler } from '../interfaces/ILabValidationHandler';
-import { EX280OCPDeploymentController } from '../controllers/labs/ex280/EX280OCPDeploymentController';
+import { AuthenticationManagementController } from '../controllers/labs/ex280/AuthenticationManagementController';
+
 
 export class EX280ValidationHandler implements ILabValidationHandler {
   constructor(
-    private readonly ex280DeploymentController: EX280OCPDeploymentController,
+    private readonly authController: AuthenticationManagementController,
+    // ...other controllers
   ) {}
 
   async handleValidation(socket: Socket, questionId: string): Promise<void> {
     switch (questionId) {
       case "01_manage_authentication":
-        await this.ex280DeploymentController.handleValidation(
-          socket,
-          questionId
-        );
+        await this.authController.handleValidation(socket, questionId);
         break;
       case "02_deploy_applications":
         // TODO: Implement the validation logic for this question
