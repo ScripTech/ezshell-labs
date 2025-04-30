@@ -1,11 +1,13 @@
 import { Socket } from 'socket.io';
 import { ILabValidationHandler } from '../interfaces/ILabValidationHandler';
 import { AuthenticationManagementController } from '../controllers/labs/ex280/AuthenticationManagementController';
+import { GroupRoleManagementController } from '../controllers/labs/ex280/GroupRoleManagementController';
 
 
 export class EX280ValidationHandler implements ILabValidationHandler {
   constructor(
     private readonly authController: AuthenticationManagementController,
+    private readonly groupRoleController: GroupRoleManagementController,
     // ...other controllers
   ) {}
 
@@ -14,8 +16,8 @@ export class EX280ValidationHandler implements ILabValidationHandler {
       case "01_manage_authentication":
         await this.authController.handleValidation(socket, questionId);
         break;
-      case "02_deploy_applications":
-        // TODO: Implement the validation logic for this question
+      case "02_manage_groups_roles":
+        await this.groupRoleController.handleValidation(socket, questionId);
         break;
       case "03_manage_storage":
         // TODO: Implement the validation logic for this question

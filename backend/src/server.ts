@@ -15,6 +15,7 @@ import { EX200ValidationHandler } from "./handlers/EX200ValidationHandler";
 import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
 import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
 import { AuthenticationManagementController, EX280OCPDeploymentController } from "./controllers/labs/ex280";
+import { GroupRoleManagementController } from "./controllers/labs/ex280/GroupRoleManagementController";
 
 dotenv.config();
 
@@ -41,6 +42,8 @@ const basicController = new BasicValidationController();
 
 const ex280DeploymentController = new EX280OCPDeploymentController();
 const authController = new AuthenticationManagementController()
+const groupRoleController = new GroupRoleManagementController();
+
 // Initialize handlers
 const ex200Handler = new EX200ValidationHandler(
   networkConfigValidationController,
@@ -53,7 +56,10 @@ const ex200Handler = new EX200ValidationHandler(
   basicController
 );
 
-const ex280Handler = new EX280ValidationHandler(authController);
+const ex280Handler = new EX280ValidationHandler(
+  authController,
+  groupRoleController
+);
 
 // Initialize factory
 const validationHandlerFactory = new LabValidationHandlerFactory(

@@ -1,6 +1,6 @@
 ---
 title: "Deploying Applications with Source-to-Image (S2I)"
-order: 2
+order: 17
 description: "Deploy an application using S2I strategy"
 difficulty: "medium"
 points: 20
