@@ -126,12 +126,51 @@ export class IdentityProviderService implements IValidationService {
   }
 
   private async validateUserAuthentication(username: string): Promise<boolean> {
-    try {
-      const result = await executeCommand(`oc whoami --as ${username}`);
-      return result.includes(username);
-    } catch (error) {
-      console.log(`Error authenticating user ${username}:`, error);
+    if (!ssh.isConnected()) {
+      await connectSSH();
+    }
+
+    // Find user credentials
+    const user = this.userCredentials.find(u => u.username === username);
+    if (!user) {
+      console.error(`No credentials found for user: ${username}`);
       return false;
+    }
+    const password = user.password;
+
+    // Sanitize username to prevent command injection
+    if (!username || /[^a-zA-Z0-9-_@.]/.test(username)) {
+      console.error(`Invalid username: ${username}`);
+      return false;
+    }
+
+    // Use a temporary kubeconfig to avoid modifying the current session
+    const tempKubeconfig = `/tmp/kubeconfig-${Date.now()}.yaml`;
+    try {
+      // Attempt login with oc login
+      const loginCommand = `oc login -u "${username}" -p "${password}" "${process.env.OCP_SERVER ?? "https://api.emucanze.ezetsu.lab:6443"}"--insecure-skip-tls-verify=true`;
+      await executeCommand(loginCommand);
+
+      // Verify the user is authenticated
+      const whoamiCommand = `oc whoami --kubeconfig="${tempKubeconfig}"`;
+      const result = await executeCommand(whoamiCommand);
+
+      // Check if the output exactly matches the username
+      const isAuthenticated = result.trim() === username;
+      if (isAuthenticated) {
+        console.log(`User ${username} authenticated successfully`);
+      } else {
+        console.log(`User ${username} authentication failed: whoami output mismatch`);
+      }
+      return isAuthenticated;
+    } catch (error: any) {
+      console.error(`Error authenticating user ${username}:`, error.message || error);
+      return false;
+    } finally {
+      // Clean up temporary kubeconfig
+      await executeCommand(`rm -f "${tempKubeconfig}"`).catch(() => {
+        console.warn(`Failed to delete temporary kubeconfig: ${tempKubeconfig}`);
+      });
     }
   }
 
