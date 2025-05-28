@@ -140,7 +140,7 @@ export class GroupManagementService implements IValidationService {
   ): Promise<boolean> {
     try {
       const result = await executeCommand(
-        `oc get rolebinding -n ${project} -o yaml | grep ${groupName}`
+        `oc get rolebinding -n ${project} -o wide | grep ${groupName}`
       );
       const hasPermission = result.includes(role);
       if (!hasPermission) {
