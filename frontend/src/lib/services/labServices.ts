@@ -92,6 +92,8 @@ export async function getLabQuestions(labId: string): Promise<LabQuestion[]> {
     throw new Error(`Lab ${labId} not found`)
   }
 
+  console.log(`Fetching questions for lab: ${labId} from path: ${labPath}`)
+
   const questions = fs.readdirSync(labPath)
     .filter(file => file.endsWith('.md'))
     .map(file => {
