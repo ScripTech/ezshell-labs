@@ -1,0 +1,52 @@
+[2025-05-28 15:05:21] Starting DO280 lab environment reset at Wed May 28 15:05:21 CAT 2025
+[2025-05-28 15:05:22] Cleaning up users associated with ex280-secret-provider
+[2025-05-28 15:05:22] Skipping user: admin-user (identity: htpasswd-provider:admin-user)
+[2025-05-28 15:05:22] Skipping user: labadmin (identity: htpasswd-provider:labadmin)
+[2025-05-28 15:05:22] Deleted 0 user(s) associated with ex280-secret-provider
+[2025-05-28 15:05:22] Group ex280-users does not exist, skipping
+[2025-05-28 15:05:22] Group ex280-guests, does not exist, skipping
+[2025-05-28 15:05:22] Group ex280-admins, does not exist, skipping
+[2025-05-28 15:05:23] Group ex280-developers, does not exist, skipping
+[2025-05-28 15:05:23] Group guest-users, does not exist, skipping
+[2025-05-28 15:05:23] Group site-users does not exist, skipping
+[2025-05-28 15:05:23] Cleaning up role bindings for deleted users and groups
+[2025-05-28 15:05:26] Cleaning up DO280 deployments
+[2025-05-28 15:05:26] Cleaning up DO280 resource configurations
+[2025-05-28 15:05:27] Cleaning up DO280 projects
+[2025-05-28 15:05:27] Project ex280-demo does not exist, skipping
+[2025-05-28 15:05:27] Project ex280-quotas does not exist, skipping
+[2025-05-28 15:05:27] Project ex280-limits does not exist, skipping
+[2025-05-28 15:05:27] Project ex280-test does not exist, skipping
+[2025-05-28 15:05:27] Resetting ex280-secret-provider identity provider
+[2025-05-28 15:05:27] Applying predefined OAuth configuration to remove ex280-secret-provider
+[2025-05-28 15:05:27] Removed ex280-secret-provider from OAuth configuration
+[2025-05-28 15:05:27] Deleting ex280-secure secret
+[2025-05-28 15:05:27] Secret ex280-secure does not exist, skipping
+[2025-05-28 15:05:28] Cleaned up temporary /tmp/oauth.yaml
+[2025-05-28 15:05:28] DO280 lab environment reset completed at Wed May 28 15:05:28 CAT 2025
+[2025-05-28 15:05:54] -------------------------- Starting DO280 lab environment reset at Wed May 28 15:05:54 CAT 2025 -------------------------- 
+[2025-05-28 15:05:54] Cleaning up users associated with ex280-secret-provider
+[2025-05-28 15:05:54] Skipping user: admin-user (identity: htpasswd-provider:admin-user)
+[2025-05-28 15:05:55] Skipping user: labadmin (identity: htpasswd-provider:labadmin)
+[2025-05-28 15:05:55] Deleted 0 user(s) associated with ex280-secret-provider
+[2025-05-28 15:05:55] Group ex280-users does not exist, skipping
+[2025-05-28 15:05:55] Group ex280-guests, does not exist, skipping
+[2025-05-28 15:05:55] Group ex280-admins, does not exist, skipping
+[2025-05-28 15:05:55] Group ex280-developers, does not exist, skipping
+[2025-05-28 15:05:55] Group guest-users, does not exist, skipping
+[2025-05-28 15:05:55] Group site-users does not exist, skipping
+[2025-05-28 15:05:55] Cleaning up role bindings for deleted users and groups
+[2025-05-28 15:05:58] Cleaning up DO280 deployments
+[2025-05-28 15:05:59] Cleaning up DO280 resource configurations
+[2025-05-28 15:05:59] Cleaning up DO280 projects
+[2025-05-28 15:05:59] Project ex280-demo does not exist, skipping
+[2025-05-28 15:05:59] Project ex280-quotas does not exist, skipping
+[2025-05-28 15:05:59] Project ex280-limits does not exist, skipping
+[2025-05-28 15:05:59] Project ex280-test does not exist, skipping
+[2025-05-28 15:05:59] Resetting ex280-secret-provider identity provider
+[2025-05-28 15:05:59] Applying predefined OAuth configuration to remove ex280-secret-provider
+[2025-05-28 15:05:59] Removed ex280-secret-provider from OAuth configuration
+[2025-05-28 15:05:59] Deleting ex280-secure secret
+[2025-05-28 15:06:00] Secret ex280-secure does not exist, skipping
+[2025-05-28 15:06:00] Cleaned up temporary /tmp/oauth.yaml
+[2025-05-28 15:06:00] -------------------------- DO280 lab environment reset completed at Wed May 28 15:06:00 CAT 2025 -------------------------- 

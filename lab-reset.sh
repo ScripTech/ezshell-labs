@@ -230,7 +230,10 @@ cleanup_deployments() {
 }
 
 main() {
-    log "Starting DO280 lab environment reset at $(date)"
+    mkdir -p "./logs"
+    touch "$LOG_FILE"
+    chmod 660 "$LOG_FILE"
+    log "-------------------------- Starting DO280 lab environment reset at $(date) -------------------------- "
     check_prerequisites
 
     # Reset in specific order to handle dependencies
@@ -255,7 +258,7 @@ main() {
         log "Cleaned up temporary $OAUTH_YAML"
     fi
 
-    log "DO280 lab environment reset completed at $(date)"
+    log "-------------------------- DO280 lab environment reset completed at $(date) -------------------------- "
 }
 
 # Execute main function
