@@ -44,7 +44,8 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
         terminalInstance.current = term
 
         if (!terminalRef.current) return
-
+        term.options.fontSize = 12
+        term.options.fontFamily = 'monospace';
         term.loadAddon(fitAddon)
         term.open(terminalRef.current)
         fitAddon.fit()

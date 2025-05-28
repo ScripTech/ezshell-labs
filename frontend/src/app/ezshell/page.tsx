@@ -14,7 +14,7 @@ interface Props { }
 
 const EZSShellView = () => {
 
-  const [termPanelSize, setTermPanelSize] = React.useState<number>(55)
+  const [termPanelSize, setTermPanelSize] = React.useState<number>(63)
   const socketRef = React.useRef(socket);
 
   React.useEffect(() => {
