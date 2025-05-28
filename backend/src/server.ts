@@ -18,6 +18,11 @@ import { AuthenticationManagementController, EX280OCPDeploymentController } from
 import { GroupRoleManagementController } from "./controllers/labs/ex280/GroupRoleManagementController";
 import { DO280ValidationHandler } from './handlers/DO280ValidationHandler';
 import { IdentityProvidersController } from "./controllers/labs/do280/IdentityProvidersController";
+import { ProjectPermissionController } from "./controllers/labs/do280/ProjectPermissionController";
+import { GroupManagementController } from "./controllers/labs/do280/GroupManagementController";
+import { ResourceQuotaController } from "./controllers/labs/do280/ResourceQuotaController";
+import { LimitRangeController } from './controllers/labs/do280/LimitRangeController';
+import { ScalingController } from './controllers/labs/do280/ScalingController';
 
 dotenv.config();
 
@@ -46,8 +51,13 @@ const ex280DeploymentController = new EX280OCPDeploymentController();
 const authController = new AuthenticationManagementController()
 const groupRoleController = new GroupRoleManagementController();
 
-// DO280
+// DO280 Controllers
 const identityProvidersController = new IdentityProvidersController()
+const projectPermissionController = new ProjectPermissionController();
+const groupManagementController = new GroupManagementController();
+const resourceQuotaController = new ResourceQuotaController();
+const limitRangeController = new LimitRangeController();
+const scalingController = new ScalingController();
 
 // Initialize handlers
 const ex200Handler = new EX200ValidationHandler(
@@ -69,7 +79,11 @@ const ex280Handler = new EX280ValidationHandler(
 
 const do280Handler = new DO280ValidationHandler(
   identityProvidersController,
-  groupRoleController
+  projectPermissionController,
+  groupManagementController,
+  resourceQuotaController,
+  limitRangeController,
+  scalingController
 );
 
 // Initialize factory

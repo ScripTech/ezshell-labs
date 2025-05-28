@@ -111,7 +111,7 @@ export class IdentityProviderService implements IValidationService {
     return (
       result.includes("ex280-secure") &&
       result.includes("HTPasswd") &&
-      result.includes("ex280-secret-providers")
+      result.includes("ex280-secret-provider")
     );
   }
 
