@@ -48,20 +48,21 @@ export async function executeCommand(command: string) {
       }
     });
 
-    console.log("Command result:", {
-      code: result.code,
-      stdout: result.stdout,
-      stderr: result.stderr
-    });
+    // console.log("Command result:", {
+    //   code: result.code,
+    //   stdout: result.stdout,
+    //   stderr: result.stderr
+    // });
 
     if (result.code !== 0) {
       console.error("Command failed:", result.stderr);
+      throw new Error(`${result.stderr}`);
     }
 
     return result.stdout.trim();
   } catch (error: any) {
-    console.error("Error while executing command!", error);
-    throw error;
+    console.error("Error while executing command!", error.message);
+    throw new Error(`Command execution failed: ${error.message}`);
   }
 }
 

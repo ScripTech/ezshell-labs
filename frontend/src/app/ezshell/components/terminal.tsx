@@ -40,6 +40,8 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
 
         const term = new Terminal({
           cursorBlink: true,
+          cols: 1800,
+          rows: 1000,
         })
         terminalInstance.current = term
 
@@ -49,6 +51,11 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
         term.loadAddon(fitAddon)
         term.open(terminalRef.current)
         fitAddon.fit()
+
+        if (term.cols < 200) {
+          term.resize(200, term.rows);
+          console.log(`Resized terminal to 200 columns, current size: ${term.cols}x${term.rows}`);
+        }
 
         // Create new socket connection
         const newSocket = io('http://localhost:3001', {
@@ -145,5 +152,5 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
     )
   }
 
-  return <div ref={terminalRef} className="bg-transparent h-full" />
+  return <div ref={terminalRef} className="bg-transparent h-full w-full" />
 }

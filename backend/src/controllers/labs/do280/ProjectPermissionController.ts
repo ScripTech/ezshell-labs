@@ -25,7 +25,6 @@ export class ProjectPermissionController extends BaseLabController {
         'Cluster Admin Rights': details.bobClusterAdmin,
         'Project Creation Rights': details.johnProjectCreation && details.qwertyNoProjectCreation,
         'View Role Permissions': details.natashaViewerRoles && details.susanViewerRole,
-        'Developer Role Permissions': details.harryDeveloperRole,
         'Admin Role Permissions': details.armstrongAdminRole,
         'Kubeadmin Removal': details.kubeadminRemoved
       };

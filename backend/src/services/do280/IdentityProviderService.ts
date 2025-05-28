@@ -3,34 +3,34 @@ import { connectSSH, ssh, executeCommand } from "../../utils/ssh-service";
 
 export class IdentityProviderService implements IValidationService {
   private readonly validationSteps = [
-    'HTPasswd Secret Configuration',
-    'OAuth Provider Configuration',
+    "HTPasswd Secret Configuration",
+    "OAuth Provider Configuration",
     // Individual user validation steps
-    'User bob Validation',
-    'User qwerty Validation',
-    'User john Validation',
-    'User armstrong Validation',
-    'User natasha Validation',
-    'User harry Validation',
-    'User susan Validation',
+    "User bob Validation",
+    "User qwerty Validation",
+    "User john Validation",
+    "User armstrong Validation",
+    "User natasha Validation",
+    "User harry Validation",
+    "User susan Validation",
     // Authentication validation steps
-    'User bob Authentication',
-    'User qwerty Authentication',
-    'User john Authentication',
-    'User armstrong Authentication',
-    'User natasha Authentication',
-    'User harry Authentication',
-    'User susan Authentication'
+    "User bob Authentication",
+    "User qwerty Authentication",
+    "User john Authentication",
+    "User armstrong Authentication",
+    "User natasha Authentication",
+    "User harry Authentication",
+    "User susan Authentication",
   ];
 
   private readonly userCredentials = [
-    { username: 'bob', password: 'indionce' },
-    { username: 'qwerty', password: 'catalog' },
-    { username: 'john', password: 'john123' },
-    { username: 'armstrong', password: 'natasha123' },
-    { username: 'natasha', password: 'arthstrong' },
-    { username: 'harry', password: 'harry123' },
-    { username: 'susan', password: 'susuan123' }
+    { username: "bob", password: "indionce" },
+    { username: "qwerty", password: "catalog" },
+    { username: "john", password: "john123" },
+    { username: "armstrong", password: "natasha123" },
+    { username: "natasha", password: "armstrong" },
+    { username: "harry", password: "harry123" },
+    { username: "susan", password: "sususan123" },
   ];
 
   async validate(): Promise<IValidationResult> {
@@ -44,7 +44,7 @@ export class IdentityProviderService implements IValidationService {
         return {
           success: false,
           message: "Failed to connect to OpenShift cluster",
-          details: { error: "OpenShift connection failed" }
+          details: { error: "OpenShift connection failed" },
         };
       }
 
@@ -55,13 +55,13 @@ export class IdentityProviderService implements IValidationService {
         details,
         message: success
           ? "Identity provider configuration is correct"
-          : "Identity provider configuration is incomplete or incorrect"
+          : "Identity provider configuration is incomplete or incorrect",
       };
     } catch (error: any) {
       return {
         success: false,
         message: `Validation failed: ${error.message}`,
-        details: { error: error.message }
+        details: { error: error.message },
       };
     }
   }
@@ -81,15 +81,17 @@ export class IdentityProviderService implements IValidationService {
 
     // Add individual user existence validation
     for (const { username } of this.userCredentials) {
-      details[`user_${username}_exists`] = await this.validateUserExists(username);
+      details[`user_${username}_exists`] =
+        await this.validateUserExists(username);
     }
 
     // Add individual user authentication validation
     for (const { username } of this.userCredentials) {
-      details[`user_${username}_auth`] = await this.validateUserAuthentication(username);
+      details[`user_${username}_auth`] =
+        await this.validateUserAuthentication(username);
     }
 
-    const success = Object.values(details).every(result => result === true);
+    const success = Object.values(details).every((result) => result === true);
     return { success, details };
   }
 
@@ -107,7 +109,7 @@ export class IdentityProviderService implements IValidationService {
     if (!ssh.isConnected()) {
       await connectSSH();
     }
-    const result = await executeCommand('oc get oauth cluster -o yaml');
+    const result = await executeCommand("oc get oauth cluster -o yaml");
     return (
       result.includes("ex280-secure") &&
       result.includes("HTPasswd") &&
@@ -131,7 +133,7 @@ export class IdentityProviderService implements IValidationService {
     }
 
     // Find user credentials
-    const user = this.userCredentials.find(u => u.username === username);
+    const user = this.userCredentials.find((u) => u.username === username);
     if (!user) {
       console.error(`No credentials found for user: ${username}`);
       return false;
@@ -148,7 +150,7 @@ export class IdentityProviderService implements IValidationService {
     const tempKubeconfig = `/tmp/kubeconfig-${Date.now()}.yaml`;
     try {
       // Attempt login with oc login
-      const loginCommand = `oc login -u "${username}" -p "${password}" "${process.env.OCP_SERVER ?? "https://api.emucanze.ezetsu.lab:6443"}"--insecure-skip-tls-verify=true`;
+      const loginCommand = `oc login -u "${username}" -p "${password}" "${process.env.OCP_SERVER ?? "https://api.emucanze.ezetsu.lab:6443"}" --kubeconfig="${tempKubeconfig}" --insecure-skip-tls-verify=true`;
       await executeCommand(loginCommand);
 
       // Verify the user is authenticated
@@ -160,43 +162,50 @@ export class IdentityProviderService implements IValidationService {
       if (isAuthenticated) {
         console.log(`User ${username} authenticated successfully`);
       } else {
-        console.log(`User ${username} authentication failed: whoami output mismatch`);
+        console.log(
+          `User ${username} authentication failed: whoami output mismatch`
+        );
       }
       return isAuthenticated;
     } catch (error: any) {
-      console.error(`Error authenticating user ${username}:`, error.message || error);
+      console.error(
+        `Error authenticating user ${username}:`,
+        error.message || error
+      );
       return false;
     } finally {
       // Clean up temporary kubeconfig
       await executeCommand(`rm -f "${tempKubeconfig}"`).catch(() => {
-        console.warn(`Failed to delete temporary kubeconfig: ${tempKubeconfig}`);
+        console.warn(
+          `Failed to delete temporary kubeconfig: ${tempKubeconfig}`
+        );
       });
     }
   }
 
   private async verifyOCPConnection(): Promise<boolean> {
     try {
-      const ocVersion = await executeCommand('oc version');
-      if (!ocVersion || ocVersion.trim() === '') {
+      const ocVersion = await executeCommand("oc version");
+      if (!ocVersion || ocVersion.trim() === "") {
         console.error("OpenShift CLI not available or not responding");
         return false;
       }
 
-      const clusterInfo = await executeCommand('oc status');
+      const clusterInfo = await executeCommand("oc status");
       if (!clusterInfo || clusterInfo.includes("error")) {
         console.error("Failed to get cluster status");
         return false;
       }
 
-      const whoami = await executeCommand('oc whoami');
-      if (!whoami || whoami.trim() === '') {
+      const whoami = await executeCommand("oc whoami");
+      if (!whoami || whoami.trim() === "") {
         console.error("Not authenticated to OpenShift cluster");
         return false;
       }
 
       console.log("OCP Connection verified:", {
         user: whoami.trim(),
-        clusterInfo: clusterInfo.split('\n')[0]
+        clusterInfo: clusterInfo.split("\n")[0],
       });
 
       return true;
