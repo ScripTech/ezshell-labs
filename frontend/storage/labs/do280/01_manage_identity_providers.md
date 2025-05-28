@@ -24,7 +24,7 @@ validationSteps:
 
 ### Manage Identity Providers
 
-Configure the Oauth to use HTPasswd as the identity provider. Secret name should be `ex280-secure` and Identity provider name should be `ex280-secure`
+Configure the Oauth to use HTPasswd as the identity provider. Secret name should be `ex280-secure` and Identity provider name should be `ex280-secret-provider`
 
 ## Tasks:
 

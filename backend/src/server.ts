@@ -16,6 +16,8 @@ import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
 import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
 import { AuthenticationManagementController, EX280OCPDeploymentController } from "./controllers/labs/ex280";
 import { GroupRoleManagementController } from "./controllers/labs/ex280/GroupRoleManagementController";
+import { DO280ValidationHandler } from './handlers/DO280ValidationHandler';
+import { IdentityProvidersController } from "./controllers/labs/do280/IdentityProvidersController";
 
 dotenv.config();
 
@@ -44,6 +46,9 @@ const ex280DeploymentController = new EX280OCPDeploymentController();
 const authController = new AuthenticationManagementController()
 const groupRoleController = new GroupRoleManagementController();
 
+// DO280
+const identityProvidersController = new IdentityProvidersController()
+
 // Initialize handlers
 const ex200Handler = new EX200ValidationHandler(
   networkConfigValidationController,
@@ -61,10 +66,17 @@ const ex280Handler = new EX280ValidationHandler(
   groupRoleController
 );
 
+
+const do280Handler = new DO280ValidationHandler(
+  identityProvidersController,
+  groupRoleController
+);
+
 // Initialize factory
 const validationHandlerFactory = new LabValidationHandlerFactory(
   ex200Handler,
-  ex280Handler
+  ex280Handler,
+  do280Handler
 );
 
 httpSocketServer.on("connection", (socket) => {
