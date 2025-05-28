@@ -22,14 +22,16 @@ import { ProjectPermissionController } from "./controllers/labs/do280/ProjectPer
 import { GroupManagementController } from "./controllers/labs/do280/GroupManagementController";
 import { ResourceQuotaController } from "./controllers/labs/do280/ResourceQuotaController";
 import { LimitRangeController } from './controllers/labs/do280/LimitRangeController';
+import { DeploymentController } from './controllers/labs/do280/DeploymentController';
 import { ScalingController } from './controllers/labs/do280/ScalingController';
+import { AutoScalingController } from "./controllers/labs/do280/AutoScalingController";
 
 dotenv.config();
 
 const cors = require("cors");
 const app = express();
 const port = Number.parseInt(process.env.SERVER_PORT!) ?? 3001;
-const host = Number.parseInt(process.env.SERVER_WSHOST!) ?? 'localhost';
+const host = process.env.SERVER_WSHOST! ?? "localhost";
 
 const httpSocketServer = new Server({
   cors: {
@@ -58,6 +60,8 @@ const groupManagementController = new GroupManagementController();
 const resourceQuotaController = new ResourceQuotaController();
 const limitRangeController = new LimitRangeController();
 const scalingController = new ScalingController();
+const deploymentController = new DeploymentController();
+const autoScalingController = new AutoScalingController();
 
 // Initialize handlers
 const ex200Handler = new EX200ValidationHandler(
@@ -83,7 +87,9 @@ const do280Handler = new DO280ValidationHandler(
   groupManagementController,
   resourceQuotaController,
   limitRangeController,
-  scalingController
+  scalingController,
+  deploymentController,
+  autoScalingController
 );
 
 // Initialize factory

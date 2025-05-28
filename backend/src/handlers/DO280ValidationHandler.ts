@@ -7,6 +7,8 @@ import { GroupManagementController } from "../controllers/labs/do280/GroupManage
 import { ResourceQuotaController } from "../controllers/labs/do280/ResourceQuotaController";
 import { LimitRangeController } from "../controllers/labs/do280/LimitRangeController";
 import { ScalingController } from "../controllers/labs/do280/ScalingController";
+import { DeploymentController } from "../controllers/labs/do280/DeploymentController";
+import { AutoScalingController } from "../controllers/labs/do280/AutoScalingController";
 
 
 export class DO280ValidationHandler implements ILabValidationHandler {
@@ -16,7 +18,9 @@ export class DO280ValidationHandler implements ILabValidationHandler {
     private readonly groupManagementController: GroupManagementController,
     private readonly resourceQuotaController: ResourceQuotaController,
     private readonly limitRangeController: LimitRangeController,
-    private readonly scalingController: ScalingController
+    private readonly scalingController: ScalingController,
+    private readonly deploymentController: DeploymentController,
+    private readonly autoScalingController: AutoScalingController
   ) {}
 
   async handleValidation(socket: Socket, questionId: string): Promise<void> {
@@ -40,19 +44,22 @@ export class DO280ValidationHandler implements ILabValidationHandler {
         );
         break;
       case "04_resource_qoutas":
-        await this.resourceQuotaController.handleValidation(
-          socket,
-          questionId
-        );
+        await this.resourceQuotaController.handleValidation(socket, questionId);
         break;
       case "05_limit_ranges":
-        await this.limitRangeController.handleValidation(
+        await this.limitRangeController.handleValidation(socket, questionId);
+        break;
+      case "06_deploy_application":
+        await this.deploymentController.handleValidation(
           socket,
           questionId
         );
         break;
-      case "06_scalling":
-        await this.scalingController.handleValidation(
+      case "07_manual_scalling":
+        await this.scalingController.handleValidation(socket, questionId);
+        break;
+      case "08_auto_scalling":
+        await this.autoScalingController.handleValidation(
           socket,
           questionId
         );
