@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 import { FitAddon } from 'xterm-addon-fit';
 import "@xterm/xterm/css/xterm.css"
 import io from 'socket.io-client';
 import { Loader2 } from "lucide-react"
+import { Terminal } from 'xterm';
 
 const fitAddon = new FitAddon();
 
@@ -16,8 +17,10 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
   const [retryCount, setRetryCount] = React.useState(0)
   const [error, setError] = React.useState('')
   const terminalRef = React.useRef<HTMLDivElement | null>(null)
+  const term = useRef<Terminal | null>(null)
   const terminalInstance = React.useRef<any>(null)
   const socketRef = React.useRef<any>(null)
+  const fitAddon = useRef<FitAddon | null>(null)
 
   React.useEffect(() => {
     let isMounted = true
@@ -38,24 +41,22 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
           socketRef.current.disconnect()
         }
 
-        const term = new Terminal({
-          cursorBlink: true,
-          cols: 1800,
-          rows: 1000,
-        })
-        terminalInstance.current = term
-
         if (!terminalRef.current) return
-        term.options.fontSize = 12
-        term.options.fontFamily = 'monospace';
-        term.loadAddon(fitAddon)
-        term.open(terminalRef.current)
-        fitAddon.fit()
+        term.current = new Terminal({
+          cursorBlink: true,
+          cols: 132,
+          rows: 24,
+          fontSize: 13,
+          scrollback: 1000,
+          fontFamily: 'monospace',
+          allowProposedApi: true,
+        })
 
-        if (term.cols < 200) {
-          term.resize(200, term.rows);
-          console.log(`Resized terminal to 200 columns, current size: ${term.cols}x${term.rows}`);
-        }
+        terminalInstance.current = term
+        fitAddon.current = new FitAddon()
+        term.current.loadAddon(fitAddon.current)
+        term.current.open(terminalRef.current)
+        fitAddon.current.fit()
 
         // Create new socket connection
         const newSocket = io('http://localhost:3001', {
@@ -70,7 +71,7 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
           setRetryCount(0)
           setError('')
           // term.write('\x1B[1;32m✓\x1B[0m Connected to lab environment\r\n')
-          term.clear()
+          term.current?.clear()
         })
 
         newSocket.on('connect_error', (err) => {
@@ -88,11 +89,11 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
           }
         })
 
-        term.onResize((e) => {
+        term.current?.onResize((e) => {
           console.log(e)
         })
 
-        term.onKey((e) => {
+        term.current?.onKey((e) => {
           const newMessage = {
             type: 'command',
             data: `${e.key}`
@@ -101,11 +102,11 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
         })
 
         newSocket.on('terminal-output', (data) => {
-          term.write(data);
+          term.current?.write(data);
         });
 
         newSocket.on('stdout', (data) => {
-          term.write(data);
+          term.current?.write(data);
         });
       } catch (error) {
         if (!isMounted) return
@@ -139,6 +140,15 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
     }
   }, [questionId]) // Only depend on questionId
 
+  React.useEffect(() => {
+    if (!terminalRef.current) return;
+    const observer = new ResizeObserver(() => {
+      // fitAddon.fit();
+    });
+    observer.observe(terminalRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   if (isConnecting || error) {
     return (
       <div className="h-[calc(100vh_-_theme(spacing.12))] flex flex-col items-center justify-center space-y-4 bg-black/95 text-green-500 font-mono">
@@ -151,6 +161,16 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
       </div>
     )
   }
+  // return <div ref={terminalRef} className="bg-transparent h-full w-full" />
 
-  return <div ref={terminalRef} className="bg-transparent h-full w-full" />
+  return (
+    <div
+      ref={terminalRef}
+      style={{
+        width: '100%',
+        height: '100%',
+      borderRadius: 4,
+      overflow: 'hidden',
+    }}
+  />)
 }

@@ -2,6 +2,7 @@ import { AuthProvider } from '@/components/providers/AuthProvider'
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+// import "./xterm.css"
 import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] });
