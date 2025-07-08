@@ -25,6 +25,7 @@ import { LimitRangeController } from './controllers/labs/do280/LimitRangeControl
 import { DeploymentController } from './controllers/labs/do280/DeploymentController';
 import { ScalingController } from './controllers/labs/do280/ScalingController';
 import { AutoScalingController } from "./controllers/labs/do280/AutoScalingController";
+import { PtySession } from "./terminal/PtySession";
 
 dotenv.config();
 
@@ -102,52 +103,31 @@ const validationHandlerFactory = new LabValidationHandlerFactory(
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected to Socket server");
 
-  const conn = new ssh2.Client();
-  conn.connect({
-    host: process.env.LAB_SSH_HOST,
-    port: Number.parseInt(process.env.LAB_SSH_PORT!) ?? 22,
-    username: process.env.LAB_SSH_USERNAME ?? "lab-user",
-    password: process.env.LAB_SSH_PASSWORD ?? "password",
-  });
-
-  conn.on("connect", () => {
-    console.log("Connecting to SSH server...");
-  })
-
-  conn.on("ready", () => {
-    console.log("SSH CONNECTION ESTABLISHED");
-    socket.emit("data", "\r\n*** SSH CONNECTION ESTABLISHED ***\r\n");
-    conn.shell((err, stream) => {
-      if (err)
-        return socket.emit(
-          "data",
-          "\r\n*** SSH SHELL ERROR: " + err.message + " ***\r\n"
-        );
-      socket.on("command", (data: any) => {
-        stream.write(data.data);
-      });
-      stream.on("data", (d: any) => {
-        socket.emit("stdout", d.toString("binary"));
-      });
-      stream.on("close", () => {
-        conn.end();
-      });
-    });
-  });
-
-  // Handle command messages
-  socket.on("command", (message: any) => {
-    httpSocketServer.emit("command", message);
+  // Example: Use SSH session
+  const ptySession = new PtySession(socket, {
+    type: "ssh",
+    cols: 80,
+    rows: 60,
+    sshConfig: {
+      host: process.env.LAB_SSH_HOST!,
+      port: Number.parseInt(process.env.LAB_SSH_PORT!) ?? 22,
+      username: process.env.LAB_SSH_USERNAME ?? "lab-user",
+      password: process.env.LAB_SSH_PASSWORD ?? "password",
+    },
   });
 
   socket.on("disconnect", () => {
-    conn.end();
+    ptySession.dispose();
     console.log("A user disconnected");
   });
 
   // question validation block
 
   socket.on("validate-exercise", async ({ labId, questionId }) => {
+
+
+    console.log(labId, questionId);
+
     const handler = validationHandlerFactory.getHandler(labId);
     if (handler) {
       await handler.handleValidation(socket, questionId);

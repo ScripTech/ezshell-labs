@@ -43,15 +43,13 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
 
         if (!terminalRef.current) return
         term.current = new Terminal({
-          cursorBlink: true,
-          cols: 132,
-          rows: 24,
-          fontSize: 13,
-          scrollback: 1000,
           fontFamily: 'monospace',
-          allowProposedApi: true,
+          fontSize: 14,
+          cursorBlink: true,
+          cols: 80,
+          rows: 24,
+          scrollback: 1000,
         })
-
         terminalInstance.current = term
         fitAddon.current = new FitAddon()
         term.current.loadAddon(fitAddon.current)
@@ -64,6 +62,10 @@ export default function EZXTerminal({ questionId }: { questionId: string }): JSX
           reconnection: false
         })
         socketRef.current = newSocket
+
+        term.current?.onResize(({ cols, rows }) => {
+          newSocket.emit('resize', { cols, rows });
+        })
 
         newSocket.on('connect', () => {
           console.log('connected to ssh host')

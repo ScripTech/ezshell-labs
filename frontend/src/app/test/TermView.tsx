@@ -11,41 +11,18 @@ export default function TermView({ questionId }: { questionId: string }) {
   const [retryCount, setRetryCount] = React.useState(0)
   const [error, setError] = React.useState('')
   const terminalRef = React.useRef<HTMLDivElement | null>(null)
-  const term = useRef<Terminal | null>(null)
-  const terminalInstance = React.useRef<any>(null)
+  const fitAddon = React.useMemo(() => new FitAddon(), []);
+  const term = React.useMemo(() => new Terminal({
+    fontFamily: 'monospace',
+    fontSize: 14,
+    cursorBlink: true,
+    cols: 80,
+    rows: 24,
+    scrollback: 1000,
+  }), []);
   const socketRef = React.useRef<any>(null)
-  const fitAddon = useRef<FitAddon | null>(null)
-
-
 
   useEffect(() => {
-    if (!terminalRef.current) return
-
-    term.current = new Terminal({
-      fontFamily: 'monospace',
-      fontSize: 14,
-      cursorBlink: true,
-      cols: 80,
-      rows: 24,
-      scrollback: 1000,
-    })
-    fitAddon.current = new FitAddon()
-    term.current.loadAddon(fitAddon.current)
-    term.current.open(terminalRef.current)
-    fitAddon.current.fit()
-
-    // ResizeObserver for responsive fit
-    const observer = new window.ResizeObserver(() => {
-      fitAddon.current?.fit()
-    })
-    observer.observe(terminalRef.current)
-
-
-    term.current.onKey((e) => {
-      term.current?.write(e.key);
-    })
-
-
     // Create new socket connection
     const newSocket = io('http://localhost:3001', {
       timeout: 5000,
@@ -53,24 +30,53 @@ export default function TermView({ questionId }: { questionId: string }) {
     })
     socketRef.current = newSocket
 
+    if (!terminalRef.current) return
+
+    term.loadAddon(fitAddon)
+    term.open(terminalRef.current)
+    fitAddon.fit()
+
+    // Send initial size to backend after first fit
+    if (socketRef.current) {
+      const { cols, rows } = term;
+      socketRef.current.emit('resize', { cols, rows });
+    }
+
+    // Add a timer to trigger fit and resize again after initial load
+    const initialResizeTimer = setTimeout(() => {
+      fitAddon.fit();
+      const { cols, rows } = term;
+      newSocket.emit('resize', { cols, rows });
+    }, 300);
+
+    // ResizeObserver for responsive fit
+    const observer = new window.ResizeObserver(() => {
+      fitAddon.fit()
+      const { cols, rows } = term;
+      newSocket.emit('resize', { cols, rows });
+    })
+    observer.observe(terminalRef.current)
+
     newSocket.on('connect', () => {
       console.log('connected to ssh host')
       setIsConnecting(false)
       setRetryCount(0)
       setError('')
-      // term.write('\x1B[1;32m✓\x1B[0m Connected to lab environment\r\n')
-      term.current?.clear()
+      const { cols, rows } = term;
+      socketRef.current.emit('resize', { cols, rows });
+      // term.current?.clear()
     })
 
     newSocket.on('connect_error', (err: any) => {
       console.error('Connection error:', err)
     })
 
-    term.current?.onResize((e) => {
-      console.log(e)
+    term.onResize(({ cols, rows }) => {
+      console.log("term.current?.onResize has been called")
+      newSocket.emit('resize', { cols, rows });
     })
 
-    term.current?.onKey((e) => {
+    term.onKey((e) => {
       const newMessage = {
         type: 'command',
         data: `${ e.key }`
@@ -79,32 +85,19 @@ export default function TermView({ questionId }: { questionId: string }) {
     })
 
     newSocket.on('terminal-output', (data: any) => {
-      term.current?.write(data);
+      term.write(data);
     });
 
     newSocket.on('stdout', (data: any) => {
-      term.current?.write(data);
+      term.write(data);
     });
 
-    // // Input handling
-    // term.current.onData((data) => {
-    //   // Replace with your backend/pty handler
-    //   window.external?.TermData?.(data)
-    // })
-
-    // Output handler (replace with your backend/pty handler)
-    // window.external.PtyData = (data: string) => {
-    //   term.current?.write(data)
-    // }
-
-    // Initial PTY setup
-    // window.external?.InitPty?.(term.current.cols, term.current.rows, solutionDirectory)
-
     return () => {
-      observer.disconnect()
-      term.current?.dispose()
+      clearTimeout(initialResizeTimer);
+      observer.disconnect();
+      term.dispose();
     }
-  }, [questionId])
+  }, [questionId, fitAddon, term])
 
   return (
     <div
@@ -112,7 +105,6 @@ export default function TermView({ questionId }: { questionId: string }) {
       style={{
         width: '100%',
         height: '100%',
-        borderRadius: 4,
         overflow: 'hidden',
       }}
     />
