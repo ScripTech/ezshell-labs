@@ -15,20 +15,20 @@ export async function connectSSH() {
     console.log("Setting up OpenShift environment...");
 
     // Set KUBECONFIG environment variable
-    await executeCommand(
-      "export KUBECONFIG=/opt/.kubeconf/kubeconfig-noingress"
-    );
+    // await executeCommand(
+    //   "export KUBECONFIG=/opt/.kubeconf/kubeconfig-noingress"
+    // );
 
-    // Login to OpenShift cluster
-    const loginResult = await executeCommand(
-      `oc login -u ${process.env.OCP_USERNAME ?? "kubeadmin"} -p ${process.env.OCP_PASSWORD ?? "password"} ${process.env.OCP_SERVER ?? "https://api.emucanze.ezetsu.lab:6443"} --insecure-skip-tls-verify=true`
-    );
+    // // Login to OpenShift cluster
+    // const loginResult = await executeCommand(
+    //   `oc login -u ${process.env.OCP_USERNAME ?? "kubeadmin"} -p ${process.env.OCP_PASSWORD ?? "password"} ${process.env.OCP_SERVER ?? "https://api.emucanze.ezetsu.lab:6443"} --insecure-skip-tls-verify=true`
+    // );
 
-    if (loginResult.includes("Login successful")) {
-      console.log("Successfully logged into OpenShift cluster");
-    } else {
-      throw new Error("Failed to login to OpenShift cluster");
-    }
+    // if (loginResult.includes("Login successful")) {
+    //   console.log("Successfully logged into OpenShift cluster");
+    // } else {
+    //   throw new Error("Failed to login to OpenShift cluster");
+    // }
 
   } catch (error: any) {
     console.error("Failed to connect and setup environment:", error);
