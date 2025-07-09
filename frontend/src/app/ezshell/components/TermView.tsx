@@ -23,8 +23,9 @@ export default function TermView({ questionId }: { questionId: string }) {
   const socketRef = React.useRef<any>(null)
 
   useEffect(() => {
+    console.log("process.env.BACKEND_WS", process.env)
     // Create new socket connection
-    const newSocket = io('http://localhost:3001', {
+    const newSocket = io(process.env.BACKEND_WS ?? 'http://localhost:3001', {
       timeout: 5000,
       reconnection: false
     })

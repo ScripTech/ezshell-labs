@@ -1,5 +1,4 @@
-import TermView from "@/app/test/TermView";
-import EZXTerminal from "./terminal";
+import TermView from "./TermView";
 
 
 
