@@ -8,17 +8,26 @@ import { toast } from "sonner";
 import { AvailableLabsComponent } from "./components/available-labs";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchParams } from "next/navigation";
 
 export default function UserLabs() {
+
+  const params = useSearchParams()
+
   const [isLoading, setIsLoading] = useState(true)
   const [availableLabs, setAvailableLabs] = useState<Lab[]>([])
+  const [isEnrolled, setIsEnrolled] = useState(params.get("q") === 'enrolled')
 
   const fetchAvailableLabs = async () => {
     try {
       const response = await fetch('/api/labs/available')
       if (!response.ok) throw new Error('Failed to fetch labs')
       const data = await response.json()
-      setAvailableLabs(data)
+      if (isEnrolled) {
+        setAvailableLabs(data.filter((lab: Lab) => lab.isEnrolled))
+      } else {
+        setAvailableLabs(data)
+      }
     } catch (error) {
       console.log(error)
       toast.error('Failed to load available labs')

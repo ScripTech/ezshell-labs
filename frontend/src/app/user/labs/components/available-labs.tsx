@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Clock, Terminal, Users, CheckCircle2, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 interface AvailableLabsProps {
   data: Lab[]
@@ -50,8 +51,8 @@ export function AvailableLabsComponent({
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-2 line-clamp-1">
-              {lab.name}
+            <h3 className="font-semibold text-lg mb-2 line-clamp-1 hover:underline cursor-pointer">
+              <Link href={`/user/labs/${lab.id}`}>{lab.name}</Link>
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
               {lab.description}
@@ -71,7 +72,7 @@ export function AvailableLabsComponent({
               </div>
             </div>
           </CardContent>
-          <CardFooter className="p-4 pt-0">
+          {/* <CardFooter className="p-4 pt-0">
             {lab.isEnrolled ? (
               <Button
                 className="w-full"
@@ -88,7 +89,7 @@ export function AvailableLabsComponent({
                 Enroll to Lab
               </Button>
             )}
-          </CardFooter>
+          </CardFooter> */}
         </Card>
       ))}
     </div>

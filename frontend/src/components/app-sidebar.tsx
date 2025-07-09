@@ -52,8 +52,8 @@ const data = {
           url: "/user/labs/history",
         },
         {
-          title: "Starred",
-          url: "/user/labs?q=starred",
+          title: "Enrolled Labs",
+          url: "/user/labs?q=enrolled",
         }
       ],
     },
