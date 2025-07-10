@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { CaretSortIcon, GearIcon } from "@radix-ui/react-icons"
 import { SquareTerminal } from "lucide-react"
+import Link from "next/link"
 
 export function TeamSwitcher({
   teams,
@@ -82,7 +83,9 @@ export function TeamSwitcher({
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <GearIcon className="size-4" />
               </div>
-              <div className="font-medium">Administration</div>
+              <div className="font-medium">
+                <Link href={"/admin"}>Administration</Link>
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
