@@ -60,6 +60,7 @@ const data = {
     {
       title: "Settings",
       url: "#",
+      isActive: true,
       icon: Settings2,
       items: [
         {
@@ -100,15 +101,18 @@ const data = {
   ],
 }
 
-export function AppSidebar({ session, ...props }: Readonly<{ props: React.ComponentProps<typeof Sidebar>, session: Session | null }>) {
+export function AppSidebar({ children, session, ...props }: Readonly<{
+  children: React.ReactNode;
+  props: React.ComponentProps<typeof Sidebar>,
+  session: Session | null }>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        {/* <NavProjects projects={data.projects} /> */}
+        {children}
+        {/* <NavMain items={data.navMain} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={{

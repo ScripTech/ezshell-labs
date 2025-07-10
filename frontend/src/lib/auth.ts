@@ -1,5 +1,6 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { db } from '@/db'
+import { Session } from 'next-auth';
 
 export const authOptions = {
   adapter: DrizzleAdapter(db),
@@ -14,6 +15,8 @@ export const authOptions = {
     session: async ({ session, token }: { session: any; token: any }) => {
       if (session?.user) {
         session.user.id = token.sub!;
+        session.user.role = token.role ?? "admin";
+        session.user.roles = token.roles ?? [];
       }
       return session;
     },
@@ -24,4 +27,8 @@ export const authOptions = {
       return token;
     },
   },
+};
+
+export const isAdmin = (session: Session | null) => {
+  return session?.user?.role === "admin";
 };

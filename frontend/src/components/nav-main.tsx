@@ -21,6 +21,7 @@ import { ChevronRightIcon } from "@radix-ui/react-icons"
 
 export function NavMain({
   items,
+  groupLabel = "Platform",
 }: {
   items: {
     title: string
@@ -32,10 +33,15 @@ export function NavMain({
       url: string
     }[]
   }[]
+  groupLabel?: string
 }) {
+
+  console.log(items.map(item => item))
+
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
+
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible

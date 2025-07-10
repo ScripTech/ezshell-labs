@@ -8,7 +8,9 @@ import { DefaultSession } from 'next-auth'
 declare module 'next-auth' {
   interface Session {
     user?: {
-      id?: string | null
+      id?: string | null,
+      role: "admin" | "user" | "guest"
+      roles: Array<string> | null
     } & DefaultSession['user']
   }
 }
