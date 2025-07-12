@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { columns, DataTable } from "./components/data-table";
+import { DataTable } from "./components/data-table";
+import { columns } from "./components/columns";
 
 export default function LabsPage() {
 	const [labs, setLabs] = useState<any[]>([]);
@@ -63,7 +64,7 @@ export default function LabsPage() {
 	);
 
 	return (
-		<div>
+		<div className="px-3">
 			<h1 className="text-xl font-bold mb-4">Lab Management</h1>
 			<div className="flex flex-col md:flex-row md:items-end gap-4 mb-4">
 				<Link href="/admin/labs/create">
@@ -104,7 +105,7 @@ export default function LabsPage() {
 				<DataTable
 					columns={columns}
 					data={paginatedLabs}
-					isLoading={loading}
+					// isLoading={loading}
 				/>
 			</div>
 			{/* Pagination Controls */}

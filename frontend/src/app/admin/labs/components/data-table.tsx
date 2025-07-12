@@ -1,79 +1,98 @@
-import Link from "next/link";
+"use client"
 
-// Define columns for shadcn DataTable
-export const columns = [
-  {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }: any) => <span>{row.original.name}</span>,
-  },
-  {
-    accessorKey: "technologies",
-    header: "Technologies",
-    cell: ({ row }: any) => (
-      <span>
-        {row.original.technologies?.join(", ") || "-"}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "duration",
-    header: "Duration (min)",
-    cell: ({ row }: any) => <span>{row.original.duration}</span>,
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }: any) => (
-      <Link href={`/admin/labs/${ row.original.id }/edit`} className="text-blue-600">
-        Edit
-      </Link>
-    ),
-  },
-];
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table"
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 
+interface DataTableProps<TData, TValue> {
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
+}
 
-// Minimal shadcn/ui DataTable implementation for this page
-export function DataTable({ columns, data, isLoading }: { columns: any[]; data: any[]; isLoading?: boolean }) {
+
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+}: DataTableProps<TData, TValue>) {
+
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
+
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full border rounded">
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th key={col.accessorKey || col.id} className="px-4 py-2 text-left border-b font-medium">
-                {col.header}
-              </th>
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-center text-muted-foreground">
-                Loading...
-              </td>
-            </tr>
-          ) : data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-center text-muted-foreground">
-                No labs found.
-              </td>
-            </tr>
-          ) : (
-            data.map((row, i) => (
-              <tr key={row.id || i} className="border-b last:border-b-0">
-                {columns.map((col) => (
-                  <td key={col.accessorKey || col.id} className="px-4 py-2">
-                    {col.cell ? col.cell({ row: { original: row } }) : row[col.accessorKey]}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
