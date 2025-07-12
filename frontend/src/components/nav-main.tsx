@@ -36,8 +36,6 @@ export function NavMain({
   groupLabel?: string
 }) {
 
-  console.log(items.map(item => item))
-
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>

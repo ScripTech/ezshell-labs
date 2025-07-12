@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sidebar"
 import { CaretSortIcon, ComponentPlaceholderIcon } from "@radix-ui/react-icons"
 import { signOut } from "next-auth/react"
+import Link from "next/link"
 
 export function NavUser({
   user,
@@ -93,7 +94,7 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck className="h-4 w-4" />
-                <span className="px-2">Account</span>
+                <Link className="px-2" href="/user/profile">Account</Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <ComponentPlaceholderIcon className="h-4 w-4" />

@@ -38,6 +38,7 @@ const userNavItems = [
     url: "/user/billing",
     isActive: "true",
     items: [
+      { title: "Overview", url: "/user/billing/overview" },
       { title: "Subscription Plans", url: "/user/billing/plans" },
       { title: "Billing & Payments", url: "/user/billing" },
     ],
