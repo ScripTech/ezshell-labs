@@ -1,11 +1,11 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { db } from '@/db'
-import { Session } from 'next-auth';
+import { Session, SessionStrategy } from 'next-auth';
 
 export const authOptions = {
   adapter: DrizzleAdapter(db),
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as SessionStrategy,
   },
   pages: {
     signIn: "/auth/login",
@@ -20,7 +20,7 @@ export const authOptions = {
       }
       return session;
     },
-    jwt: async ({ token, user }: { token: any; user: any}) => {
+    jwt: async ({ token, user }: { token: any; user: any }) => {
       if (user) {
         token.sub = user.id;
       }
