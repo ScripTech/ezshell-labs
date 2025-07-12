@@ -31,7 +31,7 @@ const data = {
   },
   teams: [
     {
-      name: "Ninjas",
+      name: "Lab Playground",
       logo: Command,
       plan: "Free",
     },
