@@ -1,0 +1,844 @@
+                                        RHEL-9 RHCE EXAM MODEL PAPER
+                                                EX294
+                                                                                        Duration: 4Hrs
+                                                                                        Total Marks: 300
+                                                                                        Total Questions: 18
+
+Instructions:   Exam Domain Number2, Februar 2025
+
+control node: 	workstation.lab.example.com 
+
+managed node: 	servera.lab.example.com,
+		serverb.lab.example.com,
+		serverc.lab.example.com,
+		serverd.lab.example.com
+
+* All node root password is 'somethingweird' and Ansible control node user name is 'admin'.
+
+* Create a directory 'ansible' under the path /home/admin and all the playbook should be under /home/admin/ansible.
+
+* All playbook should be owned/executed by admin and Ansible managed node username is devops(something i forgot).
+
+* All playbooks and files should be created oder downloaded in the Folder /home/admin/ansible ('admin' is your username, it can be for your exam different). 
+
+* Ansible control node user password is 'somethingweird'
+
+* Unless advised  password should be 'somethingweird' for all users 
+
+Ansible Automation Platform 2.2 is utility.lab.example.com credentials are username: admin, password: 'redhat' 
+
+Note: In Exam, If they not given the Managed node user, use the control node user as remote user
+___________________________________________________________________________________________________________
+some Tweaks to be productive in the exam.
+vim Tweaks
+# vim /home/admin/.vimrc
+" Automatic configuration for yaml-files
+autocmd FileType yaml setlocal ai et sw=2 ts=2 sts=2 nu cuc
+
+" configuration for all other files
+set cursorcolumn
+set number   
+
+" better color lightning
+set termguicolors
+
+" manual Folding (for vim-freaks)
+set foldmethod=manual
+set foldlevel=99
+
+" to better see blank spaces
+set list
+
+
+Bash Tweaks:
+# vim /home/admin/.bashrc
+alias anr="ansible-navigator run -m stdout"
+alias ansc="ansible-navigator run -m stdout --syntax-check"
+
+
+# ssh student@workstation
+
+1. Install and Configure Ansible on the control node as follows:
+
+  * Install the required packages.
+  * Create a static inventory file called /home/admin/ansible/inventory as follows:
+          -- servera.lab.example.com is a member of the dev host group
+          -- serverb.lab.example.com is a member of the test host group
+          -- serverc.lab.example.com is a member of the prod host group
+          -- serverd.lab.example.com is a member of the balancers host group
+          -- The prod group is a member of the webservers host group
+  * Create a configuration file called ansible.cfg as follows:
+          -- The host inventory file /home/admin/ansible/inventory is defined
+          -- The location of roles used in playbooks is defined as /home/admin/ansible/roles
+          -- The location of collections used in playbooks is defined as /home/admin/ansible/collections
+
+# mkdir -p /home/admin/ansible
+# cd ~/ansible
+# sudo dnf install ansible-navigator ansible-core container-tools vim tree -y
+
+create the inventory /home/admin/ansible/inventory 
+[dev]
+servera.lab.example.com
+
+[test]
+serverb.lab.example.com
+
+[prod]
+serverc.lab.example.com
+
+[balancers]
+serverd.lab.example.com
+
+[webservers:children]
+prod
+
+create the file /home/admin/ansible/ansible.cfg:
+[defaults]
+inventory = ./inventory
+remote_user = devops
+ask_pass = false
+roles_path = ./roles
+collections_paths = ./collections
+
+[privilege_escalation]
+become = true
+become_method = sudo
+become_user = root
+become_ask_pass = false
+
+create the file /home/admin/ansible/ansible-navigator.yml:
+---
+ansible-navigator:
+  execution-environment:
+    image: utility.lab.example.com/ee-supported-rhel8:latest
+    pull:
+      policy: missing
+  playbook-artifact:
+    enable: false
+
+sign in to container-registry
+# podman login utility.lab.example.com
+# username: admin
+# password: redhat
+
+in the exam, they created a standard '.ansible-navigator.yml' file in the home Directory of 'admin' user (your user).
+if your are comfortable with, you can use this file too and don't create your own to save time.
+
+download the image:
+# ansible-navigator images
+# ansible-navigator inventory -i inventory -m stdout --graph #(verify inventory)
+alternative
+# ansible-inventory --graph #(verify inventory)
+
+
+2. Create a playbook yum.yml for configuring repository in all nodes.
+
+   i) Repository 1 
+   - The Name of the repository is EX294_BASE
+   - The description is EX294 base software
+   - The base url = http://content/rhel9.0/x86_64/dvd/BaseOS
+   - gpg signature is enabled.
+   - gpgkey = http://content.example.com/rhel9.0/x86_64/dvd/RPM-GPG-KEY-redhat-release
+   - The repository is enabled.
+
+
+   ii) Repository 2 
+   - The Name of the repository is EX294_STREAM
+   - The description is EX294 stream software
+   - The base url = http://content/rhel9.0/x86_64/dvd/AppStream
+   - gpg signature is enabled.
+   - gpgkey = http://content.example.com/rhel9.0/x86_64/dvd/RPM-GPG-KEY-redhat-release
+   - The repository is enabled.
+
+# vim /home/admin/ansible/yum.yml
+---
+- name: Configure repositories on all nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: Configure BaseOS repository
+      ansible.builtin.yum_repository:
+        file: BaseOS
+        name: EX294_BASE
+        description: "EX294 base software"
+        baseurl: "http://content/rhel9.0/x86_64/dvd/BaseOS"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "http://content.example.com/rhel9.0/x86_64/dvd/RPM-GPG-KEY-redhat-release"
+        state: present
+
+    - name: Configure AppStream repository
+      ansible.builtin.yum_repository:
+        file: Appstream
+        name: EX294_STREAM
+        description: "EX294 stream software"
+        baseurl: "http://content/rhel9.0/x86_64/dvd/AppStream"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "http://content.example.com/rhel9.0/x86_64/dvd/RPM-GPG-KEY-redhat-release"
+        state: present
+
+# ansible-navigator run yum.yml -m stdout
+OR
+# anr yum.yml
+
+# ansible all -m command -a 'dnf repolist all'  #(verify the output)
+
+3. Install packages
+create a playbook called /home/admin/ansible/packages.yml and perform the following Tasks:
+- Install the php & mariadb on hosts in the dev, test and prod host Group
+- Installl the RPM Development Tools package Group on host in the dev host group
+- Update all packages to the latest Version on host in the dev host Group
+
+
+#cd ~/ansible/
+# vim packages.yml
+---
+- name: install php and mariadb
+  hosts: dev, test, prod
+  tasks:
+    - dnf:
+        name:
+          - php
+          - mariadb
+        state: latest
+
+- name: update packages on dev
+  hosts: dev
+  tasks:
+    - dnf:
+        name: '@RPM Development Tools'
+        state: latest
+
+    - dnf:
+        name: "*"
+        state: latest
+if you forgot the Name of the package Group '@RPM Development Tools', go on a managed host and try this
+# sudo dnf grouplist
+
+# ansible-navigator run packages.yml -m stdout
+OR
+# anr packages.yml 
+
+4. Ansible Content Collections.
+  Location of Collection inside http://content.example.com/materials
+  i) install the posix-1.5.4.tar.gz collection
+  iii) Using the url 'http://content/Rhce/redhat-rhel_system_roles-1.0.0.tar.gz' to install the system roles collection under collection directory.
+
+Note: In Exam, you need to install ansible Collections. If they don't explicit ask, never create a requirements.yml file. 
+      in this Question, they just want an installation through the commandline with ansible-galaxy.
+
+# cd ~/ansible/collections
+# ansible-galaxy collection install http://content.example.com/materials/ansible-posix-1.4.0.tar.gz -p .
+# ansible-galaxy collection install http://content/Rhce/redhat-rhel_system_roles-1.0.0.tar.gz -p .
+
+# ansible-navigator collections (verify)
+ add the new Collection path in the configuration-file:
+# vim /home/admin/.ansible.cfg:
+collections_paths = ./collections:/usr/share/ansible/collections
+
+5. use a RHEL System role.
+Install the red hat roles package and create a playbook called /home/admin/ansible/timesync.yml
+- runs on all managed nodes
+- uses the timesync role
+- configure the role to use the currently active NTP Provider
+- configure the role to use the time Server 172.25.254.254 or Classroom.example.com
+- configure the role to enable the iburst Parameter
+
+# dnf install rhel-system-roles -y
+# cd ~/ansible
+# ansible-galaxy list     #(to Show the actual roles path)
+copy and paste this path in the ansible.cfg
+roles_path = ./roles:/usr/share/ansible/roles
+
+# ansible-galaxy list     #(to check the roles)
+
+# vim /usr/share/ansible/roles/rhel-system-roles.timesync/README.md #(copy the example)
+---
+- hosts: all
+  vars:
+    timesync_ntp_servers:
+      - hostname: Classroom.example.com
+        iburst: true
+  roles:
+    - rhel_system_roles.timesync
+# this Task is just optional if they aks something in the exam
+  tasks:
+    - name: set timezone
+      timezone:
+        name: Asia/Kolkata
+
+# ansible-navigator run timesync.yml 
+OR
+# anr timesync.yml
+
+# timedatectl #(on one node to check the work)
+check on one managed host
+# cat /etc/chrony.conf
+# chronyc sources -v
+OR
+# ansible all -m command -a 'cat /etc/chrony.conf; chronyc sources -v'  #(verify the output)
+ 
+
+6. Install roles using ansible Galaxy
+- use ansible Galaxy with a requirements file called /home/admin/ansible/requirements.yml 
+- install role to /home/admin/ansible/roles from following URL:
+  i)  role name should be 'balancer' and download using this url http://content.example.com/rhce/balancer.tgz.
+  ii) role name should be 'phpinfo' and download using this url http://content.example.com/rhce/phpinfo.tgz.
+
+# cd ~/ansible/
+# vim requirements.yml
+---
+roles:
+  - name: balancer
+    src: http://content.example.com/Rhce/balancer.tgz
+
+  - name: phpinfo
+    src: http://content.example.com/Rhce/phpinfo.tgz
+    
+
+# ansible-galaxy role install -r requirements.yml -p roles/
+# ansible-galaxy list       #(to Show the roles)
+
+
+7. Create and use a role.
+create a role called apache in /home/admin/ansible/roles with the following requirements:
+- the httpd package is installed, enabled on boot and started
+- The Firewall is enabled and running with a rule to allow Access the web Server
+- a template file index.html.j2 exists and is used to create the file /var/www/html/index.html with the message:
+     Welcome to HOSTNAME on IPADDRESS
+- where HOSTNAME is the fqdn of the managed node and ip address is the ip of the node
+- create a playbook called /home/admin/ansible/newrole.yml that uses this role as follows:
+- the playbook runs on host in the webservers host group
+
+# ansible-galaxy role init ~/ansible/roles/apache
+# tree roles/apache
+
+# vim ~/ansible/roles/apache/templates/template.j2
+My host is {{ ansible_facts['fqdn'] }} on {{ ansible_facts['default_ipv4']['address'] }}
+
+# vim /home/admin/ansible/roles/apache/tasks/main.yml
+---
+- name: Install httpd and firewalld packages
+  ansible.builtin.dnf:
+    name:
+      - httpd
+      - firewalld
+
+    state: present
+
+- name: start and enable httpd and firewalld service
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - httpd
+    - firewalld
+
+- name: Add http service to firewall
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  loop:
+    - http
+    - https
+
+- name: Deploy web page from template
+  ansible.builtin.template:
+    src: template.j2
+    dest: /var/www/html/index.html
+
+# vim /home/admin/ansible/newrole.yml
+---
+- name: Deploy Apache role on dev hosts
+  hosts: dev
+  roles:
+    - apache
+
+# anr newrole.yml
+# curl http://servera.lab.example.com   #curl nodeX (where X is 1-5 should work too)  #(Verify the output)
+
+
+8. use roles from Ansible Galaxy
+Create a playbook called /home/admin/ansible/deploy-haproxy.yml
+- The playbook contains a Play that runs on balancer host Group and uses the balancer role.
+- This role to configure load balancer web Server request between hosts in the webserver host Group.
+- Browsing to host in the balancer host Group for http://servera.lab.example.com then it should give below Output:
+        Welcome to serverb.lab.example.com on 172.25.250.11
+- Reloading the browser produces Output from the alternet webserver:
+        Welcome to serverc.lab.example.com on 172.25.250.12
+The playbook contains a Play that runs on webservers hostgroup and use the phpinfo role.
+- Browsing to host in the webservers host Group with the url URL/hello.php then it should give below Output:
+        Hello PHP World from FQDN
+For example Browsing to http://serverb.lab.example.com/hello.php produces the following Output:
+        Hello PHP World from serverb.lab.example.com
+Note: along with various Details of the PHP configuration include the Version of PHP that is installed.
+Similary, Browsing to http://serverc.lab.example.com/hello.php produces the following Output:
+        Hello PHP World from serverc.lab.example.com
+Note: along with various Details of the PHP configuration include the Version of PHP that is installed.
+
+# cd ~/ansible/
+# vim deploy-haproxy.yml
+---
+- name: deploy haproy role on balancer host Group
+  hosts: balancer
+  roles:
+    - balancer
+
+- name: deploy phpinfo role on webservers host Group
+  hosts: webservers
+  roles:
+    - phpinfo
+
+#vim roles/balancer/templates/haproxy.cfg.j2
+---
+haproxy_appservers:
+  - name: serverb.lab.example.com
+    ip: 172.25.250.11
+    backend_port: 80
+
+  - name: serverc.lab.example.com
+    ip: 172.25.250.12
+    backend_port: 80
+
+# vim roles/phpinfo/templates/hello.j2 #(to see the Name of variables)
+# vim roles/phpinfo/vars/main.yml
+---
+web_message: Hello PHP World
+
+# anr deploy-haproxy.yml
+# curl http://serverb.lab.example.com
+on the browser, enter this url
+# http://serverb.lab.example.com/hello.php
+the first line should be "Hello PHP World from serverb.lab.example.com"
+
+
+9. create and use a Logical volume
+Create a playbook called /home/admin/ansible/lvm.yml that runs on all managed nodes that does the following:
+* creates a Logical volume with these requirements:
+- The Logical volume is created in the research volume Group
+- The Logical volume name is 'data'
+- The Logical volume size is 1500 MiB
+* Format the Logical Volume with the ext4 file System
+* if the requested Logical volume size cannot be created, the error message "could not create Logical volume of that size" should
+be displayed and size 800 MiB should be used instead.
+* if the volume research does not exist, the error message volume Group does not exist should be displayed
+* Does Not mount the Logical volume in any way.
+
+# cd ~/ansible
+# vim lvm.yml
+---
+- name: Manage Logical Volume on managed nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: Check if volume group 'research' exists
+      command: "vgs research"
+      register: vg_check
+      ignore_errors: true
+
+    - name: Fail if volume group 'research' does not exist
+      fail:
+        msg: "Volume Group does not exist"
+      when: vg_check.failed
+
+    - name: Create logical volume 'data' with 1500 MiB in VG research
+      lvol:
+        vg: research
+        lv: data
+        size: 1500m
+      register: lv_1500
+      when: not vg_check.failed
+
+    - name: Check if creation of LV 'data' with 1500 MiB failed
+      debug:
+        msg: "Could not create Logical volume of that size; using fallback size of 800 MiB"
+      when: lv_1500.failed
+
+    - name: Create logical volume 'data' with 800 MiB fallback
+      lvol:
+        vg: research
+        lv: data
+        size: 800m
+      register: lv_800
+      when: lv_1500.failed
+
+    - name: Format logical volume 'data' with ext4 filesystem
+      filesystem:
+        fstype: ext4
+        dev: "/dev/research/data"
+      when: (lv_1500 is defined and not lv_1500.failed) or (lv_800 is defined and not lv_800.failed)
+
+# ansc lvm.yml
+# anr lvm.yml
+
+
+10. Generate a host file with following requirements:
+* Download an initial template file from http://materials.example.com/hosts.j2 to /home/admin/ansible
+* Complete the template file so that it can be used to generate a file with a line for each host in the same Format as /etc/hosts:
+      172.25.250.9 Workstation.lab.example.com Workstation
+* Create a playbook called /home/admin/ansible/hosts.yml that uses this template to generate the file /etc/myhosts on hosts in the
+dev host Group.
+* When run the playbook, the file /etc/myhosts on dev host Group should have a line for each managed hosts:
+127.0.0.1 localhost localhost.localdomain localhost4.localdomain4
+::1 localhost localhost.localdomain localhost6.localdomain6
+172.25.250.13 serverd.lab.example.com serverd
+
+Note: The order in which the inventory hostnames appear is not important.
+
+#cd ~/ansible
+# wget http://materials.example.com/hosts.j2
+vim hosts.j2
+{% for host in groups['dev'] %}
+{{ hostvars[host]['ansible_facts']['default_ipv4']['address'] }} {{ hostvars[host]['ansible_facts']['fqdn'] }} {{ hostvars[host]['ansible_facts']['hostname'] }}
+{% endfor%}
+
+# vim hosts.yml
+---
+- hosts: dev
+  gather_facts: true
+  tasks:
+    - template:
+        src: hosts.j2
+        dest: /etc/myhosts
+
+
+# anr hosts.yml
+# ansible all -m command 'cat /etc/myhosts' #(to verify)
+
+
+11. Modify the file Content
+Create a playbook called /home/admin/ansible/issue.yml
+* The Playbook runs on all managed hosts
+* The playbook replaces the Content of /etc/issue with a single line of text as follows:
+- On hosts in the dev hostgroup, the line reads: Development
+- On hosts in the test hostgroup, the line read: Test 
+- On hosts in the prod hostgroup, the line read: Production
+
+# cd ~/ansible
+# vim issue.yml
+---
+- name: Modify /etc/issue content on managed hosts
+  hosts: all
+  tasks:
+    - name: Set /etc/issue content to "Development" on dev hosts
+      copy:
+        dest: /etc/issue
+        content: "Development\n"
+      when: inventory_hostname in groups['dev']
+
+    - name: Set /etc/issue content to "Test" on test hosts
+      copy:
+        dest: /etc/issue
+        content: "Test\n"
+      when: inventory_hostname in groups['test']
+
+    - name: Set /etc/issue content to "Production" on prod hosts
+      copy:
+        dest: /etc/issue
+        content: "Production\n"
+      when: inventory_hostname in groups['prod']
+
+# anr issue.yml
+# ansible all -m command 'cat /etc/issue' #(verify)
+
+12. Create a web Content Directory
+Create a playbook called /home/admin/ansible/webconten.yml as follows:
+* one play runs managed node in the dev hostgroup
+* Create the Directory /webdev with the following requirement:
+- Membership in the webdev Group
+- it has regular permissions: owner=r+w+x, group=r+w+x, other=r+x
+- it has Special pemission: set Group GID
+* Symbolically link /var/www/html/webdev to /webdev
+* Create the file /webdev/index.html with a single line of text that reads: Development
+* Browsing this Directory on host in the dev host Group (for example http://serverd.lab.example.com/webdev/) produces following Output:
+                        Development
+Note: - Need to check the webdev Group is exists or not if not create it. (some time question as about apache in place of webdev Group.
+in that case, we don't Need to create apache Group ist already there by Default.
+* another Play runs managed node in the test hostgroup
+* Create the Directory /opsmgr with the following requirement:
+- Membership in the 'opsmgr' Group
+- it has regular permissions: owner=r+w+x, group=r+w+x, other=r+x
+- it has Special pemission: set Group GID
+
+# cd ~/ansible
+# vim webcontent.yml
+---
+- name: Create web content directory on dev hosts
+  hosts: dev
+  tasks:
+    - name: Ensure group 'webdev' exists
+      group:
+        name: webdev
+        state: present
+
+    - name: Create /webdev directory with setgid and proper permissions
+      file:
+        path: /webdev
+        state: directory
+        owner: root
+        group: webdev
+        mode: "2775"    # 2 = setgid; 7=rwx (owner), 7=rwx (group), 5=r-x (others)
+        setype: httpd_sys_content_t
+
+    - name: Create symbolic link from /var/www/html/webdev to /webdev
+      file:
+        src: /webdev
+        dest: /var/www/html/webdev
+        state: link
+        force: true
+
+    - name: Create /webdev/index.html with content "Development"
+      copy:
+        dest: /webdev/index.html
+        content: "Development\n"
+        owner: root
+        group: webdev
+        mode: 0644
+        setype: httpd_sys_content_t
+
+- hosts: test
+  tasks:
+    - name: Ensure group 'opsmgr' exists
+      group:
+        name: opsmgr
+        state: present
+
+    - name: Create /opsmgr directory with setgid and proper permissions
+      file:
+        path: /opsmgr
+        state: directory
+        owner: root
+        group: opsmgr
+        mode: "2775"   
+        setype: httpd_sys_content_t
+
+# anr webcontent.yml 
+# curl http://serverb.exaple.com/webdev/  --> Development  #(verify)
+
+13. Generate a Hardware Report
+Create a playbook called /home/admin/ansible/hwreport.yml that produces an Output file called /root/hwreport.txt on all managed nodes with the following Information:
+- Inventory hostname
+- Total Memory in MB
+- BIOS Version
+- Size of disk device vda
+- Size of disk device vdb
+- Each line og the Output file containes a single key=value pair
+* your playbook should:
+- Download the file from http://server.network.example.com/materials/hwreport.empty and save it is as /root/hwreport.txt
+- modify /root/hwreport.txt with correct values
+
+The file Looks like:
+"
+HOSTNAME=inventory_hostname
+BIOS=bios_version
+TOTAL_RAM=memory in mb
+VDA_SIZE=disk size
+VDB_SIZE=disk size
+"
+
+# cd ~/ansible
+# wget http://server.network.example.com/materials/hwreport.empty
+# vim hwreport.yml
+---
+- name: Generate hardware report on all managed nodes
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Download initial hwreport template
+      get_url:
+        url: "http://server.network.example.com/materials/hwreport.empty"
+        dest: /root/hwreport.txt
+        mode: '0644'
+
+    - name: Update HOSTNAME in hwreport.txt
+      lineinfile:
+        path: /root/hwreport.txt
+        regexp: '^HOSTNAME=.*'
+        line: "HOSTNAME={{ inventory_hostname | default('NONE') }}"
+
+    - name: Update BIOS version in hwreport.txt
+      lineinfile:
+        path: /root/hwreport.txt
+        regexp: '^BIOS=.*'
+        line: "BIOS={{ ansible_facts['bios_version'] | default('NONE') }}"
+
+    - name: Update TOTAL_RAM in hwreport.txt
+      lineinfile:
+        path: /root/hwreport.txt
+        regexp: '^TOTAL_RAM=.*'
+        line: "TOTAL_RAM={{ ansible_memtotal_mb | default('NONE') }}"
+
+    - name: Update VDA_SIZE in hwreport.txt
+      lineinfile:
+        path: /root/hwreport.txt
+        regexp: '^VDA_SIZE=.*'
+        line: "VDA_SIZE={{ ansible_facts['devices']['vda']['size'] | default('NONE') }}"
+
+    - name: Update VDB_SIZE in hwreport.txt
+      lineinfile:
+        path: /root/hwreport.txt
+        regexp: '^VDB_SIZE=.*'
+        line: "VDB_SIZE={{ ansible_facts['devices']['vdb']['size'] | default('NONE') }}"
+
+
+# anr hwreport.yml
+# ansible all -m command -a "cat /root/hwreport.txt" #(verify)
+
+
+14. Create a Password vault:
+create an ansible vault to store user Password as follows:
+* The Name of the vault is /home/admin/ansible/locker.yml
+* The vault contains two variables with names:
+- pw_developer with value Imadev
+- pw_manager with value Imamgr
+* The Password to encrypt and decrypt the vault is 'redhat'
+* The password is stored in the file /home/admin/ansible/secret.txt
+
+# cd ~/ansible
+# ansible-vault create locker.yml
+---
+pw_developer: Imadev
+pw_manager: Imamgr
+
+# vim secret.txt
+redhat
+#chmod 600 secret.txt
+
+# ansible-vault view locker.yml --vault-password-file=secret.txt #(verify)
+
+15. creat user accounts.
+* Download a list of user to be created from http://materials.example.com/user_list.yml
+*using the Password vault /home/admin/ansible/locker.yml created elsewhere in this exam, create a playbook called
+/home/admin/ansible/users.yml that creat user Account as following:
+* User with Job description of developer should be:
+- create on managed node in the dev and test host group
+- assigned the Password from the pw_developer variable
+- a member of supplementary Group devops
+* User with a Job description of Manager should be:
+- create on managed node in the prod host Group
+- assigned the Password from the pw_manager variable
+- a member of supplementary Group opsmgr
+* Password should use the SH512 has format
+
+file http://materials.example.com/user_list.yml looks like:
+users:
+   - name: Sally
+     uid: 1200
+     job: developer
+
+   - name: bob
+     uid: 1201
+     job: developer
+
+   - name: fred
+     uid: 1202
+     job: manager
+
+# cd ~/ansible
+# wget http://materials.example.com/user_list.yml
+# vim users.yml
+---
+- name: Create developer user accounts on dev and test hosts
+  hosts: dev,test
+  vars_files:
+    - locker.yml
+    - user_list.yml
+  tasks:
+    - name: create group
+      group:
+        name: devops
+        state: present
+
+    - name: Create developer user accounts
+      user:
+        name: "{{ item.name | lower }}"
+        uid: "{{ item.uid }}"
+        password: "{{ pw_developer | password_hash('sha512') }}"
+        groups: devops
+        create_home: true
+        state: present
+      loop: "{{ users }}"
+      when: item.job == 'developer'
+
+- name: Create manager user accounts on prod hosts
+  hosts: prod
+  vars_files:
+    - locker.yml
+    - user_list.yml
+  tasks:
+    - name: create group
+      group:
+        name: opsmgr
+        state: present
+
+    - name: Create manager user accounts
+      user:
+        name: "{{ item.name | lower }}"
+        uid: "{{ item.uid }}"
+        password: "{{ pw_manager | password_hash('sha512') }}"
+        groups: opsmgr
+        create_home: true
+        state: present
+      loop: "{{ users }}"
+      when: item.job == 'manager'
+
+
+# ansible-navigator run users.yml -m stdout --vault-password-file=secret.txt
+# ansible prod -m command -a "getent passwd | grep -i fred" (verify)
+
+16. Rekey an Ansible vault
+Rekey an existing ansible vault as follows:
+- Download the Ansible vault file from http://materials.example.com/salaries.yml to /home/admin/ansile/salaries.yml
+- The current vault Password is redhat
+- The new vault Password is redhat@123
+- The vault file remains in an encrypted state with the new Password
+
+# cd ~/ansible
+# wget http://materials.example.com/salaries.yml
+# ansible-vault rekey salaries.yml
+enter the current and then the new Password
+# echo "redhat@123" > new_secret.txt
+# chmod 600 new_secret.txt
+# ansible-vault view salaries.yml --vault-password-file=new_secret.txt
+
+# ansible-vault view salaries.yml  (enter the new Password to verify)
+
+
+17. create a cronjob
+Create a cronjob for user natasha in all nodes, the playbook Name crontab.yml and the Job Details are:
+-every 2 minutes the Job will execute logger "EX294 in progress"
+
+# cd ~/ansible
+# vim cron.yml
+---
+- name: Create cronjob for user natasha on all nodes
+  hosts: all
+  tasks:
+    - name: Setup cron job for natasha to log "EX294 in progress" every 2 minutes
+      cron:
+        name: "EX294 status logger"
+        user: natasha
+        minute: "*/2"
+        job: 'logger "EX294 in progress"'
+        state: present
+
+# anr cron.yml
+# ansible all -m command -a "crontab -u natasha -l" #(verify)
+
+
+18. Create a playbook named selinux.yml and use rhel system roles.
+Set selinux mode as enforcing in all managed nodes
+
+# vim ~/ansible/selinux.yml
+---
+- name: Configure SELinux as enforcing mode
+  hosts: all
+  become: true
+  vars:
+    selinux_state: enforcing
+  roles:
+    - redhat.rhel_system_roles.selinux
