@@ -5,6 +5,9 @@ import path from "path"
 import { remark } from "remark"
 import html from "remark-html"
 import matter from "gray-matter"
+import { db } from "@/db"
+import { labTasks } from "@/db/schemas/LabSchema"
+import { eq, and } from "drizzle-orm";
 
 export interface LabExercise {
   id: string
@@ -15,16 +18,18 @@ export interface LabExercise {
 }
 
 export interface LabQuestion {
-  id: string
-  labId: string
-  title: string
-  order: number
-  metadata: {
-    title: string
-    order: number
-    description?: string
-    [key: string]: any
-  }
+  id: string;
+  labId: string | null;
+  title: string;
+  order: number;
+  metadata:
+    | {
+        title: string;
+        order: number;
+        description?: string | null;
+        [key: string]: any;
+      }
+    ;
 }
 
 export async function getExerciseData(labId: string, questionId: string): Promise<LabExercise> {
@@ -136,4 +141,97 @@ export async function getFirstLabQuestion(labId: string): Promise<string> {
 
   // Return the first question ID without the .md extension
   return path.parse(questions[0]).name
+}
+
+export async function getLabQuestionsFromDB(labId: string): Promise<LabQuestion[]> {
+
+  console.log(`Fetching questions for lab: ${labId}`);
+
+  const rows = await db
+    .select()
+    .from(labTasks)
+    .where(eq(labTasks.labId, labId))
+    .orderBy(labTasks.order);
+  if (rows.length === 0) {
+    throw new Error(`No questions found for lab ${labId}`)
+  }
+
+
+  return rows.map(row => ({
+    id: row.id,
+    labId: row.labId,
+    title: row.title,
+    order: row.order,
+    metadata: {
+      title: row.title,
+      order: row.order,
+      description: row.description,
+      difficulty: row.difficulty,
+      points: row.points,
+      hint: row.hint,
+      validationSteps: row.validationSteps,
+      markdown: row.markdown,
+    }
+  }))
+}
+
+export async function getExerciseDataFromDB(
+  labId: string,
+  questionId: string
+): Promise<LabQuestion> {
+  const labs = await db
+    .select()
+    .from(labTasks)
+    .where(and(eq(labTasks.labId, labId), eq(labTasks.id, questionId)))
+    .orderBy(labTasks.order)
+    .limit(1);
+  if (labs.length === 0) {
+    throw new Error(`No questions found for lab ${labId}`);
+  }
+  const labQuestion: LabQuestion = {
+    id: labs[0].id,
+    labId: labs[0].labId,
+    title: labs[0].title,
+    order: labs[0].order,
+    metadata: {
+      title: labs[0].title,
+      order: labs[0].order,
+      description: labs[0].description,
+      difficulty: labs[0].difficulty,
+      points: labs[0].points,
+      hint: labs[0].hint,
+      validationSteps: labs[0].validationSteps,
+      markdown: labs[0].markdown,
+    },
+  };
+  return labQuestion;
+}
+
+export async function getFirstLabQuestionFromDB(labId: string): Promise<LabQuestion | null> {
+  const labs = await db
+    .select()
+    .from(labTasks)
+    .where(eq(labTasks.labId, labId))
+    .orderBy(labTasks.order)
+    .limit(1);
+
+  if (labs.length === 0) return null;
+
+  const labQuestion: LabQuestion = {
+    id: labs[0].id,
+    labId: labs[0].labId,
+    title: labs[0].title,
+    order: labs[0].order,
+    metadata: {
+      title: labs[0].title,
+      order: labs[0].order,
+      description: labs[0].description,
+      difficulty: labs[0].difficulty,
+      points: labs[0].points,
+      hint: labs[0].hint,
+      validationSteps: labs[0].validationSteps,
+      markdown: labs[0].markdown,
+    },
+  };
+  return labQuestion;
 }

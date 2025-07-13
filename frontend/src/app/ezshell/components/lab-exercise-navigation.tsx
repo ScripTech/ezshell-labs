@@ -5,7 +5,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { getLabQuestions } from '@/lib/services/labServices'
+import { getLabQuestions, getLabQuestionsFromDB } from '@/lib/services/labServices'
 import type { LabQuestion } from '@/lib/services/labServices'
 
 interface Question extends LabQuestion {
@@ -24,8 +24,7 @@ const QuestionNavigator = () => {
     const fetchLabQuestions = async () => {
       try {
         const labId = searchParams.get('lab') ?? 'EX200'
-        const labQuestions = await getLabQuestions(labId)
-
+        const labQuestions = await getLabQuestionsFromDB(labId)
         // Questions now include metadata from markdown files
         const formattedQuestions = labQuestions.map(q => ({
           ...q,

@@ -7,10 +7,12 @@ import { io } from 'socket.io-client'
 import { ShellSectionComponent } from './components/shell-section'
 import { TaskSection } from './components/task-section'
 
-const socket = io('http://localhost:3001');
+const socket = io(process.env.BACKEND_WS ?? 'http://localhost:3001', {
+    timeout: 5000,
+    reconnection: false
+})
 
 interface Props { }
-
 
 const EZSShellView = () => {
 

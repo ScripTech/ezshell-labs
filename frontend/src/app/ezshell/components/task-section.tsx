@@ -8,8 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import QuestionNavigator from './lab-exercise-navigation'
 import { FaCheckCircle } from 'react-icons/fa'
 import React from 'react'
-import { getExerciseData, getFirstLabQuestion } from '@/lib/services/labServices'
+import { getExerciseData, getExerciseDataFromDB, getFirstLabQuestionFromDB, LabQuestion } from '@/lib/services/labServices'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism"
+import { metadata } from '../../layout';
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 
 type validationResult = {
@@ -43,13 +48,17 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           const labId = searchParams.get('lab') ?? 'EX200'
           let questionId = searchParams.get('question')
 
-          questionId ??= await getFirstLabQuestion(labId);
+          let firstLabQuestion: LabQuestion | null = null
+          // Always use DB for questions
+          if (!questionId) {
+            firstLabQuestion = await getFirstLabQuestionFromDB(labId);
+            questionId = firstLabQuestion ? firstLabQuestion.id : '';
+          }
 
           setQuestion(questionId)
-
-          const data = await getExerciseData(labId, questionId)
-          setExerciseNotes(data.exerciseHtml)
-          setExerciseHint(data.exerciseHintHtml)
+          const data = await getExerciseDataFromDB(labId, questionId)
+          setExerciseNotes(firstLabQuestion ? firstLabQuestion.metadata.markdown : data.metadata.markdown)
+          // setExerciseHint(data.exerciseHintHtml)
           sethasCheckAnswer(false)
           setValidationStatus([])
         } catch (error) {
@@ -137,7 +146,33 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
         <TabsContent value="shell-content">
           <ScrollArea className='h-[calc(95vh_-_theme(spacing.24))]'>
             <div className='p-3 rounded-md mb-64'>
-              <div className='prose text-sm' dangerouslySetInnerHTML={{ __html: exerciseNotes }} />
+
+              <div className="prose prose-invert max-w-none rounded-lg mb-8">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ inline, className, children, style, ...props }: React.ComponentProps<'code'> & { inline?: boolean }) {
+                      const match = /language-(\w+)/.exec(className || "")
+                      return !inline && match ? (
+                        <SyntaxHighlighter
+                          style={oneDark}
+                          language={match[1]}
+                          PreTag="div"
+                        >
+                          {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} style={style} {...props}>
+                          {children}
+                        </code>
+                      )
+                    }
+                  }}
+                >
+                  {exerciseNotes}
+                </ReactMarkdown>
+              </div>
+
               <div className="mt-6 text-sm">
                 {validationStatus.map((status, index) => (
                   <li key={index} className='flex space-x-2 items-center' style={{ marginBottom: '8px' }}>

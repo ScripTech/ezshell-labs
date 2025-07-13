@@ -95,7 +95,7 @@ export default function LabDetailsPage() {
       // const data = await response.json()
       setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
       toast.success('Successfully enrolled in lab')
-      router.push(`/ezshell?lab=${labId}&question=question-1-network-config`)
+      router.push(`/ezshell?lab=${labId}`)
     } catch (error) {
       console.error('Enrollment error:', error)
       toast.error('Failed to enroll in lab')
@@ -147,7 +147,7 @@ export default function LabDetailsPage() {
           <Button
             size="lg"
             className="mt-8"
-            onClick={() => router.push(`/ezshell?lab=${ lab.id }&question=question-1-network-config`)}
+            onClick={() => router.push(`/ezshell?lab=${ lab.id }`)}
           >
             Continue Lab
             <ArrowRight className="ml-2 h-4 w-4" />
