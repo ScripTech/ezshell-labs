@@ -24,10 +24,23 @@ const labSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
   description: z.string().min(10, "Description must be at least 10 characters").max(5000),
   duration: z.number().int().min(10, "Minimum duration is 10 minutes").max(240, "Maximum duration is 240 minutes"),
-  imageUrl: z.string().url("Must be a valid URL").optional(),
+  imageUrl: z.string().optional(),
 })
 
-export function LabForm() {
+export function LabForm({
+  initialValues,
+  labId,
+  mode = "create",
+}: {
+  initialValues?: {
+    name: string
+    description: string
+    duration: number
+    imageUrl?: string
+  }
+  labId?: string
+  mode?: "create" | "edit"
+}) {
   const router = useRouter()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -36,7 +49,7 @@ export function LabForm() {
 
   const form = useForm<z.infer<typeof labSchema>>({
     resolver: zodResolver(labSchema),
-    defaultValues: {
+    defaultValues: initialValues || {
       name: "",
       description: "",
       duration: 30,
@@ -61,20 +74,24 @@ export function LabForm() {
     }
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/labs", {
-        method: "POST",
+      const url = mode === "edit" && labId
+        ? `/api/admin/labs/${labId}`
+        : "/api/admin/labs"
+      const method = mode === "edit" ? "PUT" : "POST"
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(result.data),
       })
       if (!res.ok) {
         const data = await res.json()
-        setApiError(data.error || "Failed to create lab")
+        setApiError(data.error || "Failed to save lab")
         setLoading(false)
         return
       }
       router.push("/admin/labs")
     } catch (err) {
-      setApiError("Failed to create lab")
+      setApiError("Failed to save lab")
       setLoading(false)
     }
   }
@@ -164,7 +181,7 @@ export function LabForm() {
             <div className="text-red-600 text-sm">{apiError}</div>
           )}
           <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Lab"}
+            {loading ? (mode === "edit" ? "Saving..." : "Creating...") : (mode === "edit" ? "Save Changes" : "Create Lab")}
           </Button>
         </form>
       </Form>

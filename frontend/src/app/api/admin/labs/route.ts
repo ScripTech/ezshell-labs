@@ -11,7 +11,7 @@ const labSchema = z.object({
   name: z.string().min(3).max(100),
   description: z.string().min(10).max(5000),
   duration: z.number().int().min(10).max(240),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -33,9 +33,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const result = labSchema.safeParse(body);
-
   if (!result.success) {
-    return NextResponse.json({ error: "Validation failed", issues: result.error.issues }, { status: 400 });
+    return NextResponse.json({ error: "Form Validation failed! Invalid data", issues: result.error.issues }, { status: 400 });
   }
 
   try {
