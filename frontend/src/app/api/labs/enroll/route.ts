@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { eq } from 'drizzle-orm'
 import { authOptions } from '../../auth/[...nextauth]/route'
-import { labs, labEnrollments } from '@/db/schemas/LabSchema'
+import { labs, labEnrollments, labTasks, labTaskProgress } from '@/db/schemas/LabSchema'
 import { nanoid } from 'nanoid'
 
 export async function POST(request: Request) {
@@ -53,6 +53,22 @@ export async function POST(request: Request) {
         enrolledAt: new Date(),
       })
       .returning();
+
+    // Initialize lab_task_progress for all tasks in the lab
+    const tasks = await db.select().from(labTasks).where(eq(labTasks.labId, labId));
+    if (tasks.length > 0) {
+      await db.insert(labTaskProgress).values(
+        tasks.map(task => ({
+          id: nanoid(),
+          userId,
+          labTaskId: task.id,
+          labEnrollmentId: enrollment.id,
+          score: 0,
+          completed: false,
+          createdAt: new Date(),
+        }))
+      );
+    }
 
     return NextResponse.json({
       ...enrollment,
