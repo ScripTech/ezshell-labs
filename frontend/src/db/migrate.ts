@@ -11,7 +11,7 @@ async function runMigrations() {
 
   console.log('⏳ Running migrations...');
 
-  await migrate(db, { migrationsFolder: 'drizzle' });
+  await migrate(db, { migrationsFolder: 'drizzle/new' });
 
   console.log('✅ Migrations completed!');
 

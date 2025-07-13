@@ -4,6 +4,7 @@ import {
   text,
   integer,
   boolean,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { users } from "./UserSchema";
 import { relations } from "drizzle-orm";
@@ -55,10 +56,37 @@ export const labExerciseProgress = pgTable("lab_exercise_progress", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const labTasks = pgTable("lab_tasks", {
+  id: text("id").primaryKey(),
+  labId: text("labId").references(() => labs.id, { onDelete: "cascade" }),
+  order: integer("order").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  difficulty: text("difficulty"),
+  points: integer("points").notNull().default(0),
+  hint: text("hint"),
+  validationSteps: jsonb("validation_steps"), // array of strings
+  markdown: text("markdown"), // full markdown content
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const labTaskProgress = pgTable("lab_task_progress", {
+  id: text("id").primaryKey(),
+  userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
+  labTaskId: text("labTaskId").references(() => labTasks.id, { onDelete: "cascade" }),
+  labEnrollmentId: text("labEnrollmentId").references(() => labEnrollments.id, { onDelete: "cascade" }),
+  score: integer("score").default(0),
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const labRelations = relations(labs, ({ many }) => ({
   sessions: many(labSessions),
   enrollments: many(labEnrollments),
   exercises: many(labExercises),
+  tasks: many(labTasks),
 }));
 
 export const labSessionRelations = relations(labSessions, ({ one }) => ({
@@ -89,4 +117,27 @@ export const labExerciseRelations = relations(labExercises, ({ one, many }) => (
     references: [labs.id],
   }),
   progress: many(labExerciseProgress),
+}));
+
+export const labTaskRelations = relations(labTasks, ({ one, many }) => ({
+  lab: one(labs, {
+    fields: [labTasks.labId],
+    references: [labs.id],
+  }),
+  progress: many(labTaskProgress),
+}));
+
+export const labTaskProgressRelations = relations(labTaskProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [labTaskProgress.userId],
+    references: [users.id],
+  }),
+  labTask: one(labTasks, {
+    fields: [labTaskProgress.labTaskId],
+    references: [labTasks.id],
+  }),
+  enrollment: one(labEnrollments, {
+    fields: [labTaskProgress.labEnrollmentId],
+    references: [labEnrollments.id],
+  }),
 }));
