@@ -24,6 +24,12 @@ const pathLabels: Record<string, string> = {
 
 const userNavItems = [
   {
+    title: "Dashboard",
+    url: "/user/dashboard",
+    isActive: "true",
+    items: [],
+  },
+  {
     title: "Playground",
     url: "/user",
     isActive: "true",
