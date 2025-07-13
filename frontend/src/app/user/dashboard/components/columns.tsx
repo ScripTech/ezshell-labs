@@ -1,6 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
+import Link from "next/link"
 
 export const columns: ColumnDef<any>[] = [
 	{
@@ -12,11 +13,13 @@ export const columns: ColumnDef<any>[] = [
 	{
 		accessorKey: "title",
 		header: "Challenge",
-		cell: ({ row }: any) => (
-			<span className="text-blue-600 hover:underline cursor-pointer">
-				{row.original.title}
-			</span>
-		),
+		cell: ({ row }: any) => {
+      return (
+        <span className="text-blue-600 hover:underline cursor-pointer">
+          <Link href={`/ezshell?lab=${ row.original.lab }&question=${ row.original.id }`}>{row.original.title}</Link>
+        </span>
+      )
+    },
 	},
 	{
 		accessorKey: "difficulty",
