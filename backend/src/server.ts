@@ -116,6 +116,10 @@ httpSocketServer.on("connection", (socket) => {
     },
   });
 
+  socket.emit("connected", {
+    message: "Connected to the terminal service",
+  });
+
   socket.on("disconnect", () => {
     ptySession.dispose();
     console.log("A user disconnected");
