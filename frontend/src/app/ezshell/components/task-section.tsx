@@ -204,7 +204,7 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                       } else {
                         return (
                           <Button type='button' variant={'outline'} className='border-red-700' onClick={() => checkExerciseAnswer(question)}>
-                            Reavaliar resposta<span>
+                            Submit Answer<span>
                               <LucideXCircle className="h-5 w-5 ml-2 text-red-700" />
                             </span>
                           </Button>
@@ -213,7 +213,7 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                     } else {
                       return (
                         <Button type='button' variant={'outline'} onClick={() => checkExerciseAnswer(question)} >
-                          Avaliar resposta<span>
+                          Submit Answer<span>
                             <CheckCheckIcon className="h-5 w-5 ml-2" />
                           </span>
                         </Button>

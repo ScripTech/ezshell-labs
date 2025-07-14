@@ -128,9 +128,7 @@ httpSocketServer.on("connection", (socket) => {
   // question validation block
 
   socket.on("validate-exercise", async ({ labId, questionId }) => {
-
-
-    console.log(labId, questionId);
+    console.info("Validating exercise for lab:", labId, "question:", questionId);
 
     const handler = validationHandlerFactory.getHandler(labId);
     if (handler) {
