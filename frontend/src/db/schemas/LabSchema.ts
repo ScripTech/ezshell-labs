@@ -80,7 +80,12 @@ export const labTaskProgress = pgTable("lab_task_progress", {
   score: integer("score").default(0),
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
+  attempts: integer("attempts").default(0), // Track number of attempts
+  maxAttempts: integer("max_attempts").default(3), // Maximum allowed attempts
+  lastAttemptAt: timestamp("last_attempt_at"), // Track when last attempt was made
+  validationResults: jsonb("validation_results"), // Store detailed validation results
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const labRelations = relations(labs, ({ many }) => ({
