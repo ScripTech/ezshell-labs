@@ -47,7 +47,7 @@ export const labs = pgTable("labs", {
 	duration: integer().default(30).notNull(),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
-	imageUrl: text().default('),
+	imageUrl: text().default(''),
 });
 
 export const user = pgTable("user", {

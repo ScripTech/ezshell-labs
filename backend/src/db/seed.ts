@@ -1,5 +1,5 @@
 import { db, closeConnection } from './index';
-import { users } from './schemas/UserSchema';
+import { users } from './schemas-old/UserSchema';
 
 async function seed() {
   console.log('🌱 Seeding database...');

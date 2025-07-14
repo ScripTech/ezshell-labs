@@ -26,6 +26,10 @@ import { DeploymentController } from './controllers/labs/do280/DeploymentControl
 import { ScalingController } from './controllers/labs/do280/ScalingController';
 import { AutoScalingController } from "./controllers/labs/do280/AutoScalingController";
 import { PtySession } from "./terminal/PtySession";
+import { ServiceOrientedValidationHandler } from "./handlers/ServiceOrientedValidationHandler";
+import { EnhancedWebSocketService } from "./services/EnhancedWebSocketService";
+import { ValidationTaskService } from "./services/ValidationTaskService";
+import { progressService } from "./services/ProgressService";
 import apiRoutes from "./routes/api";
 
 dotenv.config();
@@ -110,8 +114,20 @@ const validationHandlerFactory = new LabValidationHandlerFactory(
   do280Handler
 );
 
+// Initialize new Service-Oriented validation handler
+const serviceOrientedHandler = new ServiceOrientedValidationHandler();
+
+// Initialize Enhanced WebSocket Service with advanced features
+const validationTaskService = new ValidationTaskService();
+const enhancedWebSocketService = new EnhancedWebSocketService(httpSocketServer, validationTaskService);
+
+console.log('✅ Enhanced WebSocket Service initialized with progress persistence and real-time analytics');
+
 httpSocketServer.on("connection", (socket) => {
   console.log("Client connected to Socket server");
+
+  // Enhanced WebSocket Service handles all the new features automatically
+  // The EnhancedWebSocketService constructor sets up all event handlers
 
   // Example: Use SSH session
   const ptySession = new PtySession(socket, {
@@ -127,16 +143,17 @@ httpSocketServer.on("connection", (socket) => {
   });
 
   socket.emit("connected", {
-    message: "Connected to the terminal service",
+    message: "Connected to the terminal service with enhanced features",
+    features: {
+      progressPersistence: true,
+      realtimeAnalytics: true,
+      stepByStepValidation: true,
+      learningInsights: true,
+      adminDashboard: true
+    }
   });
 
-  socket.on("disconnect", () => {
-    ptySession.dispose();
-    console.log("A user disconnected");
-  });
-
-  // question validation block
-
+  // Legacy validation support (maintained for backward compatibility)
   socket.on("validate-exercise", async ({ labId, questionId }) => {
     console.info("Validating exercise for lab:", labId, "question:", questionId);
 
@@ -148,14 +165,83 @@ httpSocketServer.on("connection", (socket) => {
     }
   });
 
-  // end block
+  // Enhanced Service-Oriented validation with progress persistence
+  socket.on("validate-task", async ({ taskId, labId, userId, sessionData }) => {
+    console.info("Service-Oriented validation for task:", taskId, "lab:", labId, "user:", userId);
 
-  socket.on("validate", (username) => {
-    validationController.handleValidation(socket, username);
+    try {
+      // Log the validation start event for analytics
+      const sessionId = enhancedWebSocketService.getUserSession(userId);
+      if (sessionId) {
+        await progressService.logRealtimeEvent(
+          userId,
+          sessionId,
+          'task-validation-start',
+          { taskId, labId, sessionData },
+          socket.id
+        );
+      }
+
+      await serviceOrientedHandler.handleValidation(socket, taskId, {
+        labId,
+        userId,
+        sessionData
+      });
+    } catch (error) {
+      console.error("Service-Oriented validation error:", error);
+      socket.emit('validation-error', {
+        taskId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
+  // Enhanced progress tracking endpoints
+  socket.on("request-progress-summary", async ({ userId, labId }) => {
+    try {
+      const insights = await progressService.getLearningInsights(userId, labId);
+      const activeSession = await progressService.getActiveSession(userId, labId);
+
+      socket.emit('progress-summary', {
+        insights,
+        activeSession,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      socket.emit('progress-error', { message: 'Failed to retrieve progress summary' });
+    }
+  });
+
+  // Real-time command tracking for enhanced analytics
+  socket.on("terminal-command", async ({ userId, command, output, exitCode }) => {
+    try {
+      const sessionId = enhancedWebSocketService.getUserSession(userId);
+      if (sessionId) {
+        await progressService.logRealtimeEvent(
+          userId,
+          sessionId,
+          'command-executed',
+          { command, output, exitCode },
+          socket.id
+        );
+      }
+    } catch (error) {
+      console.error("Failed to log command execution:", error);
+    }
+  });
+
+  // Enhanced disconnect handling with session cleanup
   socket.on("disconnect", () => {
-    console.log("Client disconnected");
+    ptySession.dispose();
+
+    // The EnhancedWebSocketService handles user session cleanup automatically
+    console.log("Client disconnected - session cleanup handled by EnhancedWebSocketService");
+  });
+
+  // Legacy validation handler (maintained for compatibility)
+  socket.on("validate", (username) => {
+    validationController.handleValidation(socket, username);
   });
 });
 
