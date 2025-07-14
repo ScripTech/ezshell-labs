@@ -98,6 +98,7 @@ export class ProgressService {
       sessionName: `${labId}-Session-${Date.now()}`,
       startedAt: new Date(),
       lastActiveAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // expires in 24 hours
       status: 'active',
       totalTimeSpent: 0,
       overallProgress: '0.00',

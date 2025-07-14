@@ -1,5 +1,6 @@
 import { Socket } from "socket.io";
 import { BasicValidationService } from "../../../services/ex200/BasicValidationService";
+import { validationTrackingService, ValidationContext } from "../../../services/ValidationTrackingService";
 
 export class BasicValidationController {
   private service: BasicValidationService;
@@ -8,7 +9,18 @@ export class BasicValidationController {
     this.service = new BasicValidationService();
   }
 
-  handleTarValidation = async (socket: Socket, questionId: string) => {
+  handleTarValidation = async (
+    socket: Socket,
+    questionId: string,
+    userId?: string,
+    labEnrollmentId?: string
+  ) => {
+    // If userId and labEnrollmentId are provided, use tracking service
+    if (userId && labEnrollmentId) {
+      return this.handleTarValidationWithTracking(socket, questionId, userId, labEnrollmentId);
+    }
+
+    // Fallback to original manual validation for backward compatibility
     socket.emit(`validation-${questionId}-step`, {
       step: "Create a tar archive",
       status: "loading",
@@ -20,7 +32,18 @@ export class BasicValidationController {
     });
   };
 
-  handleFilePermissionsValidation = async (socket: Socket, questionId: string) => {
+  handleFilePermissionsValidation = async (
+    socket: Socket,
+    questionId: string,
+    userId?: string,
+    labEnrollmentId?: string
+  ) => {
+    // If userId and labEnrollmentId are provided, use tracking service
+    if (userId && labEnrollmentId) {
+      return this.handleFilePermissionsWithTracking(socket, questionId, userId, labEnrollmentId);
+    }
+
+    // Fallback to original manual validation for backward compatibility
     socket.emit(`validation-${questionId}-step`, {
       step: "Owned by the root user and group",
       status: "loading",
@@ -117,5 +140,82 @@ export class BasicValidationController {
       step: "Recommended tuned profile",
       status: tunned ? "success" : "failed",
     });
+  };
+
+  /**
+   * Example of using ValidationTrackingService for comprehensive task validation
+   * This shows how to integrate attempt tracking, progressive scoring, and detailed validation steps
+   */
+  handleFilePermissionsWithTracking = async (
+    socket: Socket,
+    questionId: string,
+    userId: string,
+    labEnrollmentId: string
+  ) => {
+    const context: ValidationContext = {
+      socket,
+      questionId,
+      userId,
+      labEnrollmentId
+    };
+
+    // Create validation steps using the tracking service
+    const validationSteps = [
+      validationTrackingService.createValidationStep(
+        'root-ownership',
+        'File owned by root user and group',
+        25,
+        () => this.service.filePermissionsValidation_OwnedBy("root")
+      ),
+      validationTrackingService.createValidationStep(
+        'not-executable',
+        'File is not executable by anyone',
+        25,
+        () => this.service.filePermissionsValidation_NotExec()
+      ),
+      validationTrackingService.createValidationStep(
+        'natasha-read-write',
+        'User natasha can read and write',
+        25,
+        () => this.service.filePermissionsValidation_UserCanRead("natasha")
+      ),
+      validationTrackingService.createValidationStep(
+        'others-read-only',
+        'All other users can read only',
+        25,
+        () => this.service.filePermissionsValidation_UserCanRead("others")
+      )
+    ];
+
+    // Execute validation with full tracking
+    await validationTrackingService.executeValidationWithTracking(context, validationSteps);
+  };
+
+  /**
+   * Example of using ValidationTrackingService for tar archive validation
+   */
+  handleTarValidationWithTracking = async (
+    socket: Socket,
+    questionId: string,
+    userId: string,
+    labEnrollmentId: string
+  ) => {
+    const context: ValidationContext = {
+      socket,
+      questionId,
+      userId,
+      labEnrollmentId
+    };
+
+    const validationSteps = [
+      validationTrackingService.createValidationStep(
+        'tar-archive-created',
+        'Create a tar archive with correct files',
+        100,
+        () => this.service.tarValidation()
+      )
+    ];
+
+    await validationTrackingService.executeValidationWithTracking(context, validationSteps);
   };
 }

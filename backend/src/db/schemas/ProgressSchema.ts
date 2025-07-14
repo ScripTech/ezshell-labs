@@ -7,27 +7,30 @@ import {
   jsonb,
   decimal,
 } from "drizzle-orm/pg-core";
-// Reference existing tables instead of importing non-existent schemas
-const user = pgTable('user', { id: text('id').primaryKey() });
-const labs = pgTable('labs', { id: text('id').primaryKey() });
-const labTasks = pgTable('lab_tasks', { id: text('id').primaryKey() });
-const labEnrollments = pgTable('lab_enrollments', { id: text('id').primaryKey() });
 import { relations } from "drizzle-orm";
+// Import existing tables from their proper schemas
+import { users } from "./UserSchema";
+import { labs, labTasks, labEnrollments } from "./LabSchema";
 
 // Enhanced lab progress tracking with detailed persistence
 export const labProgressSessions = pgTable("lab_progress_sessions", {
   id: text("id").primaryKey(),
-  userId: text("userId").references(() => user.id, { onDelete: "cascade" }),
+  userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
   labId: text("labId").references(() => labs.id, { onDelete: "cascade" }),
   enrollmentId: text("enrollmentId").references(() => labEnrollments.id, { onDelete: "cascade" }),
   sessionName: text("sessionName"), // e.g., "EX200-Lab1-Session1"
   startedAt: timestamp("startedAt").defaultNow(),
   lastActiveAt: timestamp("lastActiveAt").defaultNow(),
   endedAt: timestamp("endedAt"),
-  status: text("status").default("active"), // active, paused, completed, abandoned
-  totalTimeSpent: integer("totalTimeSpent").default(0), // in seconds
+  pausedAt: timestamp("pausedAt"), // when session was paused
+  resumedAt: timestamp("resumedAt"), // when session was resumed
+  expiresAt: timestamp("expiresAt").notNull(), // calculated based on lab duration
+  status: text("status").default("active"), // active, paused, completed, abandoned, expired
+  totalTimeSpent: integer("totalTimeSpent").default(0), // in seconds (excluding paused time)
+  timeRemaining: integer("timeRemaining"), // in seconds, calculated field
   currentTaskId: text("currentTaskId").references(() => labTasks.id),
   overallProgress: decimal("overallProgress", { precision: 5, scale: 2 }).default("0"), // percentage
+  autoSaveInterval: integer("autoSaveInterval").default(30), // auto-save frequency in seconds
   metadata: jsonb("metadata").default({}), // session-specific data
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow(),
@@ -38,7 +41,7 @@ export const taskAttempts = pgTable("task_attempts", {
   id: text("id").primaryKey(),
   sessionId: text("sessionId").references(() => labProgressSessions.id, { onDelete: "cascade" }),
   taskId: text("taskId").references(() => labTasks.id, { onDelete: "cascade" }),
-  userId: text("userId").references(() => user.id, { onDelete: "cascade" }),
+  userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
   attemptNumber: integer("attemptNumber").notNull(), // 1, 2, 3, etc.
   startedAt: timestamp("startedAt").defaultNow(),
   completedAt: timestamp("completedAt"),
@@ -78,7 +81,7 @@ export const validationSteps = pgTable("validation_steps", {
 // Learning analytics and insights
 export const learningAnalytics = pgTable("learning_analytics", {
   id: text("id").primaryKey(),
-  userId: text("userId").references(() => user.id, { onDelete: "cascade" }),
+  userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
   labId: text("labId").references(() => labs.id, { onDelete: "cascade" }),
   totalTimeSpent: integer("totalTimeSpent").default(0), // in seconds
   totalAttempts: integer("totalAttempts").default(0),
@@ -98,7 +101,7 @@ export const learningAnalytics = pgTable("learning_analytics", {
 // Real-time events for WebSocket debugging and analytics
 export const realtimeEvents = pgTable("realtime_events", {
   id: text("id").primaryKey(),
-  userId: text("userId").references(() => user.id, { onDelete: "cascade" }),
+  userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
   sessionId: text("sessionId").references(() => labProgressSessions.id, { onDelete: "cascade" }),
   eventType: text("eventType").notNull(), // websocket-connect, validation-start, command-executed, etc.
   eventData: jsonb("eventData").default({}),
@@ -110,9 +113,9 @@ export const realtimeEvents = pgTable("realtime_events", {
 
 // Enhanced relations for comprehensive data access
 export const labProgressSessionsRelations = relations(labProgressSessions, ({ one, many }) => ({
-  user: one(user, {
+  user: one(users, {
     fields: [labProgressSessions.userId],
-    references: [user.id],
+    references: [users.id],
   }),
   lab: one(labs, {
     fields: [labProgressSessions.labId],
@@ -139,9 +142,9 @@ export const taskAttemptsRelations = relations(taskAttempts, ({ one, many }) => 
     fields: [taskAttempts.taskId],
     references: [labTasks.id],
   }),
-  user: one(user, {
+  user: one(users, {
     fields: [taskAttempts.userId],
-    references: [user.id],
+    references: [users.id],
   }),
   validationSteps: many(validationSteps),
 }));
@@ -154,9 +157,9 @@ export const validationStepsRelations = relations(validationSteps, ({ one }) => 
 }));
 
 export const learningAnalyticsRelations = relations(learningAnalytics, ({ one }) => ({
-  user: one(user, {
+  user: one(users, {
     fields: [learningAnalytics.userId],
-    references: [user.id],
+    references: [users.id],
   }),
   lab: one(labs, {
     fields: [learningAnalytics.labId],
@@ -165,9 +168,9 @@ export const learningAnalyticsRelations = relations(learningAnalytics, ({ one })
 }));
 
 export const realtimeEventsRelations = relations(realtimeEvents, ({ one }) => ({
-  user: one(user, {
+  user: one(users, {
     fields: [realtimeEvents.userId],
-    references: [user.id],
+    references: [users.id],
   }),
   session: one(labProgressSessions, {
     fields: [realtimeEvents.sessionId],

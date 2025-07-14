@@ -3,6 +3,7 @@ import { UserController } from '../controllers/UserController';
 import { TaskValidationController } from '../controllers/TaskValidationController';
 import { testConnection } from '../db';
 import progressRoutes from './progress';
+import validationRoutes from './validation';
 
 const router = Router();
 const userController = new UserController();
@@ -33,6 +34,9 @@ router.delete('/users/:id', userController.deleteUser.bind(userController));
 router.post('/validation/tasks/:taskId/execute', taskValidationController.executeTaskValidation.bind(taskValidationController));
 router.get('/validation/tasks/:taskId/config', taskValidationController.getTaskValidationConfig.bind(taskValidationController));
 router.get('/validation/types', taskValidationController.getAvailableValidationTypes.bind(taskValidationController));
+
+// Validation history and tracking routes
+router.use('/validation', validationRoutes);
 
 // Progress routes
 router.use('/progress', progressRoutes);
