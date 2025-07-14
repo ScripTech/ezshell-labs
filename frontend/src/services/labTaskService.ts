@@ -21,7 +21,7 @@ export async function importLabTasksFromMarkdown(
   labId: string,
   labFolder?: string
 ): Promise<ImportedLabTasks> {
-  const folder = path.join(LAB_TASKS_BASE_PATH, labId);
+  const folder = path.join(LAB_TASKS_BASE_PATH, labFolder ?? "");
 
   if (!fs.existsSync(folder ?? "")) {
     throw new Error(`Lab folder does not exist: ${labFolder}`);

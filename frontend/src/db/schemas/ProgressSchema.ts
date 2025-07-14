@@ -22,10 +22,15 @@ export const labProgressSessions = pgTable("lab_progress_sessions", {
   startedAt: timestamp("startedAt").defaultNow(),
   lastActiveAt: timestamp("lastActiveAt").defaultNow(),
   endedAt: timestamp("endedAt"),
-  status: text("status").default("active"), // active, paused, completed, abandoned
-  totalTimeSpent: integer("totalTimeSpent").default(0), // in seconds
+  pausedAt: timestamp("pausedAt"), // when session was paused
+  resumedAt: timestamp("resumedAt"), // when session was resumed
+  expiresAt: timestamp("expiresAt").notNull(), // calculated based on lab duration
+  status: text("status").default("active"), // active, paused, completed, abandoned, expired
+  totalTimeSpent: integer("totalTimeSpent").default(0), // in seconds (excluding paused time)
+  timeRemaining: integer("timeRemaining"), // in seconds, calculated field
   currentTaskId: text("currentTaskId").references(() => labTasks.id),
   overallProgress: decimal("overallProgress", { precision: 5, scale: 2 }).default("0"), // percentage
+  autoSaveInterval: integer("autoSaveInterval").default(30), // auto-save frequency in seconds
   metadata: jsonb("metadata").default({}), // session-specific data
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow(),

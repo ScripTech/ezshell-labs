@@ -8,6 +8,7 @@ import { sql } from "drizzle-orm";
 
 const labSchema = z.object({
   name: z.string().min(3).max(100),
+  labId: z.string().min(3).max(50),
   description: z.string().min(10).max(5000),
   duration: z.number().int().min(10).max(240),
   imageUrl: z.string().optional(),
@@ -43,7 +44,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const id = params.id;
   const body = await req.json();
   const result = labSchema.safeParse(body);
-
   if (!result.success) {
     return NextResponse.json({ error: "Validation failed", issues: result.error.issues }, { status: 400 });
   }
@@ -53,6 +53,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       .update(labs)
       .set({
         name: result.data.name,
+        labId: result.data.labId,
         description: result.data.description,
         duration: result.data.duration,
         imageUrl: result.data.imageUrl ?? "",

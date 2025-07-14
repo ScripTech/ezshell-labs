@@ -39,6 +39,7 @@ export async function GET() {
       return {
         id: lab.id,
         name: lab.name,
+        labId: lab.labId,
         description: lab.description ?? undefined,
         duration: lab.duration,
         imageUrl: lab.imageUrl ?? undefined,

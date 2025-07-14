@@ -87,17 +87,26 @@ export default function LabDetailsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ labId }),
+        body: JSON.stringify({
+          labId,
+          startSession: true // Automatically start session on enrollment
+        }),
       })
 
       if (!response.ok) {
         throw new Error('Failed to enroll in lab')
       }
 
-      // const data = await response.json()
+      const data = await response.json()
       setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
-      toast.success('Successfully enrolled in lab')
-      router.push(`/ezshell?lab=${labId}`)
+
+      if (data.session) {
+        toast.success('Successfully enrolled and lab session started!')
+        router.push(`/ezshell?lab=${labId}&session=${data.session.id}`)
+      } else {
+        toast.success('Successfully enrolled in lab')
+        router.push(`/ezshell?lab=${labId}`)
+      }
     } catch (error) {
       console.error('Enrollment error:', error)
       toast.error('Failed to enroll in lab')

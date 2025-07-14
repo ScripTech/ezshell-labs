@@ -22,6 +22,7 @@ import { useState } from "react"
 
 const labSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
+  labId: z.string().min(3, "Lab ID is required").max(50),
   description: z.string().min(10, "Description must be at least 10 characters").max(5000),
   duration: z.number().int().min(10, "Minimum duration is 10 minutes").max(240, "Maximum duration is 240 minutes"),
   imageUrl: z.string().optional(),
@@ -34,6 +35,7 @@ export function LabForm({
 }: {
   initialValues?: {
     name: string
+    labId: string
     description: string
     duration: number
     imageUrl?: string
@@ -51,8 +53,9 @@ export function LabForm({
     resolver: zodResolver(labSchema),
     defaultValues: initialValues || {
       name: "",
+      labId: "",
       description: "",
-      duration: 30,
+      duration: 60, // Default duration
       imageUrl: "",
     },
   })
@@ -112,6 +115,22 @@ export function LabForm({
                 </FormControl>
                 <FormDescription>
                   This is your public display name.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="labId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Lab ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="Lab ID" {...field} />
+                </FormControl>
+                <FormDescription>
+                  This is your unique lab identifier.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

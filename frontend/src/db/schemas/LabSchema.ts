@@ -21,6 +21,7 @@ export const labSessions = pgTable("lab_session", {
 export const labs = pgTable("labs", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  labId: text("labId").notNull().unique(),
   imageUrl: text("imageUrl").default(""),
   description: text("description"),
   duration: integer("duration").notNull().default(30), // duration in minutes

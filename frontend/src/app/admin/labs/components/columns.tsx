@@ -6,6 +6,11 @@ import { ColumnDef } from "@tanstack/react-table"
 // Define columns for shadcn DataTable
 export const columns: ColumnDef<any>[] = [
   {
+    accessorKey: "labId",
+    header: "Lab ID",
+    cell: ({ row }: any) => <span>{row.original.labId}</span>,
+  },
+  {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }: any) => <span>{row.original.name}</span>,

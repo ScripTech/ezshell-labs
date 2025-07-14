@@ -9,6 +9,7 @@ import { z } from "zod";
 
 const labSchema = z.object({
   name: z.string().min(3).max(100),
+  labId: z.string().min(3).max(50),
   description: z.string().min(10).max(5000),
   duration: z.number().int().min(10).max(240),
   imageUrl: z.string().optional(),
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     const lab = await db.insert(labs).values({
       id: crypto.randomUUID(),
+      labId: result.data.labId,
       name: result.data.name,
       description: result.data.description,
       duration: result.data.duration,

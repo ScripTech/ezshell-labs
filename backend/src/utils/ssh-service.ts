@@ -4,12 +4,15 @@ export const ssh = new NodeSSH();
 
 export async function connectSSH() {
   try {
+
     await ssh.connect({
       host: process.env.LAB_SSH_HOST,
       port: 22,
       username: process.env.LAB_SSH_USERNAME ?? "lab-user",
       password: process.env.LAB_SSH_PASSWORD ?? "password",
     });
+
+    console.log("SSH connection established successfully");
 
     // Set up OpenShift environment
     console.log("Setting up OpenShift environment...");
@@ -32,6 +35,11 @@ export async function connectSSH() {
 
   } catch (error: any) {
     console.error("Failed to connect and setup environment:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      level: error.level
+    });
     throw error;
   }
 }
@@ -49,20 +57,23 @@ export async function executeCommand(command: string) {
       }
     });
 
-    // console.log("Command result:", {
-    //   code: result.code,
-    //   stdout: result.stdout,
-    //   stderr: result.stderr
-    // });
+    console.log("Command result:", {
+      code: result.code,
+      stdout: result.stdout,
+      stderr: result.stderr
+    });
 
     if (result.code !== 0) {
-      console.error("Command failed:", result.stderr);
-      throw new Error(`${result.stderr}`);
+      console.error("Command failed with code:", result.code);
+      console.error("STDERR:", result.stderr);
+      console.error("STDOUT:", result.stdout);
+      throw new Error(`Command failed with exit code ${result.code}: ${result.stderr || result.stdout}`);
     }
 
     return result.stdout.trim();
   } catch (error: any) {
     console.error("Error while executing command!", error.message);
+    console.error("Command was:", command);
     throw new Error(`Command execution failed: ${error.message}`);
   }
 }
@@ -86,5 +97,29 @@ export async function validateFileContent(username: string): Promise<boolean> {
   } catch (error) {
     console.error("Exercise 1 - Invalid content", error);
     return false;
+  }
+}
+
+export async function testConnection(): Promise<{ success: boolean; message: string }> {
+  try {
+    if (!ssh.isConnected()) {
+      console.log("SSH not connected, attempting to connect...");
+      await connectSSH();
+    }
+
+    // Test basic command execution
+    const result = await executeCommand("echo 'SSH connection test successful'");
+
+    if (result.includes("SSH connection test successful")) {
+      return { success: true, message: "SSH connection is working properly" };
+    } else {
+      return { success: false, message: "SSH connection test failed - unexpected response" };
+    }
+  } catch (error) {
+    console.error("SSH connection test failed:", error);
+    return {
+      success: false,
+      message: `SSH connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
   }
 }

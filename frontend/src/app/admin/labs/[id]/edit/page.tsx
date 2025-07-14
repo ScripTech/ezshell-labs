@@ -44,6 +44,7 @@ export default function EditLabPage() {
             <LabForm
               initialValues={{
                 name: lab.name,
+                labId: lab.labId,
                 description: lab.description,
                 duration: lab.duration,
                 imageUrl: lab.imageUrl,
