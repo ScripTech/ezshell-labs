@@ -14,6 +14,8 @@ import remarkGfm from "remark-gfm"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark"
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LabTasksOverview } from '@/components/lab-tasks-overview'
 
 export default function LabDetailsPage() {
   const params = useParams()
@@ -117,30 +119,43 @@ export default function LabDetailsPage() {
             priority
           />
         </div>
-        <div className="prose prose-invert max-w-none bg-muted/40 rounded-lg p-6 mb-8">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code({ inline, className, children, style, ...props}: React.ComponentProps<'code'> & {inline?: boolean}) {
-                const match = /language-(\w+)/.exec(className || "")
-                return !inline && match ? (
-                  <SyntaxHighlighter
-                    style={oneDark}
-                    language={match[1]}
-                    PreTag="div"
-                  >
-                    {String(children).replace(/\n$/, "")}
-                  </SyntaxHighlighter>
-                ) : (
-                  <code className={className} style={style} {...props}>
-                    {children}
-                  </code>
-                )
-              }
-            }}
-          >
-            {lab.description}
-          </ReactMarkdown>
+        <div className="w-full">
+          <Tabs defaultValue="details" className="">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="labTasks">Lab Tasks</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details">
+              <div className="prose prose-invert max-w-none bg-muted/40 rounded-lg p-6 mb-8">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ inline, className, children, style, ...props }: React.ComponentProps<'code'> & { inline?: boolean }) {
+                      const match = /language-(\w+)/.exec(className || "")
+                      return !inline && match ? (
+                        <SyntaxHighlighter
+                          style={oneDark}
+                          language={match[1]}
+                          PreTag="div"
+                        >
+                          {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={className} style={style} {...props}>
+                          {children}
+                        </code>
+                      )
+                    }
+                  }}
+                >
+                  {lab.description}
+                </ReactMarkdown>
+              </div>
+            </TabsContent>
+            <TabsContent value="labTasks">
+              <LabTasksOverview labId={lab.id} />
+            </TabsContent>
+          </Tabs>
         </div>
 
         {lab.isEnrolled ? (
