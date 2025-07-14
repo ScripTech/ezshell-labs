@@ -19,7 +19,7 @@ export default function BillingOverviewPage() {
             <CardTitle>Current metered usage</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$0.05</div>
+            <div className="text-2xl font-bold">$0.00</div>
             <div className="text-muted-foreground text-sm mt-2">Showing gross metered usage for your account.</div>
           </CardContent>
         </Card>
@@ -31,7 +31,7 @@ export default function BillingOverviewPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$0.05</div>
+            <div className="text-2xl font-bold">$0.00</div>
             <div className="text-muted-foreground text-sm mt-2">Showing currently applied discounts for your account.</div>
           </CardContent>
         </Card>
