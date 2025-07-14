@@ -1,6 +1,6 @@
 import express from "express";
 import { Server } from "socket.io";
-import { ValidationController } from "./controllers/validationController";
+import { ValidationController } from "./controllers/labs/ex200/validationController";
 import ssh2 from "ssh2";
 import dotenv from "dotenv";
 import { NetworkConfigValidationController } from "./controllers/labs/ex200/NetworkConfigValidationController";

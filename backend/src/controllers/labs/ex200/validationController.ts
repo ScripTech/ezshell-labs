@@ -1,5 +1,5 @@
-import { ValidationService } from "../services/validationService";
 import { Socket } from "socket.io";
+import { ValidationService } from "../../../services/ex200/validationService";
 
 export class ValidationController {
   private validationService: ValidationService;
