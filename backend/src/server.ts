@@ -26,11 +26,21 @@ import { DeploymentController } from './controllers/labs/do280/DeploymentControl
 import { ScalingController } from './controllers/labs/do280/ScalingController';
 import { AutoScalingController } from "./controllers/labs/do280/AutoScalingController";
 import { PtySession } from "./terminal/PtySession";
+import apiRoutes from "./routes/api";
 
 dotenv.config();
 
 const cors = require("cors");
 const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// API Routes
+app.use('/api', apiRoutes);
+
 const port = Number.parseInt(process.env.SERVER_PORT!) ?? 3001;
 const host = process.env.SERVER_WSHOST! ?? "localhost";
 
