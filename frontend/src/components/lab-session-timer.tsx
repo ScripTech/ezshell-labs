@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Clock, Pause, Play, Square, AlertTriangle } from 'lucide-react'
@@ -42,6 +41,7 @@ export function LabSessionTimer({
   compact = false
 }: LabSessionTimerProps) {
   const [timeInfo, setTimeInfo] = useState<SessionTimeInfo | null>(null)
+  const [localTimeRemaining, setLocalTimeRemaining] = useState<number>(0)
   const [loading, setLoading] = useState(false)
   const [showEndDialog, setShowEndDialog] = useState(false)
   const [showPauseDialog, setShowPauseDialog] = useState(false)
@@ -62,17 +62,26 @@ export function LabSessionTimer({
   const fetchTimeInfo = useCallback(async () => {
     if (!session?.id) return
 
+    console.log('Fetching time info for session:', session.id)
     try {
       const response = await fetch(`/api/lab-sessions/${session.id}`)
+      console.log('Time info response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log('Time info data:', data)
         setTimeInfo(data)
+        setLocalTimeRemaining(data.timeRemaining) // Update local countdown
 
         // Auto-end session if expired
         if (data.isExpired && session.status === 'active') {
           toast.error('Lab session has expired')
           handleEndSession('expired')
         }
+      } else {
+        console.error('Failed to fetch time info, status:', response.status)
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
       }
     } catch (error) {
       console.error('Failed to fetch session time info:', error)
@@ -109,6 +118,7 @@ export function LabSessionTimer({
 
         switch (action) {
           case 'pause':
+
             toast.success('Lab session paused')
             onSessionPause?.()
             break
@@ -157,7 +167,7 @@ export function LabSessionTimer({
     fetchTimeInfo()
 
     // Set up intervals
-    const timeUpdateInterval = setInterval(fetchTimeInfo, 10000) // Update every 10 seconds
+    const timeUpdateInterval = setInterval(fetchTimeInfo, 10000) // Update from server every 10 seconds
     const activityInterval = setInterval(updateActivity, 30000) // Heartbeat every 30 seconds
 
     return () => {
@@ -166,13 +176,59 @@ export function LabSessionTimer({
     }
   }, [session?.id, fetchTimeInfo, updateActivity])
 
-  if (!session || !timeInfo) {
+  // Local countdown effect - updates every second when session is active
+  useEffect(() => {
+    if (!session?.id || session.status !== 'active' || !timeInfo) return
+
+    const countdownInterval = setInterval(() => {
+      setLocalTimeRemaining(prev => {
+        const newTime = Math.max(0, prev - 1)
+
+        // If time reaches 0, trigger session end
+        if (newTime === 0 && prev > 0) {
+          toast.error('Lab session has expired')
+          handleEndSession('expired')
+        }
+
+        return newTime
+      })
+    }, 1000) // Update every second
+
+    return () => clearInterval(countdownInterval)
+  }, [session?.status, session?.id, timeInfo])
+
+  if (!session) {
     return null
   }
 
+  // Show basic timer even without timeInfo for debugging
+  if (!timeInfo) {
+    return (
+      <div className={`flex items-center gap-4 ${compact ? 'text-sm' : 'text-base'}`}>
+        <div className="flex items-center gap-2">
+          <Clock className={compact ? "h-4 w-4" : "h-5 w-5"} />
+          <Badge variant="secondary">
+            {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+          </Badge>
+        </div>
+        <div className={`font-mono font-bold text-muted-foreground ${compact ? 'text-lg' : 'text-2xl'}`}>
+          Loading...
+        </div>
+      </div>
+    )
+  }
+
+  const getTimeColor = () => {
+    const timeToCheck = localTimeRemaining || timeInfo?.timeRemaining || 0
+    if (timeToCheck < 300) return 'text-red-600' // < 5 minutes
+    if (timeToCheck < 900) return 'text-yellow-600' // < 15 minutes
+    return 'text-green-600'
+  }
+
   const getStatusColor = () => {
+    const timeToCheck = localTimeRemaining || timeInfo?.timeRemaining || 0
     switch (session.status) {
-      case 'active': return timeInfo.timeRemaining < 300 ? 'destructive' : 'default' // Red if < 5 minutes
+      case 'active': return timeToCheck < 300 ? 'destructive' : 'default' // Red if < 5 minutes
       case 'paused': return 'secondary'
       case 'completed': return 'default'
       case 'expired': return 'destructive'
@@ -180,103 +236,86 @@ export function LabSessionTimer({
     }
   }
 
-  const getTimeColor = () => {
-    if (timeInfo.timeRemaining < 300) return 'text-red-600' // < 5 minutes
-    if (timeInfo.timeRemaining < 900) return 'text-yellow-600' // < 15 minutes
-    return 'text-green-600'
-  }
-
   return (
     <>
-      <Card className={`w-full ${compact ? 'max-w-sm' : 'max-w-md'}`}>
-        <CardHeader className={compact ? "pb-2" : "pb-3"}>
-          <CardTitle className={`flex items-center gap-2 ${compact ? "text-base" : "text-lg"}`}>
-            <Clock className={compact ? "h-4 w-4" : "h-5 w-5"} />
-            {compact ? "Timer" : "Lab Session Timer"}
-            <Badge variant={getStatusColor()} className="ml-auto">
-              {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-            </Badge>
-          </CardTitle>
+      <div className={`flex items-center gap-4 ${compact ? 'text-sm' : 'text-base'}`}>
+        {/* Timer Icon and Status */}
+        <div className="flex items-center gap-2">
+          <Clock className={compact ? "h-4 w-4" : "h-5 w-5"} />
+          <Badge variant={getStatusColor()}>
+            {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+          </Badge>
+        </div>
+
+        {/* Time Remaining */}
+        <div className="flex items-center gap-2">
+          <div className={`font-mono font-bold ${getTimeColor()} ${compact ? 'text-lg' : 'text-2xl'}`}>
+            {formatTime(localTimeRemaining || timeInfo.timeRemaining)}
+          </div>
           {!compact && (
-            <CardDescription>
-              {session.sessionName || `Session ${session.id.slice(0, 8)}`}
-            </CardDescription>
+            <span className="text-sm text-muted-foreground">remaining</span>
           )}
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-4">
-          {/* Time Remaining */}
-          <div className="text-center">
-            <div className={`text-3xl font-mono font-bold ${getTimeColor()}`}>
-              {formatTime(timeInfo.timeRemaining)}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Time Remaining
-            </div>
+        {/* Progress Bar */}
+        {!compact && (
+          <div className="flex items-center gap-2 min-w-[120px]">
+            <Progress value={timeInfo.percentage} className="h-2 flex-1" />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {Math.round(timeInfo.percentage)}%
+            </span>
           </div>
+        )}
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <Progress value={timeInfo.percentage} className="h-2" />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Time Spent: {formatTime(timeInfo.timeSpent)}</span>
-              <span>Total: {formatTime(timeInfo.totalDuration)}</span>
-            </div>
+        {/* Warning for low time */}
+        {(localTimeRemaining || timeInfo.timeRemaining) < 300 && (localTimeRemaining || timeInfo.timeRemaining) > 0 && (
+          <div className="flex items-center gap-1">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            {!compact && (
+              <span className="text-sm text-red-500">Low time!</span>
+            )}
           </div>
+        )}
 
-          {/* Warning for low time */}
-          {timeInfo.timeRemaining < 900 && timeInfo.timeRemaining > 0 && (
-            <div className="flex items-center gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-600">
-                {timeInfo.timeRemaining < 300 ? 'Less than 5 minutes remaining!' : 'Less than 15 minutes remaining'}
-              </span>
-            </div>
+        {/* Session Controls */}
+        <div className="flex gap-1">
+          {session.status === 'active' && timeInfo.canPause && (
+            <Button
+              variant="outline"
+              size={compact ? "sm" : "sm"}
+              onClick={handlePauseSession}
+              disabled={loading}
+            >
+              <Pause className="h-4 w-4" />
+              {!compact && <span className="ml-1">Pause</span>}
+            </Button>
           )}
 
-          {/* Session Controls */}
-          <div className="flex gap-2">
-            {session.status === 'active' && timeInfo.canPause && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePauseSession}
-                disabled={loading}
-                className="flex-1"
-              >
-                <Pause className="h-4 w-4 mr-1" />
-                Pause
-              </Button>
-            )}
+          {session.status === 'paused' && timeInfo.canResume && (
+            <Button
+              variant="outline"
+              size={compact ? "sm" : "sm"}
+              onClick={() => handleSessionAction('resume')}
+              disabled={loading}
+            >
+              <Play className="h-4 w-4" />
+              {!compact && <span className="ml-1">Resume</span>}
+            </Button>
+          )}
 
-            {session.status === 'paused' && timeInfo.canResume && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSessionAction('resume')}
-                disabled={loading}
-                className="flex-1"
-              >
-                <Play className="h-4 w-4 mr-1" />
-                Resume
-              </Button>
-            )}
-
-            {(session.status === 'active' || session.status === 'paused') && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleEndSession('completed')}
-                disabled={loading}
-                className="flex-1"
-              >
-                <Square className="h-4 w-4 mr-1" />
-                End Lab
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          {(session.status === 'active' || session.status === 'paused') && (
+            <Button
+              variant="destructive"
+              size={compact ? "sm" : "sm"}
+              onClick={() => handleEndSession('completed')}
+              disabled={loading}
+            >
+              <Square className="h-4 w-4" />
+              {!compact && <span className="ml-1">End</span>}
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Pause Confirmation Dialog */}
       <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>

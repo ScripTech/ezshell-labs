@@ -15,6 +15,8 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { LabSessionProvider } from "@/contexts/LabSessionContext"
+import { HeaderSessionTimer } from "@/components/header-session-timer"
 
 export default function layout({ children }: any) {
 
@@ -23,24 +25,31 @@ export default function layout({ children }: any) {
   const userName = session?.user?.name ?? 'Anonymous'
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 flex h-12 items-center gap-4 border-b bg-background px-4 md:px-6">
-        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-lg font-semibold md:text-base"
-          >
-            <Terminal className="h-6 w-6" />
-            <span className="sr-only">eAlgoritimo Inc</span>
-          </Link>
-          <Link
-            href="/user/labs"
-            className="text-foreground transition-colors hover:text-foreground text-nowrap"
-          >
-            eZShell Labs
-          </Link>
-        </nav>
-        <Sheet>
+    <LabSessionProvider>
+      <div className="flex min-h-screen w-full flex-col">
+        <header className="sticky top-0 flex h-12 items-center gap-4 border-b bg-background px-4 md:px-6">
+          <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-lg font-semibold md:text-base"
+            >
+              <Terminal className="h-6 w-6" />
+              <span className="sr-only">eAlgoritimo Inc</span>
+            </Link>
+            <Link
+              href="/user/labs"
+              className="text-foreground transition-colors hover:text-foreground text-nowrap"
+            >
+              eZShell Labs
+            </Link>
+          </nav>
+
+          {/* Center - Session Timer */}
+          <div className="flex-1 flex justify-center items-center">
+            <HeaderSessionTimer />
+          </div>
+
+          <Sheet>
           <SheetTrigger asChild>
             <Button
               variant="outline"
@@ -65,8 +74,8 @@ export default function layout({ children }: any) {
             </nav>
           </SheetContent>
         </Sheet>
-        <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="ml-auto flex-1 sm:flex-initial">
+        <div className="flex items-center gap-4 md:gap-2 lg:gap-4">
+          <div className="flex items-center">
             <div>{userName}</div>
           </div>
           <DropdownMenu>
@@ -99,5 +108,6 @@ export default function layout({ children }: any) {
         {children}
       </main>
     </div>
+    </LabSessionProvider>
   )
 }
