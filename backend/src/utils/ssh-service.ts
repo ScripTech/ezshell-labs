@@ -43,7 +43,8 @@ export async function executeCommand(command: string) {
       execOptions: {
         env: {
           KUBECONFIG: '/etc/kubernetes/admin.conf',
-          PATH: '/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin'
+          PATH: '/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin',
+          NODE_ENV: "test"
         }
       }
     });

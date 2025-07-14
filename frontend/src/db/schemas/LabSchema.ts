@@ -141,3 +141,14 @@ export const labTaskProgressRelations = relations(labTaskProgress, ({ one }) => 
     references: [labEnrollments.id],
   }),
 }));
+
+export const labExerciseProgressRelations = relations(labExerciseProgress, ({ one }) => ({
+  exercise: one(labExercises, {
+    fields: [labExerciseProgress.exerciseId],
+    references: [labExercises.id],
+  }),
+  enrollment: one(labEnrollments, {
+    fields: [labExerciseProgress.enrollmentId],
+    references: [labEnrollments.id],
+  }),
+}));

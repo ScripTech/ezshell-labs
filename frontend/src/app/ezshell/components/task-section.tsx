@@ -73,8 +73,24 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
       return () => {
         const currentQuestion = searchParams.get('question')
         if (currentQuestion) {
+          // For cleanup, we'll remove listeners for both the original and all possible mapped IDs
+          // This is not ideal but ensures cleanup works
           socketRef.current.off(`validation-${currentQuestion}-step`)
           socketRef.current.off(`validation-${currentQuestion}-complete`)
+
+          // Also clean up potential mapped question IDs
+          const possibleMappedIds = [
+            "question-1-network-config", "question-2-yum-repository", "question-3-selinux-port",
+            "question-4-user-group-management", "question-5-collaborative-directory", "question-6-cron-job",
+            "question-7-autofs-configuration", "question-8-create-tar-archive", "question-9-file-permissions",
+            "question-10-time-synchronization", "question-11-find-user-files", "question-12-string-search",
+            "question-13-create-user", "question-14-configure-yum-repository", "question-18-configure-tuned-profile"
+          ];
+
+          possibleMappedIds.forEach(mappedId => {
+            socketRef.current.off(`validation-${mappedId}-step`)
+            socketRef.current.off(`validation-${mappedId}-complete`)
+          });
         }
       }
     }, [searchParams])
@@ -83,29 +99,63 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
   const checkExerciseAnswer = async (questionId: string) => {
     if (!hasCheckAnswer) {
       const labId = searchParams.get('lab') ?? 'EX200';
-      socketRef.current.emit('validate-exercise', { labId, questionId });
-      socketRef.current.on(`validation-${ questionId }-step`, (data: validationResult) => {
-        console.log(data)
-        setValidationStatus(prevStatus => {
-          const updatedStatus = prevStatus.filter(status => status.step !== data.step);
-          updatedStatus.push(data);
-          return updatedStatus;
-        });
-      })
 
-      socketRef.current.on(`validation-${ questionId }-complete`, (data: { success: string, message: string }) => {
-        if (data.success) {
-          sethasCheckAnswer(true)
-          setIsCorrect(true)
-        }
-      })
+      try {
+        // Get the task metadata to find the order for mapping
+        const taskData = await getExerciseDataFromDB(labId, questionId);
+        const validationQuestionId = getValidationQuestionId(questionId, taskData.metadata.order);
 
-      socketRef.current.on(`validation-lab-complete`, (data: { success: string, message: string }) => {
-        console.log("lab complete", data)
-        if (data.success) {
-          sethasCheckAnswer(true)
-        }
-      })
+        console.log(`Mapping question ${questionId} (order: ${taskData.metadata.order}) to validation ID: ${validationQuestionId}`);
+
+        // Use the legacy validation system for now with the mapped question ID
+        socketRef.current.emit('validate-exercise', { labId, questionId: validationQuestionId });
+
+        // Listen for validation steps using the mapped questionId
+        socketRef.current.on(`validation-${ validationQuestionId }-step`, (data: validationResult) => {
+          console.log('Validation step:', data)
+          setValidationStatus(prevStatus => {
+            const updatedStatus = prevStatus.filter(status => status.step !== data.step);
+            updatedStatus.push(data);
+            return updatedStatus;
+          });
+        })
+
+        socketRef.current.on(`validation-${ validationQuestionId }-complete`, (data: { success: string, message: string }) => {
+          console.log('Validation complete:', data);
+          if (data.success) {
+            sethasCheckAnswer(true)
+            setIsCorrect(true)
+          }
+        })
+
+        socketRef.current.on(`validation-lab-complete`, (data: { success: string, message: string }) => {
+          console.log("lab complete", data)
+          if (data.success) {
+            sethasCheckAnswer(true)
+          }
+        })
+      } catch (error) {
+        console.error('Error mapping question ID:', error);
+        // Fallback to original questionId if mapping fails
+        socketRef.current.emit('validate-exercise', { labId, questionId });
+
+        socketRef.current.on(`validation-${ questionId }-step`, (data: validationResult) => {
+          console.log('Validation step (fallback):', data)
+          setValidationStatus(prevStatus => {
+            const updatedStatus = prevStatus.filter(status => status.step !== data.step);
+            updatedStatus.push(data);
+            return updatedStatus;
+          });
+        })
+
+        socketRef.current.on(`validation-${ questionId }-complete`, (data: { success: string, message: string }) => {
+          console.log('Validation complete (fallback):', data);
+          if (data.success) {
+            sethasCheckAnswer(true)
+            setIsCorrect(true)
+          }
+        })
+      }
     }
   }
 
@@ -236,3 +286,27 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
     </>
   )
 }
+
+// Question ID mapping function to convert database IDs to validation handler IDs
+const getValidationQuestionId = (dbQuestionId: string, order: number): string => {
+  // Map database question IDs to validation handler question IDs based on order
+  const questionMap: { [key: number]: string } = {
+    1: "question-1-network-config",
+    2: "question-2-yum-repository",
+    3: "question-3-selinux-port",
+    4: "question-4-user-group-management",
+    5: "question-5-collaborative-directory",
+    6: "question-6-cron-job",
+    7: "question-7-autofs-configuration",
+    8: "question-8-create-tar-archive",
+    9: "question-9-file-permissions",
+    10: "question-10-time-synchronization",
+    11: "question-11-find-user-files",
+    12: "question-12-string-search",
+    13: "question-13-create-user",
+    14: "question-14-configure-yum-repository",
+    18: "question-18-configure-tuned-profile"
+  };
+
+  return questionMap[order] || dbQuestionId;
+};
