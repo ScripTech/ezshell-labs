@@ -108,7 +108,8 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
         console.log(`Mapping question ${questionId} (order: ${taskData.metadata.order}) to validation ID: ${validationQuestionId}`);
 
         // Use the legacy validation system for now with the mapped question ID
-        socketRef.current.emit('validate-exercise', { labId: "ex200", questionId: validationQuestionId });
+        socketRef.current.emit('validate-exercise', {
+          labId: taskData.lab?.labId, questionId: validationQuestionId });
 
         // Listen for validation steps using the mapped questionId
         socketRef.current.on(`validation-${ validationQuestionId }-step`, (data: validationResult) => {

@@ -6,7 +6,7 @@ import { remark } from "remark"
 import html from "remark-html"
 import matter from "gray-matter"
 import { db } from "@/db"
-import { labTasks } from "@/db/schemas/LabSchema"
+import { labTasks, labs } from "@/db/schemas/LabSchema"
 import { eq, and } from "drizzle-orm";
 
 export interface LabExercise {
@@ -22,6 +22,14 @@ export interface LabQuestion {
   labId: string | null;
   title: string;
   order: number;
+  lab?: {
+    id: string;
+    name: string;
+    labId: string;
+    description: string | null;
+    duration: number;
+    imageUrl: string | null;
+  };
   metadata:
     | {
         title: string;
@@ -148,29 +156,41 @@ export async function getLabQuestionsFromDB(labId: string): Promise<LabQuestion[
   console.log(`Fetching questions for lab: ${labId}`);
 
   const rows = await db
-    .select()
+    .select({
+      task: labTasks,
+      lab: labs,
+    })
     .from(labTasks)
+    .leftJoin(labs, eq(labTasks.labId, labs.id))
     .where(eq(labTasks.labId, labId))
     .orderBy(labTasks.order);
+
   if (rows.length === 0) {
     throw new Error(`No questions found for lab ${labId}`)
   }
 
-
   return rows.map(row => ({
-    id: row.id,
-    labId: row.labId,
-    title: row.title,
-    order: row.order,
+    id: row.task.id,
+    labId: row.task.labId,
+    title: row.task.title,
+    order: row.task.order,
+    lab: row.lab ? {
+      id: row.lab.id,
+      name: row.lab.name,
+      labId: row.lab.labId,
+      description: row.lab.description,
+      duration: row.lab.duration,
+      imageUrl: row.lab.imageUrl,
+    } : undefined,
     metadata: {
-      title: row.title,
-      order: row.order,
-      description: row.description,
-      difficulty: row.difficulty,
-      points: row.points,
-      hint: row.hint,
-      validationSteps: row.validationSteps,
-      markdown: row.markdown,
+      title: row.task.title,
+      order: row.task.order,
+      description: row.task.description,
+      difficulty: row.task.difficulty,
+      points: row.task.points,
+      hint: row.task.hint,
+      validationSteps: row.task.validationSteps,
+      markdown: row.task.markdown,
     }
   }))
 }
@@ -179,58 +199,90 @@ export async function getExerciseDataFromDB(
   labId: string,
   questionId: string
 ): Promise<LabQuestion> {
-  const labs = await db
-    .select()
+  const result = await db
+    .select({
+      task: labTasks,
+      lab: labs,
+    })
     .from(labTasks)
+    .leftJoin(labs, eq(labTasks.labId, labs.id))
     .where(and(eq(labTasks.labId, labId), eq(labTasks.id, questionId)))
     .orderBy(labTasks.order)
     .limit(1);
-  if (labs.length === 0) {
+
+  if (result.length === 0) {
     throw new Error(`No questions found for lab ${labId}`);
   }
+
+  const row = result[0];
   const labQuestion: LabQuestion = {
-    id: labs[0].id,
-    labId: labs[0].labId,
-    title: labs[0].title,
-    order: labs[0].order,
+    id: row.task.id,
+    labId: row.task.labId,
+    title: row.task.title,
+    order: row.task.order,
+    lab: row.lab ? {
+      id: row.lab.id,
+      name: row.lab.name,
+      labId: row.lab.labId,
+      description: row.lab.description,
+      duration: row.lab.duration,
+      imageUrl: row.lab.imageUrl,
+    } : undefined,
     metadata: {
-      title: labs[0].title,
-      order: labs[0].order,
-      description: labs[0].description,
-      difficulty: labs[0].difficulty,
-      points: labs[0].points,
-      hint: labs[0].hint,
-      validationSteps: labs[0].validationSteps,
-      markdown: labs[0].markdown,
+      title: row.task.title,
+      order: row.task.order,
+      description: row.task.description,
+      difficulty: row.task.difficulty,
+      points: row.task.points,
+      hint: row.task.hint,
+      validationSteps: row.task.validationSteps,
+      markdown: row.task.markdown,
     },
   };
+
+  console.log(
+    `Fetched question from DB: ${labQuestion.id} for lab: ${labQuestion.labId}`
+  );
   return labQuestion;
 }
 
 export async function getFirstLabQuestionFromDB(labId: string): Promise<LabQuestion | null> {
-  const labs = await db
-    .select()
+  const result = await db
+    .select({
+      task: labTasks,
+      lab: labs,
+    })
     .from(labTasks)
+    .leftJoin(labs, eq(labTasks.labId, labs.id))
     .where(eq(labTasks.labId, labId))
     .orderBy(labTasks.order)
     .limit(1);
 
-  if (labs.length === 0) return null;
+  if (result.length === 0) return null;
 
+  const row = result[0];
   const labQuestion: LabQuestion = {
-    id: labs[0].id,
-    labId: labs[0].labId,
-    title: labs[0].title,
-    order: labs[0].order,
+    id: row.task.id,
+    labId: row.task.labId,
+    title: row.task.title,
+    order: row.task.order,
+    lab: row.lab ? {
+      id: row.lab.id,
+      name: row.lab.name,
+      labId: row.lab.labId,
+      description: row.lab.description,
+      duration: row.lab.duration,
+      imageUrl: row.lab.imageUrl,
+    } : undefined,
     metadata: {
-      title: labs[0].title,
-      order: labs[0].order,
-      description: labs[0].description,
-      difficulty: labs[0].difficulty,
-      points: labs[0].points,
-      hint: labs[0].hint,
-      validationSteps: labs[0].validationSteps,
-      markdown: labs[0].markdown,
+      title: row.task.title,
+      order: row.task.order,
+      description: row.task.description,
+      difficulty: row.task.difficulty,
+      points: row.task.points,
+      hint: row.task.hint,
+      validationSteps: row.task.validationSteps,
+      markdown: row.task.markdown,
     },
   };
   return labQuestion;
