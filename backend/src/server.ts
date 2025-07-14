@@ -1,5 +1,6 @@
 import express from "express";
 import { Server } from "socket.io";
+import { socketAuthMiddleware, AuthenticatedSocket } from "./middleware/socketAuth";
 import { ValidationController } from "./controllers/labs/ex200/validationController";
 import ssh2 from "ssh2";
 import dotenv from "dotenv";
@@ -53,6 +54,9 @@ const httpSocketServer = new Server({
     origin: "*",
   },
 });
+
+// Add authentication middleware for Socket.IO
+httpSocketServer.use(socketAuthMiddleware);
 
 const validationController = new ValidationController();
 const networkConfigValidationController = new NetworkConfigValidationController();
@@ -123,8 +127,8 @@ const enhancedWebSocketService = new EnhancedWebSocketService(httpSocketServer, 
 
 console.log('✅ Enhanced WebSocket Service initialized with progress persistence and real-time analytics');
 
-httpSocketServer.on("connection", (socket) => {
-  console.log("Client connected to Socket server");
+httpSocketServer.on("connection", (socket: AuthenticatedSocket) => {
+  console.log(`Client connected to Socket server - User: ${socket.user?.sub} (${socket.user?.email})`);
 
   // Enhanced WebSocket Service handles all the new features automatically
   // The EnhancedWebSocketService constructor sets up all event handlers
@@ -155,7 +159,8 @@ httpSocketServer.on("connection", (socket) => {
 
   // Legacy validation support (maintained for backward compatibility)
   socket.on("validate-exercise", async ({ labId, questionId }) => {
-    console.info("Validating exercise for lab:", labId, "question:", questionId);
+    const userId = socket.user?.sub;
+    console.info("Validating exercise for lab:", labId, "question:", questionId, "user:", userId);
 
     const handler = validationHandlerFactory.getHandler(labId);
     if (handler) {
@@ -166,7 +171,17 @@ httpSocketServer.on("connection", (socket) => {
   });
 
   // Enhanced Service-Oriented validation with progress persistence
-  socket.on("validate-task", async ({ taskId, labId, userId, sessionData }) => {
+  socket.on("validate-task", async ({ taskId, labId, sessionData }) => {
+    const userId = socket.user?.sub;
+    if (!userId) {
+      socket.emit('validation-error', {
+        taskId,
+        error: 'Authentication required',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
     console.info("Service-Oriented validation for task:", taskId, "lab:", labId, "user:", userId);
 
     try {
@@ -198,7 +213,13 @@ httpSocketServer.on("connection", (socket) => {
   });
 
   // Enhanced progress tracking endpoints
-  socket.on("request-progress-summary", async ({ userId, labId }) => {
+  socket.on("request-progress-summary", async ({ labId }) => {
+    const userId = socket.user?.sub;
+    if (!userId) {
+      socket.emit('progress-error', { message: 'Authentication required' });
+      return;
+    }
+
     try {
       const insights = await progressService.getLearningInsights(userId, labId);
       const activeSession = await progressService.getActiveSession(userId, labId);
@@ -214,7 +235,10 @@ httpSocketServer.on("connection", (socket) => {
   });
 
   // Real-time command tracking for enhanced analytics
-  socket.on("terminal-command", async ({ userId, command, output, exitCode }) => {
+  socket.on("terminal-command", async ({ command, output, exitCode }) => {
+    const userId = socket.user?.sub;
+    if (!userId) return;
+
     try {
       const sessionId = enhancedWebSocketService.getUserSession(userId);
       if (sessionId) {

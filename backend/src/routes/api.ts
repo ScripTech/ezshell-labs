@@ -4,10 +4,14 @@ import { TaskValidationController } from '../controllers/TaskValidationControlle
 import { testConnection } from '../db';
 import progressRoutes from './progress';
 import validationRoutes from './validation';
+import { debugSecretController } from '../controllers/debug';
 
 const router = Router();
 const userController = new UserController();
 const taskValidationController = new TaskValidationController();
+
+// Debug route
+router.get('/debug/secret', debugSecretController);
 
 // Database health check
 router.get('/health', async (req, res) => {

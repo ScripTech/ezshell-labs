@@ -192,7 +192,7 @@ describe('Progress Service Integration Tests', () => {
 
       expect(updatedAttempt.status).toBe('completed');
       expect(updatedAttempt.score).toBe('85.50');
-      expect(updatedAttempt.endTime).toBeDefined();
+      expect(updatedAttempt.completedAt).toBeDefined();
       expect(updatedAttempt.timeSpent).toBeGreaterThan(0);
     });
   });

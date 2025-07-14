@@ -2,10 +2,10 @@ import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { eq } from 'drizzle-orm'
-import { authOptions } from '../../auth/[...nextauth]/route'
 import { labs, labEnrollments, labTasks, labTaskProgress } from '@/db/schemas/LabSchema'
 import { labSessionService } from '@/services/labSessionService'
 import { nanoid } from 'nanoid'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

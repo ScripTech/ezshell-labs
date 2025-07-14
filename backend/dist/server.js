@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
+const socketAuth_1 = require("./middleware/socketAuth");
 const validationController_1 = require("./controllers/labs/ex200/validationController");
 const dotenv_1 = __importDefault(require("dotenv"));
 const NetworkConfigValidationController_1 = require("./controllers/labs/ex200/NetworkConfigValidationController");
@@ -51,6 +52,8 @@ const httpSocketServer = new socket_io_1.Server({
         origin: "*",
     },
 });
+// Add authentication middleware for Socket.IO
+httpSocketServer.use(socketAuth_1.socketAuthMiddleware);
 const validationController = new validationController_1.ValidationController();
 const networkConfigValidationController = new NetworkConfigValidationController_1.NetworkConfigValidationController();
 const userGroupMnt = new UserGroupManagementController_1.UserGroupManagementController();
@@ -85,7 +88,7 @@ const validationTaskService = new ValidationTaskService_1.ValidationTaskService(
 const enhancedWebSocketService = new EnhancedWebSocketService_1.EnhancedWebSocketService(httpSocketServer, validationTaskService);
 console.log('✅ Enhanced WebSocket Service initialized with progress persistence and real-time analytics');
 httpSocketServer.on("connection", (socket) => {
-    console.log("Client connected to Socket server");
+    console.log(`Client connected to Socket server - User: ${socket.user?.sub} (${socket.user?.email})`);
     // Enhanced WebSocket Service handles all the new features automatically
     // The EnhancedWebSocketService constructor sets up all event handlers
     // Example: Use SSH session
@@ -112,7 +115,8 @@ httpSocketServer.on("connection", (socket) => {
     });
     // Legacy validation support (maintained for backward compatibility)
     socket.on("validate-exercise", async ({ labId, questionId }) => {
-        console.info("Validating exercise for lab:", labId, "question:", questionId);
+        const userId = socket.user?.sub;
+        console.info("Validating exercise for lab:", labId, "question:", questionId, "user:", userId);
         const handler = validationHandlerFactory.getHandler(labId);
         if (handler) {
             await handler.handleValidation(socket, questionId);
@@ -122,7 +126,16 @@ httpSocketServer.on("connection", (socket) => {
         }
     });
     // Enhanced Service-Oriented validation with progress persistence
-    socket.on("validate-task", async ({ taskId, labId, userId, sessionData }) => {
+    socket.on("validate-task", async ({ taskId, labId, sessionData }) => {
+        const userId = socket.user?.sub;
+        if (!userId) {
+            socket.emit('validation-error', {
+                taskId,
+                error: 'Authentication required',
+                timestamp: new Date().toISOString()
+            });
+            return;
+        }
         console.info("Service-Oriented validation for task:", taskId, "lab:", labId, "user:", userId);
         try {
             // Log the validation start event for analytics
@@ -146,7 +159,12 @@ httpSocketServer.on("connection", (socket) => {
         }
     });
     // Enhanced progress tracking endpoints
-    socket.on("request-progress-summary", async ({ userId, labId }) => {
+    socket.on("request-progress-summary", async ({ labId }) => {
+        const userId = socket.user?.sub;
+        if (!userId) {
+            socket.emit('progress-error', { message: 'Authentication required' });
+            return;
+        }
         try {
             const insights = await ProgressService_1.progressService.getLearningInsights(userId, labId);
             const activeSession = await ProgressService_1.progressService.getActiveSession(userId, labId);
@@ -161,7 +179,10 @@ httpSocketServer.on("connection", (socket) => {
         }
     });
     // Real-time command tracking for enhanced analytics
-    socket.on("terminal-command", async ({ userId, command, output, exitCode }) => {
+    socket.on("terminal-command", async ({ command, output, exitCode }) => {
+        const userId = socket.user?.sub;
+        if (!userId)
+            return;
         try {
             const sessionId = enhancedWebSocketService.getUserSession(userId);
             if (sessionId) {

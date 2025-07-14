@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next'
 import { LabSessionService } from '@/services/labSession'
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
-import { authOptions } from '../[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { DefaultSession } from 'next-auth'
 
 declare module 'next-auth' {

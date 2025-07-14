@@ -3,14 +3,13 @@
 import React, { useEffect, useRef } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
-import io from 'socket.io-client';
 import 'xterm/css/xterm.css'
 import { LoaderCircle } from 'lucide-react';
+import { useAuthenticatedSocket } from '@/hooks/useAuthenticatedSocket'
 
 export default function TermView({ questionId }: { questionId: string }) {
+  const { socket, isConnected, isAuthenticated, error: socketError, connect } = useAuthenticatedSocket()
   const [isConnecting, setIsConnecting] = React.useState(false)
-  const [isConnected, setIsConnected] = React.useState(false)
-  const [retryCount, setRetryCount] = React.useState(0)
   const [error, setError] = React.useState('')
   const terminalRef = React.useRef<HTMLDivElement | null>(null)
   const fitAddon = React.useMemo(() => new FitAddon(), []);
@@ -22,52 +21,17 @@ export default function TermView({ questionId }: { questionId: string }) {
     rows: 24,
     scrollback: 1000,
   }), []);
-  const socketRef = React.useRef<any>(null)
-  const maxRetries = 3
 
-  // Move connection logic outside useEffect
-  const connectSocket = React.useCallback((term: Terminal, fitAddon: FitAddon, terminalRef: React.RefObject<HTMLDivElement>, setIsConnecting: any, setIsConnected: any, setRetryCount: any, setError: any, socketRef: any, maxRetries: number, retryConnection: any, attempt = 1) => {
-    setIsConnecting(true)
-    setError('')
-    const socket = io(process.env.NEXT_PUBLIC_BACKEND_WS ?? 'http://localhost:3001', {
-      timeout: 5000,
-      reconnection: false,
-      transports: ['websocket'], // Ensure websocket transport
-    })
-    socketRef.current = socket
+  // Initialize terminal when socket is connected
+  useEffect(() => {
+    if (!socket || !isConnected || !terminalRef.current) return
 
-    if (!terminalRef.current) return
-
+    // Setup terminal
     term.loadAddon(fitAddon)
     term.open(terminalRef.current)
     fitAddon.fit()
 
-    // Use socket.once for connect event to avoid duplicate handlers
-    socket.once('connect', () => {
-      setIsConnecting(false)
-      setIsConnected(true)
-      setRetryCount(0)
-      setError('')
-      const { cols, rows } = term
-      socket.emit('resize', { cols, rows })
-    })
-
-    socket.on('connect_error', (err: any) => {
-      setIsConnecting(false)
-      setError('Connection error: Unable to connect to backend terminal service.')
-      if (attempt < maxRetries) {
-        retryConnection(attempt)
-      } else {
-        setError('Failed to connect after multiple attempts. Please check backend status and try again.')
-      }
-    })
-
-    socket.on('disconnect', () => {
-      setIsConnecting(false)
-      setIsConnected(false)
-      setError('Connection lost. Please refresh or try again later.')
-    })
-
+    // Setup terminal event handlers
     term.onResize(({ cols, rows }) => {
       socket.emit('resize', { cols, rows })
     })
@@ -80,61 +44,78 @@ export default function TermView({ questionId }: { questionId: string }) {
       socket.emit(newMessage.type, newMessage)
     })
 
-    socket.on('terminal-output', (data: any) => {
+    // Setup socket event handlers
+    const handleTerminalOutput = (data: any) => {
       term.write(data)
-    })
-
-    socket.on('stdout', (data: any) => {
-      term.write(data)
-    })
-
-    return socket
-  }, [])
-
-  useEffect(() => {
-    let socket: any
-    let retryTimeout: NodeJS.Timeout | null = null
-
-    const retryConnection = (attempt: number) => {
-      setRetryCount(attempt)
-      retryTimeout = setTimeout(() => {
-        connectSocket(term, fitAddon, terminalRef, setIsConnecting, setIsConnected, setRetryCount, setError, socketRef, maxRetries, retryConnection, attempt + 1)
-      }, 5000) // Retry after 2 seconds
     }
 
-    socket = connectSocket(term, fitAddon, terminalRef, setIsConnecting, setIsConnected, setRetryCount, setError, socketRef, maxRetries, retryConnection)
+    const handleStdout = (data: any) => {
+      term.write(data)
+    }
 
+    socket.on('terminal-output', handleTerminalOutput)
+    socket.on('stdout', handleStdout)
+
+    // Initial resize
     const initialResizeTimer = setTimeout(() => {
       fitAddon.fit()
       const { cols, rows } = term
-      socketRef.current?.emit('resize', { cols, rows })
+      socket.emit('resize', { cols, rows })
     }, 300)
 
+    // Setup resize observer
     const observer = new window.ResizeObserver(() => {
       fitAddon.fit()
       const { cols, rows } = term
-      socketRef.current?.emit('resize', { cols, rows })
+      socket.emit('resize', { cols, rows })
     })
+
     if (terminalRef.current) {
       observer.observe(terminalRef.current)
     }
 
+    // Cleanup function
     return () => {
       clearTimeout(initialResizeTimer)
       observer.disconnect()
+      socket.off('terminal-output', handleTerminalOutput)
+      socket.off('stdout', handleStdout)
       term.dispose()
-      if (retryTimeout) clearTimeout(retryTimeout)
-      if (socket) socket.disconnect()
     }
-  }, [questionId, fitAddon, term, connectSocket])
+  }, [socket, isConnected, term, fitAddon])
+
+  // Handle connection state
+  useEffect(() => {
+    if (socket && !isConnected) {
+      setIsConnecting(true)
+    } else if (isConnected) {
+      setIsConnecting(false)
+      setError('')
+    }
+  }, [socket, isConnected])
+
+  // Handle socket errors
+  useEffect(() => {
+    if (socketError) {
+      setError(`Connection error: ${socketError}`)
+      setIsConnecting(false)
+    }
+  }, [socketError])
+
+  // Auto-connect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated && !socket) {
+      connect().catch((err) => {
+        setError(`Authentication failed: ${err.message}`)
+      })
+    }
+  }, [isAuthenticated, socket, connect])
 
   return (
-
     <>
       {isConnecting && (
         <div className="flex flex-col items-center justify-center z-10 py-8">
           <span className="text-white mb-2">Connecting to terminal...</span>
-          <span className="text-white text-xs">Retry: {retryCount} / {maxRetries}</span>
           <span className="mt-2 animate-spin text-white"><LoaderCircle/></span>
         </div>
       )}

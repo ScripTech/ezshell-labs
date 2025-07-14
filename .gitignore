@@ -44,3 +44,4 @@ frontend/src/components/login-form.tsx
 frontend/drizzle/*
 frontend/storage/generate_ex280_files.sh
 backend/dist/*
+test-jwt.js

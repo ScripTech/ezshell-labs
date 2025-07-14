@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation"
 import { LabSessionProvider } from "@/contexts/LabSessionContext"
 import { HeaderSessionTimer } from "@/components/header-session-timer"
 
-export default function layout({ children }: any) {
+export default function Layout({ children }: any) {
 
   const router = useRouter()
   const { data: session } = useSession()

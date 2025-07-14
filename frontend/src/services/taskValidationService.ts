@@ -1,5 +1,3 @@
-'use server'
-
 import { db } from "@/db"
 import { labTaskProgress, labTasks, labEnrollments } from "@/db/schemas/LabSchema"
 import { eq, and } from "drizzle-orm"

@@ -339,7 +339,7 @@ export const ValidationProgress: React.FC<ValidationProgressProps> = ({
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">Ready to Validate</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Click the "Start Validation" button to begin step-by-step task validation.
+              Click the &quot;Start Validation&quot; button to begin step-by-step task validation.
             </p>
           </div>
         )}

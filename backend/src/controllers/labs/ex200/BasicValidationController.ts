@@ -1,6 +1,8 @@
 import { Socket } from "socket.io";
 import { BasicValidationService } from "../../../services/ex200/BasicValidationService";
 import { validationTrackingService, ValidationContext } from "../../../services/ValidationTrackingService";
+import { AuthenticatedSocket } from "../../../middleware/socketAuth";
+import { SocketUserService } from "../../../services/SocketUserService";
 
 export class BasicValidationController {
   private service: BasicValidationService;
@@ -217,5 +219,131 @@ export class BasicValidationController {
     ];
 
     await validationTrackingService.executeValidationWithTracking(context, validationSteps);
+  };
+
+  /**
+   * Example of using ValidationTrackingService with authenticated socket
+   * This method automatically extracts user information from the authenticated socket
+   */
+  handleFilePermissionsValidationAuthenticated = async (
+    socket: AuthenticatedSocket,
+    questionId: string,
+    labId: string
+  ) => {
+    try {
+      // Extract user context from authenticated socket
+      const userContext = await SocketUserService.getUserContextWithLab(socket, labId);
+      if (!userContext) {
+        socket.emit(`validation-${questionId}-error`, {
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // If no lab enrollment found, handle gracefully
+      if (!userContext.labEnrollmentId) {
+        console.warn(`No lab enrollment found for user ${userContext.userId} in lab ${labId}`);
+        // Fall back to basic validation without tracking
+        return this.handleFilePermissionsValidation(socket, questionId);
+      }
+
+      const context: ValidationContext = {
+        socket,
+        questionId,
+        userId: userContext.userId,
+        labEnrollmentId: userContext.labEnrollmentId
+      };
+
+      // Create validation steps using the tracking service
+      const validationSteps = [
+        validationTrackingService.createValidationStep(
+          'root-ownership',
+          'File owned by root user and group',
+          25,
+          () => this.service.filePermissionsValidation_OwnedBy("root")
+        ),
+        validationTrackingService.createValidationStep(
+          'not-executable',
+          'File is not executable by anyone',
+          25,
+          () => this.service.filePermissionsValidation_NotExec()
+        ),
+        validationTrackingService.createValidationStep(
+          'natasha-read-write',
+          'User natasha can read and write',
+          25,
+          () => this.service.filePermissionsValidation_UserCanRead("natasha")
+        ),
+        validationTrackingService.createValidationStep(
+          'others-read-only',
+          'All other users can read only',
+          25,
+          () => this.service.filePermissionsValidation_UserCanRead("others")
+        )
+      ];
+
+      // Execute validation with full tracking
+      await validationTrackingService.executeValidationWithTracking(context, validationSteps);
+
+      console.log(`✅ Authenticated validation completed for user ${userContext.userInfo.email} on task ${questionId}`);
+    } catch (error) {
+      console.error('Authenticated validation error:', error);
+      socket.emit(`validation-${questionId}-error`, {
+        error: error instanceof Error ? error.message : 'Validation failed',
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+
+  /**
+   * Example of using ValidationTrackingService for tar validation with authentication
+   */
+  handleTarValidationAuthenticated = async (
+    socket: AuthenticatedSocket,
+    questionId: string,
+    labId: string
+  ) => {
+    try {
+      const userContext = await SocketUserService.getUserContextWithLab(socket, labId);
+      if (!userContext) {
+        socket.emit(`validation-${questionId}-error`, {
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (!userContext.labEnrollmentId) {
+        // Fall back to basic validation without tracking
+        return this.handleTarValidation(socket, questionId);
+      }
+
+      const context: ValidationContext = {
+        socket,
+        questionId,
+        userId: userContext.userId,
+        labEnrollmentId: userContext.labEnrollmentId
+      };
+
+      const validationSteps = [
+        validationTrackingService.createValidationStep(
+          'tar-archive-created',
+          'Create a tar archive with correct files',
+          100,
+          () => this.service.tarValidation()
+        )
+      ];
+
+      await validationTrackingService.executeValidationWithTracking(context, validationSteps);
+
+      console.log(`✅ Authenticated tar validation completed for user ${userContext.userInfo.email} on task ${questionId}`);
+    } catch (error) {
+      console.error('Authenticated tar validation error:', error);
+      socket.emit(`validation-${questionId}-error`, {
+        error: error instanceof Error ? error.message : 'Validation failed',
+        timestamp: new Date().toISOString()
+      });
+    }
   };
 }

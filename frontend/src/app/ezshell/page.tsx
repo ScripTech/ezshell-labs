@@ -4,30 +4,49 @@ import React from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { io } from 'socket.io-client'
 import { ShellSectionComponent } from './components/shell-section'
 import { TaskSection } from './components/task-section'
-import { LabSessionTimer } from '@/components/lab-session-timer'
 import { useLabSession } from '@/contexts/LabSessionContext'
+import { useAuthenticatedSocket } from '@/hooks/useAuthenticatedSocket'
+import { useSession, SessionProvider } from 'next-auth/react'
 import { toast } from 'sonner'
-
-const socket = io(process.env.BACKEND_WS ?? 'http://localhost:3001', {
-    timeout: 5000,
-    reconnection: false
-})
 
 interface Props { }
 
-const EZSShellView = () => {
+const EZSShellViewContent = () => {
+  const { data: session } = useSession()
+  const { socket, isConnected, isAuthenticated, connect, disconnect } = useAuthenticatedSocket()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [termPanelSize, setTermPanelSize] = React.useState<number>(63)
   const { labSession, labInfo, setLabSession, setLabInfo } = useLabSession()
   const [loading, setLoading] = React.useState(true)
-  const socketRef = React.useRef(socket);
+
+  // Create a ref for the socket to maintain compatibility with TaskSection
+  const socketRef = React.useRef(socket)
 
   const labId = searchParams.get('lab')
   const sessionId = searchParams.get('session')
+
+  // Connect socket when session is ready
+  React.useEffect(() => {
+    if (session?.user && !isConnected) {
+      // Add a small delay to ensure the token is ready
+      const timer = setTimeout(() => {
+        connect().catch((error) => {
+          console.error('Socket connection failed:', error)
+          toast.error('Failed to connect to lab environment')
+        })
+      }, 1000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [session, isConnected, connect])
+
+  // Update socket ref when socket changes
+  React.useEffect(() => {
+    socketRef.current = socket
+  }, [socket])
 
   // Fetch or create lab session
   React.useEffect(() => {
@@ -108,16 +127,27 @@ const EZSShellView = () => {
 
   React.useEffect(() => {
     return () => {
-      socketRef.current.disconnect()
+      disconnect()
     }
-  }, [])
+  }, [disconnect])
 
-  if (loading) {
+  if (loading || !session || !isConnected || !isAuthenticated) {
     return (
       <div className="container-shell flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Initializing lab session...</p>
+          <p>
+            {!session ? 'Authenticating...' :
+             !isConnected ? 'Connecting to lab environment...' :
+             !isAuthenticated ? 'Authenticating with lab environment...' :
+             'Initializing lab session...'}
+          </p>
+          {session && (
+            <div className="mt-2 text-sm text-muted-foreground">
+              Socket: {isConnected ? '🟢 Connected' : '🔴 Connecting...'}
+              {isAuthenticated && ' (Authenticated)'}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -159,6 +189,14 @@ const EZSShellView = () => {
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
+  )
+}
+
+const EZSShellView = () => {
+  return (
+    <SessionProvider>
+      <EZSShellViewContent />
+    </SessionProvider>
   )
 }
 
