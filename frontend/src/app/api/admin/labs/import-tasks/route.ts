@@ -37,8 +37,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    await importLabTasksFromMarkdown(labId, labFolder);
-    return NextResponse.json({ success: true });
+    const labTasks = await importLabTasksFromMarkdown(labId, labFolder);
+    console.log(`Imported lab tasks for ${labId} from ${labFolder}`);
+    return NextResponse.json({
+      success: true,
+      labTasks: labTasks,
+      message: labTasks.tasks.length == 0 ? "No tasks or new tasks imported" : `${labTasks.tasks.length} tasks Imported`,
+    });
   } catch (err: any) {
     console.error("Error importing lab tasks:", err);
     return NextResponse.json(

@@ -8,8 +8,9 @@ async function main() {
     process.exit(1)
   }
   try {
-    await importLabTasksFromMarkdown(labId, labFolder)
+    const labTasks = await importLabTasksFromMarkdown(labId, labFolder)
     console.log(`Imported lab tasks for ${labId} from ${labFolder}`)
+    return labTasks;
   } catch (err) {
     console.error("Error importing lab tasks:", err)
     process.exit(1)
