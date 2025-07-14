@@ -2,7 +2,7 @@ import {
   connectSSH,
   ssh,
   executeCommand
-} from "../utils/ssh-service";
+} from "../../utils/ssh-service";
 
 export class NetworkConfigValidationService {
   async validateIPAddress(): Promise<boolean> {

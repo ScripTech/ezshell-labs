@@ -4,6 +4,13 @@ import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useSession } from "next-auth/react"
 import { columns } from "./components/columns"
 import { DataTable } from "./components/data-table"
@@ -28,6 +35,7 @@ export default function UserDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showCompletedOnly, setShowCompletedOnly] = useState(false)
   const [page, setPage] = useState(1)
+  const [labFilter, setLabFilter] = useState("")
   const pageSize = 30
 
   useEffect(() => {
@@ -41,10 +49,15 @@ export default function UserDashboardPage() {
     fetchTasks()
   }, [])
 
+  // Get unique lab names for filter dropdown (limit to 15)
+  const allLabs = Array.from(new Set(tasks.map(task => task.lab).filter(Boolean))).slice(0, 15)
+
   const filteredTasks = tasks.filter(task =>
     (task.title?.toLowerCase().includes(search.toLowerCase()) ||
+      task.lab?.toLowerCase().includes(search.toLowerCase()) ||
       task.description?.toLowerCase().includes(search.toLowerCase())) &&
-    (!showCompletedOnly || task.completed)
+    (!showCompletedOnly || task.completed) &&
+    (!labFilter || task.lab === labFilter)
   )
 
   const totalPages = Math.ceil(filteredTasks.length / pageSize)
@@ -110,6 +123,24 @@ export default function UserDashboardPage() {
           >
             {showCompletedOnly ? "Show All" : "Show Completed"}
           </Button>
+          <Select
+            value={labFilter}
+            onValueChange={value => {
+              setLabFilter(value === "all" ? "" : value)
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Lab" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Labs</SelectItem>
+              {allLabs.map(lab => (
+                <SelectItem key={lab} value={lab}>
+                  <span className="uppercase">{lab}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="rounded shadow">
           <DataTable columns={columns} data={paginatedTasks} isLoading={loading} />

@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { BasicValidationService } from "../../services/BasicValidationService";
+import { BasicValidationService } from "../../../services/ex200/BasicValidationService";
 
 export class BasicValidationController {
   private service: BasicValidationService;

@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { CronJobService } from "../../services/CronJobService";
+import { CronJobService } from "../../../services/ex200/CronJobService";
 
 export class CronJobController {
   private service: CronJobService;

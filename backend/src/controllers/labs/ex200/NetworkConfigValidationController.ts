@@ -1,4 +1,4 @@
-import { NetworkConfigValidationService } from "../../services/NetworkConfigValidationService";
+import { NetworkConfigValidationService } from "../../../services/ex200/NetworkConfigValidationService";
 import { Socket } from "socket.io";
 
 

@@ -7,7 +7,7 @@ export const columns: ColumnDef<any>[] = [
 	{
 		accessorKey: "labId",
 		header: "Lab ID",
-    cell: ({ row }: any) => <span>{row.original.lab}</span>,
+    cell: ({ row }: any) => <span className="uppercase">{row.original.lab}</span>,
 		enableSorting: true,
 	},
 	{

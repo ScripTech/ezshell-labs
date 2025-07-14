@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { CollaborativeDirectoryServiceV1 } from "../../services/CollaborativeDirectoryServiceV1";
+import { CollaborativeDirectoryServiceV1 } from "../../../services/ex200/CollaborativeDirectoryServiceV1";
 
 export class CollaborativeDirectoryControllerV1 {
   private service: CollaborativeDirectoryServiceV1;

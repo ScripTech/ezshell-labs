@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { YumRepositoryValidationService } from "../../services/YumRepositoryValidationService";
+import { YumRepositoryValidationService } from "../../../services/ex200/YumRepositoryValidationService";
 
 
 

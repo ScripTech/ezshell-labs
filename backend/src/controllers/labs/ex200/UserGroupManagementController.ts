@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { UserGroupManagementService } from "../../services/UserGroupManagementService";
+import { UserGroupManagementService } from "../../../services/ex200/UserGroupManagementService";
 
 export class UserGroupManagementController {
   private service: UserGroupManagementService;

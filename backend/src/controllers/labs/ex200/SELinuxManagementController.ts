@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { SELinuxManagementService } from "../../services/SELinuxManagementService";
+import { SELinuxManagementService } from "../../../services/ex200/SELinuxManagementService";
 
 export class SELinuxManagementController {
   private service: SELinuxManagementService;

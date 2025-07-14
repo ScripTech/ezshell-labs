@@ -3,7 +3,7 @@ import {
   validateFileContent,
   connectSSH,
   ssh
-} from "../utils/ssh-service";
+} from "../../utils/ssh-service";
 
 export class ValidationService {
   async validateFileExistence(username: string): Promise<boolean> {

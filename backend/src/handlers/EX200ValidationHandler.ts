@@ -1,13 +1,13 @@
 import { Socket } from 'socket.io';
 import { ILabValidationHandler } from '../interfaces/ILabValidationHandler';
-import { NetworkConfigValidationController } from '../controllers/exercises/NetworkConfigValidationController';
-import { UserGroupManagementController } from '../controllers/exercises/UserGroupManagementController';
-import { YumRepositoryValidationController } from '../controllers/exercises/YumRepositoryValidationController';
-import { SELinuxManagementController } from '../controllers/exercises/SELinuxManagementController';
-import { AutofsConfigurationController } from '../controllers/exercises/AutofsConfigurationController';
-import { BasicValidationController } from '../controllers/exercises/BasicValidationController';
-import { CollaborativeDirectoryControllerV1 } from '../controllers/exercises/CollaborativeDirectoryControllerV1';
-import { CronJobController } from '../controllers/exercises/CronJobController';
+import { NetworkConfigValidationController } from '../controllers/labs/ex200/NetworkConfigValidationController';
+import { UserGroupManagementController } from '../controllers/labs/ex200/UserGroupManagementController';
+import { YumRepositoryValidationController } from '../controllers/labs/ex200/YumRepositoryValidationController';
+import { SELinuxManagementController } from '../controllers/labs/ex200/SELinuxManagementController';
+import { AutofsConfigurationController } from '../controllers/labs/ex200/AutofsConfigurationController';
+import { BasicValidationController } from '../controllers/labs/ex200/BasicValidationController';
+import { CollaborativeDirectoryControllerV1 } from '../controllers/labs/ex200/CollaborativeDirectoryControllerV1';
+import { CronJobController } from '../controllers/labs/ex200/CronJobController';
 
 export class EX200ValidationHandler implements ILabValidationHandler {
   constructor(

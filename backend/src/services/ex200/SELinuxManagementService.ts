@@ -1,4 +1,4 @@
-import { connectSSH, ssh, executeCommand } from "../utils/ssh-service";
+import { connectSSH, ssh, executeCommand } from "../../utils/ssh-service";
 
 export class SELinuxManagementService {
   async validateService(service: string): Promise<boolean> {

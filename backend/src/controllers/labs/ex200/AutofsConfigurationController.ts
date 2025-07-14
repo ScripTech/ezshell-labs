@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { AutofsConfigurationService } from "../../services/AutofsConfigurationService";
+import { AutofsConfigurationService } from "../../../services/ex200/AutofsConfigurationService";
 
 export class AutofsConfigurationController {
   private service: AutofsConfigurationService;
