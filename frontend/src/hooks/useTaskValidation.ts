@@ -44,7 +44,7 @@ export function useTaskValidation(taskId: string, enrollmentId: string) {
     try {
       setLoading(true)
       const response = await fetch(`/api/task-validation/${taskId}?enrollmentId=${enrollmentId}`)
-      
+
       if (response.ok) {
         const data = await response.json()
         setProgress(data)
@@ -66,7 +66,7 @@ export function useTaskValidation(taskId: string, enrollmentId: string) {
   const submitValidation = useCallback(async (validationSteps: ValidationStep[]): Promise<ValidationResult | null> => {
     try {
       setLoading(true)
-      
+
       // Check if user can still attempt
       if (progress && !progress.canAttempt) {
         toast.error(`Maximum attempts (${progress.maxAttempts}) reached for this task`)
@@ -86,17 +86,17 @@ export function useTaskValidation(taskId: string, enrollmentId: string) {
 
       if (response.ok) {
         const result = await response.json()
-        
+
         // Refresh progress after validation
         await fetchProgress()
-        
+
         // Show appropriate toast
         if (result.passed) {
           toast.success(`Task completed! Score: ${result.totalScore}/${result.maxScore}`)
         } else {
           toast.warning(`Attempt ${result.attemptNumber} completed. Score: ${result.totalScore}/${result.maxScore}. ${result.remainingAttempts} attempts remaining.`)
         }
-        
+
         return result
       } else {
         const error = await response.json()
@@ -115,7 +115,7 @@ export function useTaskValidation(taskId: string, enrollmentId: string) {
   const fetchValidationHistory = useCallback(async () => {
     try {
       const response = await fetch(`/api/task-validation/${taskId}/history?enrollmentId=${enrollmentId}`)
-      
+
       if (response.ok) {
         const data = await response.json()
         setValidationHistory(data)

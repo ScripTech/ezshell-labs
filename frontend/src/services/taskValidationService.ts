@@ -66,7 +66,7 @@ export class TaskValidationService {
       const score = record.score ?? 0
       const completed = record.completed ?? false
       const remainingAttempts = maxAttempts - attempts
-      
+
       return {
         id: record.id,
         userId: record.userId!,
@@ -93,13 +93,13 @@ export class TaskValidationService {
   async initializeTaskProgress(userId: string, labTaskId: string, labEnrollmentId: string): Promise<TaskProgressData> {
     try {
       const existingProgress = await this.getTaskProgress(userId, labTaskId, labEnrollmentId)
-      
+
       if (existingProgress) {
         return existingProgress
       }
 
       const progressId = uuidv4()
-      
+
       await db.insert(labTaskProgress).values({
         id: progressId,
         userId,
@@ -139,12 +139,12 @@ export class TaskValidationService {
    */
   private calculateScore(validationSteps: ValidationStep[], maxPoints: number): number {
     if (validationSteps.length === 0) return 0
-    
+
     const totalPossiblePoints = validationSteps.reduce((sum, step) => sum + step.points, 0)
     const earnedPoints = validationSteps
       .filter(step => step.passed)
       .reduce((sum, step) => sum + step.points, 0)
-    
+
     // Calculate percentage and apply to max points for this task
     const percentage = totalPossiblePoints > 0 ? earnedPoints / totalPossiblePoints : 0
     return Math.round(percentage * maxPoints)
@@ -162,7 +162,7 @@ export class TaskValidationService {
     try {
       // Get current progress
       let progress = await this.getTaskProgress(userId, labTaskId, labEnrollmentId)
-      
+
       if (!progress) {
         progress = await this.initializeTaskProgress(userId, labTaskId, labEnrollmentId)
       }

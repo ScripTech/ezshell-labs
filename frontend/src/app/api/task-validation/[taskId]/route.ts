@@ -68,7 +68,7 @@ export async function POST(
     }
 
     // Validate the structure of validation steps
-    const isValidSteps = validationSteps.every((step: any) => 
+    const isValidSteps = validationSteps.every((step: any) =>
       typeof step.id === 'string' &&
       typeof step.description === 'string' &&
       typeof step.passed === 'boolean' &&
@@ -89,13 +89,13 @@ export async function POST(
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error recording validation attempt:', error)
-    
+
     if (error instanceof Error) {
       if (error.message.includes('Maximum attempts') || error.message.includes('already completed')) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to record validation attempt' },
       { status: 500 }

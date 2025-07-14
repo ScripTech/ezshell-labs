@@ -20,7 +20,7 @@ export interface ValidationContext {
  * Service to integrate validation tracking with existing validation controllers
  */
 export class ValidationTrackingService {
-  
+
   /**
    * Execute validation steps and track results
    */
@@ -30,18 +30,18 @@ export class ValidationTrackingService {
   ): Promise<void> {
     try {
       const { socket, questionId, userId, labEnrollmentId } = context
-      
+
       // Emit validation start
       socket.emit('validation-start', { questionId })
-      
+
       // Execute all validation steps
       const results: ValidationStepResult[] = []
-      
+
       for (const stepFunction of validationSteps) {
         try {
           const result = await stepFunction()
           results.push(result)
-          
+
           // Emit step result in real-time
           socket.emit('validation-step-result', {
             questionId,
@@ -92,7 +92,7 @@ export class ValidationTrackingService {
 
         if (trackingResponse.ok) {
           const trackingResult = await trackingResponse.json()
-          
+
           // Emit final validation result
           socket.emit('validation-completed', {
             questionId,
@@ -113,7 +113,7 @@ export class ValidationTrackingService {
         }
       } catch (trackingError) {
         console.error('Error tracking validation:', trackingError)
-        
+
         // Still emit results even if tracking fails
         socket.emit('validation-completed', {
           questionId,

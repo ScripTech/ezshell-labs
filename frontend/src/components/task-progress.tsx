@@ -20,15 +20,15 @@ export function TaskProgress({ progress, onReset, showHistory = false, onShowHis
     if (progress.completed) {
       return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>
     }
-    
+
     if (!progress.canAttempt) {
       return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>
     }
-    
+
     if (progress.attempts > 0) {
       return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />In Progress</Badge>
     }
-    
+
     return <Badge variant="outline"><AlertTriangle className="h-3 w-3 mr-1" />Not Started</Badge>
   }
 
@@ -74,7 +74,7 @@ export function TaskProgress({ progress, onReset, showHistory = false, onShowHis
           Track your validation attempts and scores for this task
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Score Progress */}
         <div className="space-y-2">
@@ -170,7 +170,7 @@ export function ValidationHistory({ history, isOpen, onClose }: ValidationHistor
           </Button>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {history.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">
@@ -197,11 +197,11 @@ export function ValidationHistory({ history, isOpen, onClose }: ValidationHistor
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="text-sm">
                   Score: {attempt.score} points
                 </div>
-                
+
                 {attempt.steps && (
                   <div className="space-y-1">
                     <div className="text-sm font-medium">Validation Steps:</div>
