@@ -13,11 +13,13 @@ export interface ValidationStepResult {
 }
 
 export interface ValidationContext {
-  socket: Socket
-  questionId: string
-  userId: string
-  labEnrollmentId: string
-  sessionId?: string
+  socket: Socket;
+  questionId: string;
+  validationQuestionId: string;
+  userId: string;
+  labId: string;
+  labEnrollmentId: string;
+  sessionId?: string;
 }
 
 /**
@@ -171,14 +173,17 @@ export class ValidationTrackingService {
     validationSteps: (() => Promise<ValidationStepResult>)[]
   ): Promise<void> {
     try {
-      const { socket, questionId, userId, labEnrollmentId } = context
+      const { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId } = context
 
       // Emit validation start
-      socket.emit('validation-start', { questionId })
+      socket.emit("validation-start", { validationQuestionId });
 
       // Get current session (assuming labId can be extracted from context or passed separately)
       // For now, we'll extract it from questionId or pass it explicitly
-      const labId = this.extractLabIdFromQuestionId(questionId)
+      // const labId = this.extractLabIdFromQuestionId(questionId)
+      console.log(
+        `Extracted lab ID from question ID: ${userId} - ${labId} - ${questionId} - ${labEnrollmentId}`
+      );
       const session = await this.getCurrentSession(userId, labId, labEnrollmentId)
 
       // Get next attempt number
@@ -186,10 +191,10 @@ export class ValidationTrackingService {
 
       // Check if user has exceeded max attempts (3)
       if (attemptNumber > 3) {
-        socket.emit('validation-error', {
+        socket.emit("validation-attempts-reached", {
           questionId,
-          error: 'Maximum attempts (3) exceeded for this task'
-        })
+          error: "Maximum attempts (3) exceeded for this task",
+        });
         return
       }
 

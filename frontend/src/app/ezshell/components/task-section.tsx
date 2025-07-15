@@ -15,6 +15,7 @@ import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism"
 import { metadata } from '../../layout';
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { toast } from 'sonner'
 
 
 type validationResult = {
@@ -109,7 +110,35 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
 
         // Use the legacy validation system for now with the mapped question ID
         socketRef.current.emit('validate-exercise', {
-          labId: taskData.lab?.labId, questionId: validationQuestionId });
+          id: taskData.lab?.id,
+          labId: taskData.lab?.labId,
+          questionId: questionId,
+          validationQuestionId: validationQuestionId
+        });
+
+        // Here will return the validation errors
+        socketRef.current.on('validation-error', () => {
+         toast(
+            'Validation Error',
+            {
+              description: 'An error occurred during validation. Please check the console for details.',
+              duration: 3000, // 3 seconds
+              icon: '⚠️',
+            }
+          )
+        })
+
+        // here will show a toast with max attempts reached
+        socketRef.current.on('validation-attempts-reached', () => {
+          toast(
+            'Max validation attempts reached',
+            {
+              description: 'You have reached the maximum number of validation attempts for this question.',
+              duration: 3000, // 3 seconds
+              icon: '😔',
+            }
+          )
+        })
 
         // Listen for validation steps using the mapped questionId
         socketRef.current.on(`validation-${ validationQuestionId }-step`, (data: validationResult) => {

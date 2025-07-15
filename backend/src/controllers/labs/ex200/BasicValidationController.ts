@@ -155,10 +155,12 @@ export class BasicValidationController {
     labEnrollmentId: string
   ) => {
     const context: ValidationContext = {
-      socket,
+      socket:socket,
       questionId,
+      validationQuestionId: "",
       userId,
-      labEnrollmentId
+      labId: "ex200", // Assuming labId is known or can be derived
+      labEnrollmentId,
     };
 
     // Create validation steps using the tracking service
@@ -206,7 +208,9 @@ export class BasicValidationController {
       socket,
       questionId,
       userId,
-      labEnrollmentId
+      labId: "ex200", // Assuming labId is known or can be derived
+      labEnrollmentId,
+      validationQuestionId: ""
     };
 
     const validationSteps = [
@@ -251,8 +255,10 @@ export class BasicValidationController {
       const context: ValidationContext = {
         socket,
         questionId,
+        validationQuestionId: "",
+        labId: "ex200", // just a default value, assuming labId is known or can be derived
         userId: userContext.userId,
-        labEnrollmentId: userContext.labEnrollmentId
+        labEnrollmentId: userContext.labEnrollmentId,
       };
 
       // Create validation steps using the tracking service
@@ -322,8 +328,10 @@ export class BasicValidationController {
       const context: ValidationContext = {
         socket,
         questionId,
+        validationQuestionId: "",
+        labId: "ex200", // Assuming labId is known or can be derived
         userId: userContext.userId,
-        labEnrollmentId: userContext.labEnrollmentId
+        labEnrollmentId: userContext.labEnrollmentId,
       };
 
       const validationSteps = [

@@ -49,8 +49,10 @@ export class DO280ValidationHandler implements ILabValidationHandler {
       const validationContext: ValidationContext = {
         socket: authSocket,
         questionId,
+        validationQuestionId: "",
         userId: userContext.userId,
-        labEnrollmentId: userContext.labEnrollmentId
+        labId: "do280",
+        labEnrollmentId: userContext.labEnrollmentId,
       };
 
       // Execute validation with tracking

@@ -27,18 +27,23 @@ export class EX200ValidationHandler implements ILabValidationHandler {
   private async executeWithAuthentication(
     socket: Socket,
     questionId: string,
+    labId: string,
+    validationQuestionId: string,
     validationFunction: () => Promise<void>
   ): Promise<void> {
     const authSocket = socket as AuthenticatedSocket;
 
     try {
       // Get user context from authenticated socket
-      const userContext = await SocketUserService.getUserContextWithLab(authSocket, 'ex200');
-
+      const userContext = await SocketUserService.getUserContextWithLab(
+        authSocket,
+        labId,
+      );
+      console.log(`User context for ${validationQuestionId}:`, userContext);
       if (!userContext || !userContext.labEnrollmentId) {
-        socket.emit('validation-error', {
-          questionId,
-          error: 'Authentication required or lab enrollment not found'
+        socket.emit("validation-error", {
+          validationQuestionId,
+          error: "Authentication required or lab enrollment not found",
         });
         return;
       }
@@ -46,9 +51,11 @@ export class EX200ValidationHandler implements ILabValidationHandler {
       // Create validation context for tracking
       const validationContext: ValidationContext = {
         socket: authSocket,
-        questionId,
+        questionId: questionId,
+        validationQuestionId: validationQuestionId,
         userId: userContext.userId,
-        labEnrollmentId: userContext.labEnrollmentId
+        labId: labId,
+        labEnrollmentId: userContext.labEnrollmentId,
       };
 
       // Execute validation with tracking
@@ -56,112 +63,137 @@ export class EX200ValidationHandler implements ILabValidationHandler {
         validationContext,
         [
           validationTrackingService.createValidationStep(
-            `${questionId}-execution`,
-            `Execute validation for ${questionId}`,
+            `${validationQuestionId}-execution`,
+            `Execute validation for ${validationQuestionId}`,
             100,
             async () => {
               await validationFunction();
               return true;
             }
-          )
+          ),
         ]
       );
-
     } catch (error) {
-      console.error(`Authentication error for ${questionId}:`, error);
-      socket.emit('validation-error', {
-        questionId,
-        error: 'Authentication failed'
+      console.error(`Authentication error for ${validationQuestionId}:`, error);
+      socket.emit("validation-error", {
+        validationQuestionId,
+        error: "Authentication failed",
       });
     }
   }
 
-  async handleValidation(socket: Socket, questionId: string): Promise<void> {
-    switch (questionId) {
+  async handleValidation(
+    socket: Socket,
+    questionId: string,
+    labId: string,
+    validationQuestionId: string
+  ): Promise<void> {
+    switch (validationQuestionId) {
       case "question-1-network-config":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.networkConfigValidationController.handleValidation(socket, questionId);
-        });
+        console.log(`Handling validation for ${validationQuestionId}`);
+        await this.executeWithAuthentication(
+          socket,
+          questionId,
+          labId,
+          validationQuestionId,
+          async () => {
+            this.networkConfigValidationController.handleValidation(
+              socket,
+              validationQuestionId
+            );
+          }
+        );
         break;
       case "question-2-yum-repository":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.yumManagement.handleValidation(socket, questionId);
-        });
+        await this.executeWithAuthentication(socket,
+          questionId,
+          labId,
+          validationQuestionId,
+          async () => {
+            this.yumManagement.handleValidation(socket, validationQuestionId);
+          }
+        );
         break;
       case "question-14-configure-yum-repository":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.yumManagement.handleValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.yumManagement.handleValidation(socket, validationQuestionId);
         });
         break;
       case "question-3-selinux-port":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.selinuxMnt.handleValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.selinuxMnt.handleValidation(socket, validationQuestionId);
         });
         break;
       case "question-4-user-group-management":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.userGroupMnt.handleValidations(socket, questionId, {
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.userGroupMnt.handleValidations(socket, validationQuestionId, {
             group: "sysadm",
             users: ["natasha"],
           });
         });
         break;
       case "question-5-collaborative-directory":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.collabDirV1.handleValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.collabDirV1.handleValidation(socket, validationQuestionId);
         });
         break;
       case "question-6-cron-job":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.cronJob.handleValidation(socket, questionId, {
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.cronJob.handleValidation(socket, validationQuestionId, {
             user: "natasha",
             cronjob: '*/1\t*\t*\t*\t*\tlogger "EX200 Testing"',
           });
         });
         break;
       case "question-7-autofs-configuration":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.autofsConfig.handleValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.autofsConfig.handleValidation(socket, validationQuestionId);
         });
         break;
       case "question-8-create-tar-archive":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.basicController.handleTarValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.basicController.handleTarValidation(socket, validationQuestionId);
         });
         break;
       case "question-9-file-permissions":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.basicController.handleFilePermissionsValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.basicController.handleFilePermissionsValidation(
+            socket,
+            validationQuestionId
+          );
         });
         break;
       case "question-10-time-synchronization":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.basicController.handleTimeSynchronizationValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.basicController.handleTimeSynchronizationValidation(
+            socket,
+            validationQuestionId
+          );
         });
         break;
       case "question-11-find-user-files":
         // This case was empty - maintaining for compatibility
         break;
       case "question-12-string-search":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.basicController.handleStringSearchValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.basicController.handleStringSearchValidation(socket, validationQuestionId);
         });
         break;
       case "question-13-create-user":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.userGroupMnt.handleUserIDValidation(socket, questionId, {
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.userGroupMnt.handleUserIDValidation(socket, validationQuestionId, {
             user: "appservice",
             id: "2334",
           });
         });
         break;
       case "question-18-configure-tuned-profile":
-        await this.executeWithAuthentication(socket, questionId, async () => {
-          this.basicController.handleTunedProfileValidation(socket, questionId);
+        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
+          this.basicController.handleTunedProfileValidation(socket, validationQuestionId);
         });
         break;
       default:
-        console.log(`Unknown EX200 question: ${questionId}`);
+        console.log(`Unknown EX200 question: ${validationQuestionId}`);
         break;
     }
   }

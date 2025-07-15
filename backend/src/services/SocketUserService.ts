@@ -69,7 +69,10 @@ export class SocketUserService {
   ): Promise<UserContextFromSocket | null> {
     const baseContext = this.getUserContext(socket);
     if (!baseContext) return null;
-
+    console.log(
+      "GetUserContextWithLab@getLabEnrollmentId for lab with parent id:",
+      labId
+    );
     const labEnrollmentId = await this.getLabEnrollmentId(baseContext.userId, labId);
 
     return {
