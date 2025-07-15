@@ -3,7 +3,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { CheckCheckIcon, LoaderCircle, LucideXCircle } from 'lucide-react'
+import { CheckCheckIcon, LoaderCircle, LucideLock, LucideXCircle } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import QuestionNavigator from './lab-exercise-navigation'
 import { FaCheckCircle } from 'react-icons/fa'
@@ -16,10 +16,41 @@ import { metadata } from '../../layout';
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { toast } from 'sonner'
+import { useSession } from 'next-auth/react'
 
 
 type validationResult = {
   step: string, status: string
+}
+
+interface ValidationStep {
+  stepNumber: number
+  stepName: string
+  stepDescription: string
+  status: string
+  passed: boolean
+  score: string
+  maxScore: string
+  errorMessage?: string
+  completedAt?: string
+}
+
+interface ValidationAttempt {
+  id: string
+  attemptNumber: number
+  status: string
+  score: string
+  maxPossibleScore: string
+  completedAt?: string
+  steps: ValidationStep[]
+}
+
+interface ValidationHistory {
+  attempts: ValidationAttempt[]
+  hasAttempts: boolean
+  maxAttemptsReached: boolean
+  remainingAttempts: number
+  totalAttempts?: number
 }
 
 interface TaskSectionProps {
@@ -28,6 +59,7 @@ interface TaskSectionProps {
 }
 
 export const TaskSection = ({ socketRef}: TaskSectionProps) => {
+  const { data: session } = useSession()
   const searchParams = useSearchParams()
   const questionId = searchParams.get('question') ?? ''
 
@@ -38,8 +70,70 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
   const [hasCheckAnswer, sethasCheckAnswer] = React.useState<boolean>(false)
   const [isCorrect, setIsCorrect] = React.useState<boolean | null>(false)
   const [validationStatus, setValidationStatus] = React.useState<validationResult[]>([]);
+  const [validationHistory, setValidationHistory] = React.useState<ValidationHistory | null>(null);
+  const [showHistory, setShowHistory] = React.useState(false);
 
   const [isLoading, setIsLoading] = React.useState(true);
+
+  // Fetch validation history for the current task
+  const fetchValidationHistory = async (taskId: string, labId: string) => {
+    if (!session?.user?.id) return
+
+    try {
+      const enrollmentId = searchParams.get('enrollment') // Don't use default value
+
+      // Build query params
+      const params = new URLSearchParams({
+        userId: session.user.id,
+        labId: labId
+      })
+
+      // Only add enrollmentId if it exists
+      if (enrollmentId) {
+        params.append('enrollmentId', enrollmentId)
+      }
+
+      const apiUrl = `${ process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' }/api/validation/task/${ taskId }/detailed-history?${ params.toString() }`
+
+      console.log('Fetching validation history from:', apiUrl)
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      console.log('Response status:', response.status)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Validation history data:', data)
+
+        if (data.success) {
+          setValidationHistory(data.data)
+
+          // If max attempts reached, show the latest validation results
+          if (data.data.maxAttemptsReached && data.data.attempts.length > 0) {
+            const latestAttempt = data.data.attempts[0] // Most recent attempt
+            const validationResults = latestAttempt.steps.map((step: ValidationStep) => ({
+              step: step.stepDescription,
+              status: step.passed ? 'success' : 'failed'
+            }))
+            setValidationStatus(validationResults)
+            sethasCheckAnswer(true)
+            setIsCorrect(latestAttempt.status === 'completed')
+            setShowHistory(true)
+          }
+        }
+      } else {
+        console.error('Failed to fetch validation history:', response.status, response.statusText)
+      }
+    } catch (error) {
+      console.error('Error fetching validation history:', error)
+    }
+  }
+
 
 
    React.useEffect(() => {
@@ -62,6 +156,14 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           // setExerciseHint(data.exerciseHintHtml)
           sethasCheckAnswer(false)
           setValidationStatus([])
+          setValidationHistory(null)
+          setShowHistory(false)
+
+          // Fetch validation history for this task
+          if (questionId && session?.user?.id) {
+            await fetchValidationHistory(questionId, labId)
+          }
+
         } catch (error) {
           console.error('Failed to update exercise:', error)
         } finally {
@@ -254,6 +356,65 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
               </div>
 
               <div className="mt-6 text-sm">
+                {/* Show validation history if available */}
+                {validationHistory && validationHistory.hasAttempts && showHistory && (
+                  <div className="mb-6 p-4 border rounded-lg bg-gray-900/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold">Previous Validation Attempts</h3>
+                      <span className="text-sm text-gray-400">
+                        Attempts: {validationHistory.totalAttempts || 0}/3
+                      </span>
+                    </div>
+
+                    {validationHistory.maxAttemptsReached && (
+                      <div className="mb-3 p-2 bg-yellow-900/30 border border-yellow-700 rounded text-yellow-300 text-sm">
+                        ⚠️ Maximum attempts reached. Results shown below.
+                      </div>
+                    )}
+
+                    {validationHistory.attempts.map((attempt, attemptIndex) => (
+                      <div key={attempt.id} className="mb-4 last:mb-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">
+                            Attempt #{attempt.attemptNumber}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-400">
+                              Score: {attempt.score}/{attempt.maxPossibleScore}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="ml-4 space-y-1">
+                          {attempt.steps.map((step, stepIndex) => (
+                            <div key={stepIndex} className="flex items-center space-x-2 text-sm">
+                              {step.passed ? (
+                                <FaCheckCircle style={{ color: 'green' }} className="h-3 w-3" />
+                              ) : (
+                                <FaCheckCircle style={{ color: 'red' }} className="h-3 w-3" />
+                              )}
+                              <span>
+                                {step.stepDescription}
+                                <span className={step.passed ? 'text-green-400 ml-2' : 'text-red-400 ml-2'}>
+                                  - {step.passed ? 'Passed' : 'Failed'}
+                                </span>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={() => setShowHistory(false)}
+                      className="mt-2 text-xs text-gray-400 hover:text-gray-300"
+                    >
+                      Hide history
+                    </button>
+                  </div>
+                )}
+
+                {/* Current validation status */}
                 {validationStatus.map((status, index) => (
                   <li key={index} className='flex space-x-2 items-center' style={{ marginBottom: '8px' }}>
                     {getStatusIcon(status.status)}
@@ -270,22 +431,36 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                 ))}
               </div>
               <div className="mt-8 space-x-4">
+                {/* Show history button if there are previous attempts but not at max */}
+                {validationHistory && validationHistory.hasAttempts && !validationHistory.maxAttemptsReached && !showHistory && (
+                  <Button
+                    type='button'
+                    variant={'outline'}
+                    size="sm"
+                    onClick={() => setShowHistory(true)}
+                    className="mb-4"
+                  >
+                    Show Previous Attempts ({validationHistory.totalAttempts || 0}/3)
+                  </Button>
+                )}
+
+                {/* Validation action buttons */}
                 {
                   (() => {
                     if (hasCheckAnswer) {
                       if (isCorrect) {
                         return (
                           <Button type='button' variant={'outline'} className='border-green-700 bg-green-900/50'>
-                            Resposta correcta<span>
+                            Congratulations! All validation passed<span>
                               <CheckCheckIcon className="h-5 w-5 ml-2 text-green-700" />
                             </span>
                           </Button>
                         );
                       } else {
                         return (
-                          <Button type='button' variant={'outline'} className='border-red-700' onClick={() => checkExerciseAnswer(question)}>
+                          <Button type='button' variant={'outline'} disabled onClick={() => {}}>
                             Submit Answer<span>
-                              <LucideXCircle className="h-5 w-5 ml-2 text-red-700" />
+                              <LucideLock className="h-4 w-4 ml-2 text-muted-foreground" />
                             </span>
                           </Button>
                         );
@@ -302,6 +477,13 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                   })()
                 }
               </div>
+            </div>
+          </ScrollArea>
+        </TabsContent>
+        <TabsContent value="hint-area" className="h-full">
+          <ScrollArea className="h-[calc(100vh-250px)]">
+            <div className="p-3">
+              <div className='prose text-sm' dangerouslySetInnerHTML={{ __html: exerciseHint }} />
             </div>
           </ScrollArea>
         </TabsContent>

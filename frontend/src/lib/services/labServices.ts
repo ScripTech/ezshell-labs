@@ -211,7 +211,8 @@ export async function getExerciseDataFromDB(
     .limit(1);
 
   if (result.length === 0) {
-    throw new Error(`No questions found for lab ${labId}`);
+    console.error(`No questions found for lab ${labId} with question ${questionId}`);
+    return Promise.reject({ message: `Question ${questionId} not found in lab ${labId}` });
   }
 
   const row = result[0];

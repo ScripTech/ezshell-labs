@@ -1,6 +1,7 @@
 import { Socket } from 'socket.io'
 import { db } from '../db'
 import { taskAttempts, validationSteps, labProgressSessions } from '../db/schemas/ProgressSchema'
+import { labEnrollments } from '../db/schemas/LabSchema'
 import { eq, and, desc } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -29,49 +30,101 @@ export interface ValidationContext {
 export class ValidationTrackingService {
 
   /**
+   * Get or create enrollment for user and lab
+   */
+  private async getOrCreateEnrollment(userId: string, labId: string): Promise<string> {
+    try {
+      // Try to find existing enrollment
+      const existingEnrollment = await db
+        .select()
+        .from(labEnrollments)
+        .where(
+          and(
+            eq(labEnrollments.userId, userId),
+            eq(labEnrollments.labId, labId)
+          )
+        )
+        .limit(1)
+
+      if (existingEnrollment.length > 0) {
+        return existingEnrollment[0].id
+      }
+
+      // Create new enrollment if none exists
+      const enrollmentId = uuidv4()
+      const newEnrollment = {
+        id: enrollmentId,
+        userId,
+        labId,
+        enrolledAt: new Date(),
+        status: 'in_progress' as const,
+        progress: 0
+      }
+
+      await db.insert(labEnrollments).values(newEnrollment)
+      console.log(`Created new enrollment: ${enrollmentId} for user ${userId} and lab ${labId}`)
+      
+      return enrollmentId
+    } catch (error) {
+      console.error('Error getting or creating enrollment:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get or create current lab session for the user
    */
-  private async getCurrentSession(userId: string, labId: string, enrollmentId: string) {
-    // Try to find an active session
-    const existingSessions = await db
-      .select()
-      .from(labProgressSessions)
-      .where(
-        and(
-          eq(labProgressSessions.userId, userId),
-          eq(labProgressSessions.labId, labId),
-          eq(labProgressSessions.enrollmentId, enrollmentId),
-          eq(labProgressSessions.status, 'active')
+  private async getCurrentSession(userId: string, labId: string, enrollmentId?: string) {
+    try {
+      // Get or create enrollment if not provided
+      const actualEnrollmentId = enrollmentId || await this.getOrCreateEnrollment(userId, labId)
+      
+      // Try to find an active session
+      const existingSessions = await db
+        .select()
+        .from(labProgressSessions)
+        .where(
+          and(
+            eq(labProgressSessions.userId, userId),
+            eq(labProgressSessions.labId, labId),
+            eq(labProgressSessions.enrollmentId, actualEnrollmentId),
+            eq(labProgressSessions.status, 'active')
+          )
         )
-      )
-      .orderBy(desc(labProgressSessions.lastActiveAt))
-      .limit(1)
+        .orderBy(desc(labProgressSessions.lastActiveAt))
+        .limit(1)
 
-    if (existingSessions.length > 0) {
-      // Update last active time
-      const session = existingSessions[0]
-      // Skip updating for now to avoid TypeScript issues
-      return session
+      if (existingSessions.length > 0) {
+        // Update last active time
+        const session = existingSessions[0]
+        // Skip updating for now to avoid TypeScript issues
+        return session
+      }
+
+      // Create new session if none exists
+      const newSessionId = uuidv4()
+      const defaultExpiryTime = new Date(Date.now() + 4 * 60 * 60 * 1000) // 4 hours default
+      const newSession = {
+        id: newSessionId,
+        userId,
+        labId,
+        enrollmentId: actualEnrollmentId,
+        sessionName: `Session-${Date.now()}`,
+        expiresAt: defaultExpiryTime, // Required field from frontend schema
+        startedAt: new Date(),
+        lastActiveAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      await db.insert(labProgressSessions).values(newSession)
+      console.log(`Created new session: ${newSessionId} for enrollment ${actualEnrollmentId}`)
+      
+      return newSession
+    } catch (error) {
+      console.error('Error getting or creating session:', error)
+      throw error
     }
-
-    // Create new session if none exists
-    const newSessionId = uuidv4()
-    const defaultExpiryTime = new Date(Date.now() + 4 * 60 * 60 * 1000) // 4 hours default
-    const newSession = {
-      id: newSessionId,
-      userId,
-      labId,
-      enrollmentId,
-      sessionName: `Session-${Date.now()}`,
-      expiresAt: defaultExpiryTime, // Required field from frontend schema
-      startedAt: new Date(),
-      lastActiveAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    await db.insert(labProgressSessions).values(newSession)
-    return newSession
   }
 
   /**
@@ -363,6 +416,121 @@ export class ValidationTrackingService {
           errorMessage: error instanceof Error ? error.message : 'Unknown validation error'
         }
       }
+    }
+  }
+
+  /**
+   * Retrieve all previous attempts and their validation steps for a task
+   * This will be called when a task is loaded to show previous validation results
+   */
+  async getTaskValidationHistory(userId: string, labId: string, taskId: string, enrollmentId?: string) {
+    try {
+      // Get current session
+      const session = await this.getCurrentSession(userId, labId, enrollmentId)
+
+      // Get all attempts for this task in the current session
+      const attempts = await db
+        .select()
+        .from(taskAttempts)
+        .where(
+          and(
+            eq(taskAttempts.sessionId, session.id),
+            eq(taskAttempts.taskId, taskId),
+            eq(taskAttempts.userId, userId)
+          )
+        )
+        .orderBy(desc(taskAttempts.attemptNumber))
+
+      // If no attempts, return empty history
+      if (attempts.length === 0) {
+        return {
+          attempts: [],
+          hasAttempts: false,
+          maxAttemptsReached: false,
+          remainingAttempts: 3
+        }
+      }
+
+      // Get validation steps for each attempt
+      const attemptsWithSteps = await Promise.all(
+        attempts.map(async (attempt) => {
+          const steps = await db
+            .select()
+            .from(validationSteps)
+            .where(eq(validationSteps.attemptId, attempt.id))
+            .orderBy(validationSteps.stepNumber)
+
+          return {
+            ...attempt,
+            steps: steps.map(step => ({
+              stepNumber: step.stepNumber,
+              stepName: step.stepName,
+              stepDescription: step.stepDescription,
+              status: step.status,
+              passed: step.status === 'passed',
+              score: step.score,
+              maxScore: step.maxScore,
+              errorMessage: step.errorMessage,
+              completedAt: step.completedAt
+            }))
+          }
+        })
+      )
+
+      const maxAttemptsReached = attempts.length >= 3
+      const remainingAttempts = Math.max(0, 3 - attempts.length)
+
+      return {
+        attempts: attemptsWithSteps,
+        hasAttempts: true,
+        maxAttemptsReached,
+        remainingAttempts,
+        totalAttempts: attempts.length,
+        sessionId: session.id
+      }
+    } catch (error) {
+      console.error('Error retrieving task validation history:', error)
+      return {
+        attempts: [],
+        hasAttempts: false,
+        maxAttemptsReached: false,
+        remainingAttempts: 3,
+        error: 'Failed to retrieve validation history'
+      }
+    }
+  }
+
+  /**
+   * Get the latest validation results for a task without performing new validation
+   * This is useful when max attempts are reached and you want to show the last results
+   */
+  async getLatestValidationResults(userId: string, labId: string, taskId: string, enrollmentId?: string) {
+    try {
+      const history = await this.getTaskValidationHistory(userId, labId, taskId, enrollmentId)
+
+      if (!history.hasAttempts || history.attempts.length === 0) {
+        return null
+      }
+
+      // Get the most recent attempt (first in the array due to DESC ordering)
+      const latestAttempt = history.attempts[0]
+
+      return {
+        attemptNumber: latestAttempt.attemptNumber,
+        totalSteps: latestAttempt.steps.length,
+        passedSteps: latestAttempt.steps.filter(step => step.passed).length,
+        totalPoints: parseFloat(latestAttempt.score || '0'),
+        maxPoints: parseFloat(latestAttempt.maxPossibleScore || '0'),
+        passed: latestAttempt.status === 'completed',
+        steps: latestAttempt.steps,
+        completedAt: latestAttempt.completedAt,
+        validationResult: latestAttempt.validationResult,
+        maxAttemptsReached: history.maxAttemptsReached,
+        remainingAttempts: history.remainingAttempts
+      }
+    } catch (error) {
+      console.error('Error retrieving latest validation results:', error)
+      return null
     }
   }
 }

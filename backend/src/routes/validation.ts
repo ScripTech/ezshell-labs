@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { taskValidationHistoryService } from '../services/TaskValidationHistoryService'
+import { validationHistoryController } from '../controllers/ValidationHistoryController'
 
 // Extend Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -84,5 +85,20 @@ router.get('/task/:taskId/can-attempt', async (req: AuthenticatedRequest, res: R
     res.status(500).json({ error: 'Failed to check task attempt eligibility' })
   }
 })
+
+/**
+ * Get detailed validation history with steps for a specific task
+ */
+router.get('/task/:taskId/detailed-history', validationHistoryController.getTaskValidationHistory.bind(validationHistoryController))
+
+/**
+ * Get latest validation results for a task
+ */
+router.get('/task/:taskId/latest', validationHistoryController.getLatestValidationResults.bind(validationHistoryController))
+
+/**
+ * Get attempts status for a task
+ */
+router.get('/task/:taskId/attempts-status', validationHistoryController.getAttemptsStatus.bind(validationHistoryController))
 
 export default router
