@@ -13,6 +13,12 @@ export interface ValidationStepResult {
   errorMessage?: string
 }
 
+export interface SocketStepResult {
+  step: string
+  status: string
+  message?: string
+}
+
 export interface ValidationContext {
   socket: Socket;
   questionId: string;
@@ -28,6 +34,35 @@ export interface ValidationContext {
  * Uses direct database access instead of HTTP calls to frontend API
  */
 export class ValidationTrackingService {
+  private currentAttemptSteps: Map<string, SocketStepResult[]> = new Map()
+
+  /**
+   * Start tracking validation steps for a specific attempt
+   */
+  startStepTracking(attemptId: string) {
+    this.currentAttemptSteps.set(attemptId, [])
+  }
+
+  /**
+   * Add a validation step result to the current tracking (deprecated - use updateOrAddStepResult)
+   */
+  addStepResult(attemptId: string, stepResult: SocketStepResult) {
+    this.updateOrAddStepResult(attemptId, stepResult)
+  }
+
+  /**
+   * Complete step tracking and save to database
+   */
+  async completeStepTracking(attemptId: string) {
+    const steps = this.currentAttemptSteps.get(attemptId) || []
+
+    if (steps.length > 0) {
+      await this.saveSocketSteps(attemptId, steps)
+    }
+
+    // Clean up tracking
+    this.currentAttemptSteps.delete(attemptId)
+  }
 
   /**
    * Get or create enrollment for user and lab
@@ -63,7 +98,7 @@ export class ValidationTrackingService {
 
       await db.insert(labEnrollments).values(newEnrollment)
       console.log(`Created new enrollment: ${enrollmentId} for user ${userId} and lab ${labId}`)
-      
+
       return enrollmentId
     } catch (error) {
       console.error('Error getting or creating enrollment:', error)
@@ -78,7 +113,7 @@ export class ValidationTrackingService {
     try {
       // Get or create enrollment if not provided
       const actualEnrollmentId = enrollmentId || await this.getOrCreateEnrollment(userId, labId)
-      
+
       // Try to find an active session
       const existingSessions = await db
         .select()
@@ -119,7 +154,7 @@ export class ValidationTrackingService {
 
       await db.insert(labProgressSessions).values(newSession)
       console.log(`Created new session: ${newSessionId} for enrollment ${actualEnrollmentId}`)
-      
+
       return newSession
     } catch (error) {
       console.error('Error getting or creating session:', error)
@@ -194,6 +229,48 @@ export class ValidationTrackingService {
   }
 
   /**
+   * Save socket-emitted validation steps to database
+   */
+  private async saveSocketSteps(attemptId: string, socketSteps: SocketStepResult[]) {
+    const steps = socketSteps.map((result, index) => ({
+      id: uuidv4(),
+      attemptId,
+      stepNumber: index + 1,
+      stepName: result.step.toLowerCase().replace(/\s+/g, '_'),
+      stepDescription: result.step,
+      status: this.mapSocketStatusToDbStatus(result.status),
+      startedAt: new Date(),
+      completedAt: new Date(),
+      score: result.status === 'success' ? '10' : '0',
+      maxScore: '10',
+      errorMessage: result.message || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }))
+
+    if (steps.length > 0) {
+      await db.insert(validationSteps).values(steps)
+      console.log(`Saved ${steps.length} socket steps for attempt ${attemptId}`)
+    }
+  }
+
+  /**
+   * Map socket status to database status
+   */
+  private mapSocketStatusToDbStatus(socketStatus: string): 'passed' | 'failed' | 'pending' {
+    switch (socketStatus) {
+      case 'success':
+        return 'passed'
+      case 'failed':
+      case 'error':
+        return 'failed'
+      case 'loading':
+      default:
+        return 'pending'
+    }
+  }
+
+  /**
    * Update task attempt with final results
    */
   private async updateTaskAttempt(
@@ -254,6 +331,9 @@ export class ValidationTrackingService {
       // Create new task attempt
       const attempt = await this.createTaskAttempt(session.id, questionId, userId, attemptNumber)
 
+      // Start tracking steps for this attempt
+      this.startStepTracking(attempt.id)
+
       // Execute all validation steps
       const results: ValidationStepResult[] = []
 
@@ -271,6 +351,13 @@ export class ValidationTrackingService {
             points: result.points,
             errorMessage: result.errorMessage
           })
+
+          // Add step result to tracking
+          this.addStepResult(attempt.id, {
+            step: result.description,
+            status: result.passed ? 'success' : 'failed',
+            message: result.errorMessage
+          })
         } catch (error) {
           console.error('Validation step failed:', error)
           results.push({
@@ -279,6 +366,13 @@ export class ValidationTrackingService {
             passed: false,
             points: 0,
             errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          })
+
+          // Add failed step to tracking
+          this.addStepResult(attempt.id, {
+            step: `step-${results.length + 1}`,
+            status: 'failed',
+            message: error instanceof Error ? error.message : 'Unknown error'
           })
         }
       }
@@ -337,6 +431,9 @@ export class ValidationTrackingService {
           },
           trackingError: 'Failed to save validation tracking to database'
         })
+      } finally {
+        // Complete step tracking
+        await this.completeStepTracking(attempt.id)
       }
 
     } catch (error) {
@@ -346,6 +443,156 @@ export class ValidationTrackingService {
         error: 'Validation failed due to system error'
       })
     }
+  }
+
+  /**
+   * Enhanced validation execution that tracks individual socket steps
+   * This method should be used by validation controllers to track each step
+   */
+  async executeValidationWithSocketTracking(
+    context: ValidationContext,
+    validationFunction: (trackedSocket: Socket) => Promise<boolean>
+  ): Promise<void> {
+    try {
+      const { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId } = context
+
+      // Emit validation start
+      socket.emit("validation-start", { validationQuestionId });
+
+      console.log(
+        `Starting socket-tracked validation: ${userId} - ${labId} - ${questionId} - ${labEnrollmentId}`
+      );
+
+      // Get current session
+      const session = await this.getCurrentSession(userId, labId, labEnrollmentId)
+
+      // Get next attempt number
+      const attemptNumber = await this.getNextAttemptNumber(session.id, questionId, userId)
+
+      // Check if user has exceeded max attempts (3)
+      if (attemptNumber > 3) {
+        socket.emit("validation-attempts-reached", {
+          questionId,
+          error: "Maximum attempts (3) exceeded for this task",
+        });
+        return
+      }
+
+      // Create new task attempt
+      const attempt = await this.createTaskAttempt(session.id, questionId, userId, attemptNumber)
+
+      // Start step tracking for this attempt
+      this.startStepTracking(attempt.id)
+
+      // Create a tracked socket that intercepts step emissions
+      const trackedSocket = this.createTrackedSocket(socket, attempt.id, validationQuestionId)
+
+      // Execute the validation function with the tracked socket
+      let overallSuccess = false
+      try {
+        overallSuccess = await validationFunction(trackedSocket)
+      } catch (error) {
+        console.error('Validation function failed:', error)
+        overallSuccess = false
+      }
+
+      // Complete step tracking and save to database
+      await this.completeStepTracking(attempt.id)
+
+      // Get the tracked steps for final calculation
+      const trackedSteps = this.currentAttemptSteps.get(attempt.id) || []
+      const totalSteps = trackedSteps.length
+      const passedSteps = trackedSteps.filter(step => step.status === 'success').length
+      const totalPoints = passedSteps * 10 // 10 points per passed step
+      const maxPoints = totalSteps * 10
+
+      // Update task attempt with final results
+      await this.updateTaskAttempt(attempt.id, [], totalPoints, maxPoints, overallSuccess)
+
+      // Calculate progressive scoring based on attempt number
+      const progressiveScore = this.calculateProgressiveScore(totalPoints, maxPoints, attemptNumber)
+
+      // Emit final validation result
+      socket.emit('validation-completed', {
+        questionId,
+        passed: overallSuccess,
+        totalSteps,
+        passedSteps,
+        totalPoints,
+        maxPoints,
+        progressiveScore,
+        results: trackedSteps.map(step => ({
+          id: step.step.toLowerCase().replace(/\s+/g, '_'),
+          description: step.step,
+          passed: step.status === 'success',
+          points: step.status === 'success' ? 10 : 0,
+          errorMessage: step.message
+        })),
+        tracking: {
+          attemptNumber,
+          remainingAttempts: Math.max(0, 3 - attemptNumber),
+          totalScore: progressiveScore,
+          sessionId: session.id,
+          attemptId: attempt.id
+        }
+      })
+
+    } catch (error) {
+      console.error('Socket-tracked validation execution failed:', error)
+      context.socket.emit('validation-error', {
+        questionId: context.questionId,
+        error: 'Validation failed due to system error'
+      })
+    }
+  }
+
+  /**
+   * Create a tracked socket that intercepts validation step emissions
+   */
+  private createTrackedSocket(originalSocket: Socket, attemptId: string, validationQuestionId: string): Socket {
+    // Create a proxy socket that intercepts emit calls
+    const trackedSocket = {
+      ...originalSocket,
+      emit: (event: string, data: any) => {
+        // Check if this is a validation step emission
+        if (event === `validation-${validationQuestionId}-step`) {
+          // Only track final states (success, failed, error), ignore loading states
+          if (data.status !== 'loading') {
+            // Check if we already have a result for this step and update it
+            this.updateOrAddStepResult(attemptId, {
+              step: data.step,
+              status: data.status,
+              message: data.message
+            })
+          }
+        }
+
+        // Always emit to the original socket
+        return originalSocket.emit(event, data)
+      }
+    } as Socket
+
+    return trackedSocket
+  }
+
+  /**
+   * Update existing step result or add new one (prevents duplicates)
+   */
+  private updateOrAddStepResult(attemptId: string, stepResult: SocketStepResult) {
+    const steps = this.currentAttemptSteps.get(attemptId) || []
+
+    // Find existing step with same name
+    const existingIndex = steps.findIndex(step => step.step === stepResult.step)
+
+    if (existingIndex !== -1) {
+      // Update existing step
+      steps[existingIndex] = stepResult
+    } else {
+      // Add new step
+      steps.push(stepResult)
+    }
+
+    this.currentAttemptSteps.set(attemptId, steps)
   }
 
   /**

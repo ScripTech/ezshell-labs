@@ -82,6 +82,129 @@ export class EX200ValidationHandler implements ILabValidationHandler {
     }
   }
 
+  private async executeWithYumValidation(
+    socket: Socket,
+    questionId: string,
+    labId: string,
+    validationQuestionId: string
+  ): Promise<void> {
+    const authSocket = socket as AuthenticatedSocket;
+
+    try {
+      // Get user context from authenticated socket
+      const userContext = await SocketUserService.getUserContextWithLab(
+        authSocket,
+        labId,
+      );
+
+      if (!userContext || !userContext.labEnrollmentId) {
+        socket.emit("validation-error", {
+          validationQuestionId,
+          error: "Authentication required or lab enrollment not found",
+        });
+        return;
+      }
+
+      // Call the updated YumRepositoryValidationController with all required parameters
+      await this.yumManagement.handleValidation(authSocket, {
+        questionId,
+        userId: userContext.userId,
+        labId,
+        validationQuestionId,
+        labEnrollmentId: userContext.labEnrollmentId
+      });
+
+    } catch (error) {
+      console.error(`Authentication error for ${validationQuestionId}:`, error);
+      socket.emit("validation-error", {
+        validationQuestionId,
+        error: "Authentication failed",
+      });
+    }
+  }
+
+  private async executeWithNetworkValidation(
+    socket: Socket,
+    questionId: string,
+    labId: string,
+    validationQuestionId: string
+  ): Promise<void> {
+    const authSocket = socket as AuthenticatedSocket;
+
+    try {
+      // Get user context from authenticated socket
+      const userContext = await SocketUserService.getUserContextWithLab(
+        authSocket,
+        labId,
+      );
+
+      if (!userContext || !userContext.labEnrollmentId) {
+        socket.emit("validation-error", {
+          validationQuestionId,
+          error: "Authentication required or lab enrollment not found",
+        });
+        return;
+      }
+
+      // Call the updated NetworkConfigValidationController with all required parameters
+      await this.networkConfigValidationController.handleValidation(authSocket, {
+        questionId,
+        userId: userContext.userId,
+        labId,
+        validationQuestionId,
+        labEnrollmentId: userContext.labEnrollmentId
+      });
+
+    } catch (error) {
+      console.error(`Authentication error for ${validationQuestionId}:`, error);
+      socket.emit("validation-error", {
+        validationQuestionId,
+        error: "Authentication failed",
+      });
+    }
+  }
+
+  private async executeWithSELinuxValidation(
+    socket: Socket,
+    questionId: string,
+    labId: string,
+    validationQuestionId: string
+  ): Promise<void> {
+    const authSocket = socket as AuthenticatedSocket;
+
+    try {
+      // Get user context from authenticated socket
+      const userContext = await SocketUserService.getUserContextWithLab(
+        authSocket,
+        labId,
+      );
+
+      if (!userContext || !userContext.labEnrollmentId) {
+        socket.emit("validation-error", {
+          validationQuestionId,
+          error: "Authentication required or lab enrollment not found",
+        });
+        return;
+      }
+
+      // Call the updated SELinuxManagementController with all required parameters
+      await this.selinuxMnt.handleValidation(authSocket, {
+        questionId,
+        userId: userContext.userId,
+        labId,
+        validationQuestionId,
+        labEnrollmentId: userContext.labEnrollmentId
+      });
+
+    } catch (error) {
+      console.error(`Authentication error for ${validationQuestionId}:`, error);
+      socket.emit("validation-error", {
+        validationQuestionId,
+        error: "Authentication failed",
+      });
+    }
+  }
+
   async handleValidation(
     socket: Socket,
     questionId: string,
@@ -91,38 +214,16 @@ export class EX200ValidationHandler implements ILabValidationHandler {
     switch (validationQuestionId) {
       case "question-1-network-config":
         console.log(`Handling validation for ${validationQuestionId}`);
-        await this.executeWithAuthentication(
-          socket,
-          questionId,
-          labId,
-          validationQuestionId,
-          async () => {
-            this.networkConfigValidationController.handleValidation(
-              socket,
-              validationQuestionId
-            );
-          }
-        );
+        await this.executeWithNetworkValidation(socket, questionId, labId, validationQuestionId);
         break;
       case "question-2-yum-repository":
-        await this.executeWithAuthentication(socket,
-          questionId,
-          labId,
-          validationQuestionId,
-          async () => {
-            this.yumManagement.handleValidation(socket, validationQuestionId);
-          }
-        );
+        await this.executeWithYumValidation(socket, questionId, labId, validationQuestionId);
         break;
       case "question-14-configure-yum-repository":
-        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
-          this.yumManagement.handleValidation(socket, validationQuestionId);
-        });
+        await this.executeWithYumValidation(socket, questionId, labId, validationQuestionId);
         break;
       case "question-3-selinux-port":
-        await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {
-          this.selinuxMnt.handleValidation(socket, validationQuestionId);
-        });
+        await this.executeWithSELinuxValidation(socket, questionId, labId, validationQuestionId);
         break;
       case "question-4-user-group-management":
         await this.executeWithAuthentication(socket, questionId, labId, validationQuestionId, async () => {

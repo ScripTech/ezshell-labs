@@ -114,12 +114,12 @@ httpSocketServer.on("connection", (socket) => {
         }
     });
     // Legacy validation support (maintained for backward compatibility)
-    socket.on("validate-exercise", async ({ labId, questionId }) => {
+    socket.on("validate-exercise", async ({ id, labId, questionId, validationQuestionId }) => {
         const userId = socket.user?.sub;
-        console.info("Validating exercise for lab:", labId, "question:", questionId, "user:", userId);
+        console.info("Validating exercise for lab:", labId, "labID: ", id, "question:", questionId, "validationQuestionId:", validationQuestionId, "user:", userId);
         const handler = validationHandlerFactory.getHandler(labId);
         if (handler) {
-            await handler.handleValidation(socket, questionId);
+            await handler.handleValidation(socket, questionId, id, validationQuestionId);
         }
         else {
             console.log(`No handler found for lab: ${labId}`);

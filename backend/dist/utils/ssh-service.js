@@ -71,7 +71,8 @@ async function executeCommand(command) {
     catch (error) {
         console.error("Error while executing command!", error.message);
         console.error("Command was:", command);
-        throw new Error(`Command execution failed: ${error.message}`);
+        return "Error executing command";
+        // throw new Error(`Command execution failed: ${error.message}`);
     }
 }
 async function validateFileExistence(username) {
