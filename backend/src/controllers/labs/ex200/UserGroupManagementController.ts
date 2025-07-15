@@ -1,11 +1,14 @@
 import { Socket } from "socket.io";
 import { UserGroupManagementService } from "../../../services/ex200/UserGroupManagementService";
+import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
 
 export class UserGroupManagementController {
   private service: UserGroupManagementService;
+  private trackingService: ValidationTrackingService;
 
   constructor() {
     this.service = new UserGroupManagementService();
+    this.trackingService = new ValidationTrackingService();
   }
 
   handleUserIDValidation = async (
@@ -242,4 +245,136 @@ export class UserGroupManagementController {
       clearInterval(gAddUser);
     }, 1302);
   };
+
+  // New socket tracking methods
+  handleUserIDValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }, validationData: { user: string; id: string }) => {
+    try {
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performUserIDValidation(trackedSocket, validationQuestionId, validationData);
+        }
+      );
+    } catch (error) {
+      console.error("Error in user ID validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  };
+
+  private async performUserIDValidation(socket: Socket, questionId: string, data: { user: string; id: string }): Promise<boolean> {
+    try {
+      socket.emit(`validation-${questionId}-step`, {
+        step: `User ${data.user} exists`,
+        status: "loading",
+      });
+      const isValidUser = await this.service.validateUser(data.user);
+      socket.emit(`validation-${questionId}-step`, {
+        step: `User ${data.user} exists`,
+        status: isValidUser ? "success" : "failed",
+        message: isValidUser ? `User ${data.user} exists` : `User ${data.user} does not exist`
+      });
+
+      socket.emit(`validation-${questionId}-step`, {
+        step: `UID ${data.id}`,
+        status: "loading",
+      });
+      const userId = await this.service.validateUserID(data.user, data.id);
+      socket.emit(`validation-${questionId}-step`, {
+        step: `UID ${data.id}`,
+        status: userId ? "success" : "failed",
+        message: userId ? `User ${data.user} has correct UID ${data.id}` : `User ${data.user} does not have UID ${data.id}`
+      });
+
+      return isValidUser && userId;
+    } catch (error) {
+      console.error("Error in user ID validation:", error);
+      const steps = [`User ${data.user} exists`, `UID ${data.id}`];
+      steps.forEach(step => {
+        socket.emit(`validation-${questionId}-step`, {
+          step,
+          status: "error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+      });
+      return false;
+    }
+  }
+
+  handleUserGroupValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }, validationData: { group: string; users: string[] }) => {
+    try {
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performUserGroupValidation(trackedSocket, validationQuestionId, validationData);
+        }
+      );
+    } catch (error) {
+      console.error("Error in user group validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  };
+
+  private async performUserGroupValidation(socket: Socket, questionId: string, data: { group: string; users: string[] }): Promise<boolean> {
+    try {
+      socket.emit(`validation-${questionId}-step`, {
+        step: `Group ${data.group} exists`,
+        status: "loading",
+      });
+      const isValidGroup = await this.service.validateGroup(data.group);
+      socket.emit(`validation-${questionId}-step`, {
+        step: `Group ${data.group} exists`,
+        status: isValidGroup ? "success" : "failed",
+        message: isValidGroup ? `Group ${data.group} exists` : `Group ${data.group} does not exist`
+      });
+
+      let allUsersValid = true;
+      for (const user of data.users) {
+        socket.emit(`validation-${questionId}-step`, {
+          step: `User ${user} exists`,
+          status: "loading",
+        });
+        const isValidUser = await this.service.validateUser(user);
+        socket.emit(`validation-${questionId}-step`, {
+          step: `User ${user} exists`,
+          status: isValidUser ? "success" : "failed",
+          message: isValidUser ? `User ${user} exists` : `User ${user} does not exist`
+        });
+
+        socket.emit(`validation-${questionId}-step`, {
+          step: `User ${user} in group ${data.group}`,
+          status: "loading",
+        });
+        const userInGroup = await this.service.validateUserGroup(user, data.group);
+        socket.emit(`validation-${questionId}-step`, {
+          step: `User ${user} in group ${data.group}`,
+          status: userInGroup ? "success" : "failed",
+          message: userInGroup ? `User ${user} is in group ${data.group}` : `User ${user} is not in group ${data.group}`
+        });
+
+        if (!isValidUser || !userInGroup) {
+          allUsersValid = false;
+        }
+      }
+
+      return isValidGroup && allUsersValid;
+    } catch (error) {
+      console.error("Error in user group validation:", error);
+      socket.emit(`validation-${questionId}-step`, {
+        step: "User group validation",
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      return false;
+    }
+  }
 }

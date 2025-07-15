@@ -16,6 +16,7 @@ const CollaborativeDirectoryControllerV1_1 = require("./controllers/labs/ex200/C
 const CronJobController_1 = require("./controllers/labs/ex200/CronJobController");
 const AutofsConfigurationController_1 = require("./controllers/labs/ex200/AutofsConfigurationController");
 const BasicValidationController_1 = require("./controllers/labs/ex200/BasicValidationController");
+const AdditionalValidationController_1 = require("./controllers/labs/ex200/AdditionalValidationController");
 const EX200ValidationHandler_1 = require("./handlers/EX200ValidationHandler");
 const EX280ValidationHandler_1 = require("./handlers/EX280ValidationHandler");
 const LabValidationHandlerFactory_1 = require("./handlers/LabValidationHandlerFactory");
@@ -76,7 +77,8 @@ const scalingController = new ScalingController_1.ScalingController();
 const deploymentController = new DeploymentController_1.DeploymentController();
 const autoScalingController = new AutoScalingController_1.AutoScalingController();
 // Initialize handlers
-const ex200Handler = new EX200ValidationHandler_1.EX200ValidationHandler(networkConfigValidationController, userGroupMnt, yumManagement, selinuxMnt, collabDirV1, cronJob, autofsConfig, basicController);
+const additionalController = new AdditionalValidationController_1.AdditionalValidationController();
+const ex200Handler = new EX200ValidationHandler_1.EX200ValidationHandler(networkConfigValidationController, userGroupMnt, yumManagement, selinuxMnt, collabDirV1, cronJob, autofsConfig, basicController, additionalController);
 const ex280Handler = new EX280ValidationHandler_1.EX280ValidationHandler(authController, groupRoleController);
 const do280Handler = new DO280ValidationHandler_1.DO280ValidationHandler(identityProvidersController, projectPermissionController, groupManagementController, resourceQuotaController, limitRangeController, scalingController, deploymentController, autoScalingController);
 // Initialize factory

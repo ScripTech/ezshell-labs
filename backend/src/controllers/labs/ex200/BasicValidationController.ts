@@ -1,27 +1,23 @@
 import { Socket } from "socket.io";
 import { BasicValidationService } from "../../../services/ex200/BasicValidationService";
-import { validationTrackingService, ValidationContext } from "../../../services/ValidationTrackingService";
-import { AuthenticatedSocket } from "../../../middleware/socketAuth";
-import { SocketUserService } from "../../../services/SocketUserService";
+import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
 
 export class BasicValidationController {
   private service: BasicValidationService;
+  private trackingService: ValidationTrackingService;
 
   constructor() {
     this.service = new BasicValidationService();
+    this.trackingService = new ValidationTrackingService();
   }
 
+  // Legacy methods for backward compatibility
   handleTarValidation = async (
     socket: Socket,
     questionId: string,
     userId?: string,
     labEnrollmentId?: string
   ) => {
-    // If userId and labEnrollmentId are provided, use tracking service
-    if (userId && labEnrollmentId) {
-      return this.handleTarValidationWithTracking(socket, questionId, userId, labEnrollmentId);
-    }
-
     // Fallback to original manual validation for backward compatibility
     socket.emit(`validation-${questionId}-step`, {
       step: "Create a tar archive",
@@ -40,318 +36,314 @@ export class BasicValidationController {
     userId?: string,
     labEnrollmentId?: string
   ) => {
-    // If userId and labEnrollmentId are provided, use tracking service
-    if (userId && labEnrollmentId) {
-      return this.handleFilePermissionsWithTracking(socket, questionId, userId, labEnrollmentId);
-    }
-
     // Fallback to original manual validation for backward compatibility
     socket.emit(`validation-${questionId}-step`, {
-      step: "Owned by the root user and group",
+      step: "File permissions validation",
       status: "loading",
     });
-    const rootown = await this.service.filePermissionsValidation_OwnedBy("root");
+    const isValid = await this.service.filePermissionsValidation();
     socket.emit(`validation-${questionId}-step`, {
-      step: "Owned by the root user and group",
-      status: rootown ? "success" : "failed",
-    });
-
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Not executable by anyone",
-      status: "loading",
-    });
-    const noExec = await this.service.filePermissionsValidation_NotExec();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Not executable by anyone",
-      status: noExec ? "success" : "failed",
-    });
-
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "User 'natasha' can read and write",
-      status: "loading",
-    });
-    const u1Write = await this.service.filePermissionsValidation_UserCanRead(
-      "natasha"
-    );
-    socket.emit(`validation-${questionId}-step`, {
-      step: "User 'natasha' can read and write",
-      status: u1Write ? "success" : "failed",
-    });
-
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "User 'harry' cannot read or write",
-      status: "loading",
-    });
-    const u2Write = await this.service.filePermissionsValidation_UserCanRead(
-      "harry"
-    );
-    socket.emit(`validation-${questionId}-step`, {
-      step: "User 'harry' cannot read or write",
-      status: u2Write ? "success" : "failed",
-    });
-
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "All other users (current or future) can read",
-      status: "loading",
-    });
-    const allRead = await this.service.filePermissionsValidation_UserCanRead("others");
-    socket.emit(`validation-${questionId}-step`, {
-      step: "All other users (current or future) can read",
-      status: allRead ? "success" : "failed",
+      step: "File permissions validation",
+      status: isValid ? "success" : "failed",
     });
   };
 
-  handleTimeSynchronizationValidation = async (socket: Socket, questionId: string) => {
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Time Synchronization",
-      status: "loading",
-    });
-    const timeSync = await this.service.timeSynchronizationValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Time Synchronization",
-      status: timeSync ? "success" : "failed",
-    });
-  };
-
-  handleStringSearchValidation = async (socket: Socket, questionId: string) => {
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Find all occurrences and copy the lines",
-      status: "loading",
-    });
-    const searchStr = await this.service.stringSearchValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Find all occurrences and copy the lines",
-      status: searchStr ? "success" : "failed",
-    });
-  };
-
-  handleTunedProfileValidation = async (socket: Socket, questionId: string) => {
-    // ---
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Recommended tuned profile",
-      status: "loading",
-    });
-    const tunned = await this.service.tunedProfileValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Recommended tuned profile",
-      status: tunned ? "success" : "failed",
-    });
-  };
-
-  /**
-   * Example of using ValidationTrackingService for comprehensive task validation
-   * This shows how to integrate attempt tracking, progressive scoring, and detailed validation steps
-   */
-  handleFilePermissionsWithTracking = async (
+  handleTimeSynchronizationValidation = async (
     socket: Socket,
-    questionId: string,
-    userId: string,
-    labEnrollmentId: string
+    questionId: string
   ) => {
-    const context: ValidationContext = {
-      socket:socket,
-      questionId,
-      validationQuestionId: "",
-      userId,
-      labId: "ex200", // Assuming labId is known or can be derived
-      labEnrollmentId,
-    };
-
-    // Create validation steps using the tracking service
-    const validationSteps = [
-      validationTrackingService.createValidationStep(
-        'root-ownership',
-        'File owned by root user and group',
-        25,
-        () => this.service.filePermissionsValidation_OwnedBy("root")
-      ),
-      validationTrackingService.createValidationStep(
-        'not-executable',
-        'File is not executable by anyone',
-        25,
-        () => this.service.filePermissionsValidation_NotExec()
-      ),
-      validationTrackingService.createValidationStep(
-        'natasha-read-write',
-        'User natasha can read and write',
-        25,
-        () => this.service.filePermissionsValidation_UserCanRead("natasha")
-      ),
-      validationTrackingService.createValidationStep(
-        'others-read-only',
-        'All other users can read only',
-        25,
-        () => this.service.filePermissionsValidation_UserCanRead("others")
-      )
-    ];
-
-    // Execute validation with full tracking
-    await validationTrackingService.executeValidationWithTracking(context, validationSteps);
+    socket.emit(`validation-${questionId}-step`, {
+      step: "Time synchronization",
+      status: "loading",
+    });
+    const isValid = await this.service.timeSynchronizationValidation();
+    socket.emit(`validation-${questionId}-step`, {
+      step: "Time synchronization",
+      status: isValid ? "success" : "failed",
+    });
   };
 
-  /**
-   * Example of using ValidationTrackingService for tar archive validation
-   */
-  handleTarValidationWithTracking = async (
+  handleStringSearchValidation = async (
     socket: Socket,
-    questionId: string,
-    userId: string,
-    labEnrollmentId: string
+    questionId: string
   ) => {
-    const context: ValidationContext = {
-      socket,
-      questionId,
-      userId,
-      labId: "ex200", // Assuming labId is known or can be derived
-      labEnrollmentId,
-      validationQuestionId: ""
-    };
-
-    const validationSteps = [
-      validationTrackingService.createValidationStep(
-        'tar-archive-created',
-        'Create a tar archive with correct files',
-        100,
-        () => this.service.tarValidation()
-      )
-    ];
-
-    await validationTrackingService.executeValidationWithTracking(context, validationSteps);
+    socket.emit(`validation-${questionId}-step`, {
+      step: "String search",
+      status: "loading",
+    });
+    const isValid = await this.service.stringSearchValidation();
+    socket.emit(`validation-${questionId}-step`, {
+      step: "String search",
+      status: isValid ? "success" : "failed",
+    });
   };
 
-  /**
-   * Example of using ValidationTrackingService with authenticated socket
-   * This method automatically extracts user information from the authenticated socket
-   */
-  handleFilePermissionsValidationAuthenticated = async (
-    socket: AuthenticatedSocket,
-    questionId: string,
-    labId: string
+  handleTunedProfileValidation = async (
+    socket: Socket,
+    questionId: string
   ) => {
+    socket.emit(`validation-${questionId}-step`, {
+      step: "Tuned profile configuration",
+      status: "loading",
+    });
+    const isValid = await this.service.tunedProfileValidation();
+    socket.emit(`validation-${questionId}-step`, {
+      step: "Tuned profile configuration",
+      status: isValid ? "success" : "failed",
+    });
+  };
+
+  // New socket tracking methods
+  handleTarValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
-      // Extract user context from authenticated socket
-      const userContext = await SocketUserService.getUserContextWithLab(socket, labId);
-      if (!userContext) {
-        socket.emit(`validation-${questionId}-error`, {
-          error: 'Authentication required',
-          timestamp: new Date().toISOString()
-        });
-        return;
-      }
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      // If no lab enrollment found, handle gracefully
-      if (!userContext.labEnrollmentId) {
-        console.warn(`No lab enrollment found for user ${userContext.userId} in lab ${labId}`);
-        // Fall back to basic validation without tracking
-        return this.handleFilePermissionsValidation(socket, questionId);
-      }
-
-      const context: ValidationContext = {
-        socket,
-        questionId,
-        validationQuestionId: "",
-        labId: "ex200", // just a default value, assuming labId is known or can be derived
-        userId: userContext.userId,
-        labEnrollmentId: userContext.labEnrollmentId,
-      };
-
-      // Create validation steps using the tracking service
-      const validationSteps = [
-        validationTrackingService.createValidationStep(
-          'root-ownership',
-          'File owned by root user and group',
-          25,
-          () => this.service.filePermissionsValidation_OwnedBy("root")
-        ),
-        validationTrackingService.createValidationStep(
-          'not-executable',
-          'File is not executable by anyone',
-          25,
-          () => this.service.filePermissionsValidation_NotExec()
-        ),
-        validationTrackingService.createValidationStep(
-          'natasha-read-write',
-          'User natasha can read and write',
-          25,
-          () => this.service.filePermissionsValidation_UserCanRead("natasha")
-        ),
-        validationTrackingService.createValidationStep(
-          'others-read-only',
-          'All other users can read only',
-          25,
-          () => this.service.filePermissionsValidation_UserCanRead("others")
-        )
-      ];
-
-      // Execute validation with full tracking
-      await validationTrackingService.executeValidationWithTracking(context, validationSteps);
-
-      console.log(`✅ Authenticated validation completed for user ${userContext.userInfo.email} on task ${questionId}`);
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performTarValidation(trackedSocket, validationQuestionId);
+        }
+      );
     } catch (error) {
-      console.error('Authenticated validation error:', error);
-      socket.emit(`validation-${questionId}-error`, {
-        error: error instanceof Error ? error.message : 'Validation failed',
-        timestamp: new Date().toISOString()
+      console.error("Error in tar validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
   };
 
-  /**
-   * Example of using ValidationTrackingService for tar validation with authentication
-   */
-  handleTarValidationAuthenticated = async (
-    socket: AuthenticatedSocket,
-    questionId: string,
-    labId: string
-  ) => {
+  private async performTarValidation(socket: Socket, questionId: string): Promise<boolean> {
     try {
-      const userContext = await SocketUserService.getUserContextWithLab(socket, labId);
-      if (!userContext) {
-        socket.emit(`validation-${questionId}-error`, {
-          error: 'Authentication required',
-          timestamp: new Date().toISOString()
-        });
-        return;
-      }
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Create a tar archive",
+        status: "loading",
+      });
 
-      if (!userContext.labEnrollmentId) {
-        // Fall back to basic validation without tracking
-        return this.handleTarValidation(socket, questionId);
-      }
+      const isValid = await this.service.tarValidation();
 
-      const context: ValidationContext = {
-        socket,
-        questionId,
-        validationQuestionId: "",
-        labId: "ex200", // Assuming labId is known or can be derived
-        userId: userContext.userId,
-        labEnrollmentId: userContext.labEnrollmentId,
-      };
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Create a tar archive",
+        status: isValid ? "success" : "failed",
+        message: isValid ? "Tar archive created successfully" : "Tar archive creation failed"
+      });
 
-      const validationSteps = [
-        validationTrackingService.createValidationStep(
-          'tar-archive-created',
-          'Create a tar archive with correct files',
-          100,
-          () => this.service.tarValidation()
-        )
-      ];
-
-      await validationTrackingService.executeValidationWithTracking(context, validationSteps);
-
-      console.log(`✅ Authenticated tar validation completed for user ${userContext.userInfo.email} on task ${questionId}`);
+      return isValid;
     } catch (error) {
-      console.error('Authenticated tar validation error:', error);
-      socket.emit(`validation-${questionId}-error`, {
-        error: error instanceof Error ? error.message : 'Validation failed',
-        timestamp: new Date().toISOString()
+      console.error("Error in tar validation:", error);
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Create a tar archive",
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      return false;
+    }
+  }
+
+  handleFilePermissionsValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+    try {
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performFilePermissionsValidation(trackedSocket, validationQuestionId);
+        }
+      );
+    } catch (error) {
+      console.error("Error in file permissions validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
       });
     }
   };
+
+  private async performFilePermissionsValidation(socket: Socket, questionId: string): Promise<boolean> {
+    try {
+      socket.emit(`validation-${questionId}-step`, {
+        step: "File owned by root user and group",
+        status: "loading",
+      });
+      const isOwnedByRootUser = await this.service.filePermissionsValidation_OwnedBy("root");
+      socket.emit(`validation-${questionId}-step`, {
+        step: "File owned by root user and group",
+        status: isOwnedByRootUser ? "success" : "failed",
+        message: isOwnedByRootUser ? "File is owned by root user and group" : "File is not owned by root user and group"
+      });
+
+      socket.emit(`validation-${questionId}-step`, {
+        step: "File belongs to root group",
+        status: "loading",
+      });
+      const belongsToRootGroup = await this.service.filePermissionsValidation_BelongsTO("root");
+      socket.emit(`validation-${questionId}-step`, {
+        step: "File belongs to root group",
+        status: belongsToRootGroup ? "success" : "failed",
+        message: belongsToRootGroup ? "File belongs to root group" : "File does not belong to root group"
+      });
+
+      socket.emit(`validation-${questionId}-step`, {
+        step: "File is not executable",
+        status: "loading",
+      });
+      const isNotExecutable = await this.service.filePermissionsValidation_NotExec();
+      socket.emit(`validation-${questionId}-step`, {
+        step: "File is not executable",
+        status: isNotExecutable ? "success" : "failed",
+        message: isNotExecutable ? "File is not executable" : "File is executable (should not be)"
+      });
+
+      return isOwnedByRootUser && belongsToRootGroup && isNotExecutable;
+    } catch (error) {
+      console.error("Error in file permissions validation:", error);
+      const steps = ["File owned by root user and group", "File belongs to root group", "File is not executable"];
+      steps.forEach(step => {
+        socket.emit(`validation-${questionId}-step`, {
+          step,
+          status: "error",
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        });
+      });
+      return false;
+    }
+  }
+
+  handleTimeSynchronizationValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+    try {
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performTimeSynchronizationValidation(trackedSocket, validationQuestionId);
+        }
+      );
+    } catch (error) {
+      console.error("Error in time synchronization validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  };
+
+  private async performTimeSynchronizationValidation(socket: Socket, questionId: string): Promise<boolean> {
+    try {
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Time synchronization",
+        status: "loading",
+      });
+
+      const isValid = await this.service.timeSynchronizationValidation();
+
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Time synchronization",
+        status: isValid ? "success" : "failed",
+        message: isValid ? "Time synchronization is properly configured" : "Time synchronization is not properly configured"
+      });
+
+      return isValid;
+    } catch (error) {
+      console.error("Error in time synchronization validation:", error);
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Time synchronization",
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      return false;
+    }
+  }
+
+  handleStringSearchValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+    try {
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performStringSearchValidation(trackedSocket, validationQuestionId);
+        }
+      );
+    } catch (error) {
+      console.error("Error in string search validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  };
+
+  private async performStringSearchValidation(socket: Socket, questionId: string): Promise<boolean> {
+    try {
+      socket.emit(`validation-${questionId}-step`, {
+        step: "String search",
+        status: "loading",
+      });
+
+      const isValid = await this.service.stringSearchValidation();
+
+      socket.emit(`validation-${questionId}-step`, {
+        step: "String search",
+        status: isValid ? "success" : "failed",
+        message: isValid ? "String search completed successfully" : "String search failed"
+      });
+
+      return isValid;
+    } catch (error) {
+      console.error("Error in string search validation:", error);
+      socket.emit(`validation-${questionId}-step`, {
+        step: "String search",
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      return false;
+    }
+  }
+
+  handleTunedProfileValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+    try {
+      const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        async (trackedSocket: Socket) => {
+          return await this.performTunedProfileValidation(trackedSocket, validationQuestionId);
+        }
+      );
+    } catch (error) {
+      console.error("Error in tuned profile validation:", error);
+      socket.emit('validation-error', {
+        questionId: data.questionId,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  };
+
+  private async performTunedProfileValidation(socket: Socket, questionId: string): Promise<boolean> {
+    try {
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Tuned profile configuration",
+        status: "loading",
+      });
+
+      const isValid = await this.service.tunedProfileValidation();
+
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Tuned profile configuration",
+        status: isValid ? "success" : "failed",
+        message: isValid ? "Tuned profile is correctly configured" : "Tuned profile is not correctly configured"
+      });
+
+      return isValid;
+    } catch (error) {
+      console.error("Error in tuned profile validation:", error);
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Tuned profile configuration",
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+      return false;
+    }
+  }
 }

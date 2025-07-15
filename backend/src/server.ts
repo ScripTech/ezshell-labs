@@ -12,6 +12,7 @@ import { CollaborativeDirectoryControllerV1 } from "./controllers/labs/ex200/Col
 import { CronJobController } from "./controllers/labs/ex200/CronJobController";
 import { AutofsConfigurationController } from "./controllers/labs/ex200/AutofsConfigurationController";
 import { BasicValidationController } from "./controllers/labs/ex200/BasicValidationController";
+import { AdditionalValidationController } from "./controllers/labs/ex200/AdditionalValidationController";
 import { EX200ValidationHandler } from "./handlers/EX200ValidationHandler";
 import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
 import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
@@ -83,6 +84,8 @@ const deploymentController = new DeploymentController();
 const autoScalingController = new AutoScalingController();
 
 // Initialize handlers
+const additionalController = new AdditionalValidationController();
+
 const ex200Handler = new EX200ValidationHandler(
   networkConfigValidationController,
   userGroupMnt,
@@ -91,7 +94,8 @@ const ex200Handler = new EX200ValidationHandler(
   collabDirV1,
   cronJob,
   autofsConfig,
-  basicController
+  basicController,
+  additionalController
 );
 
 const ex280Handler = new EX280ValidationHandler(
