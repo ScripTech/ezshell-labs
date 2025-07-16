@@ -46,7 +46,9 @@ export function LabForm({
   const router = useRouter()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [migratingQuestions, setMigratingQuestions] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [migrationSuccess, setMigrationSuccess] = useState<string | null>(null)
 
 
   const form = useForm<z.infer<typeof labSchema>>({
@@ -96,6 +98,42 @@ export function LabForm({
     } catch (err) {
       setApiError("Failed to save lab")
       setLoading(false)
+    }
+  }
+
+  async function handleMigrateQuestions() {
+    if (!labId && !initialValues?.labId) {
+      setApiError("Lab ID is required for migration")
+      return
+    }
+
+    setMigratingQuestions(true)
+    setApiError(null)
+    setMigrationSuccess(null)
+
+    try {
+      const url = `/api/admin/labs/import-tasks`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          labId: labId,
+          labFolder: initialValues?.labId
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setApiError(data.error || "Failed to migrate questions")
+        return
+      }
+
+      const result = await res.json()
+      setMigrationSuccess(`Successfully migrated ${result.count || 'questions'} for lab ${initialValues?.labId}`)
+    } catch (err) {
+      setApiError("Failed to migrate questions")
+    } finally {
+      setMigratingQuestions(false)
     }
   }
 
@@ -199,9 +237,27 @@ export function LabForm({
           {apiError && (
             <div className="text-red-600 text-sm">{apiError}</div>
           )}
-          <Button type="submit" disabled={loading}>
-            {loading ? (mode === "edit" ? "Saving..." : "Creating...") : (mode === "edit" ? "Save Changes" : "Create Lab")}
-          </Button>
+          {migrationSuccess && (
+            <div className="text-green-600 text-sm">{migrationSuccess}</div>
+          )}
+          <div className="flex gap-4">
+            <Button type="submit" disabled={loading || migratingQuestions}>
+              {loading ? (mode === "edit" ? "Saving..." : "Creating...") : (mode === "edit" ? "Save Changes" : "Create Lab")}
+            </Button>
+            {mode === "edit" && labId && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading || migratingQuestions}
+                onClick={handleMigrateQuestions}
+              >
+                {migratingQuestions ? "Migrating..." : "Migrate Questions"}
+              </Button>
+            )}
+          </div>
+          {migrationSuccess && (
+            <div className="text-green-600 text-sm">{migrationSuccess}</div>
+          )}
         </form>
       </Form>
     </div>

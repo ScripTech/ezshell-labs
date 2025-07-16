@@ -25,10 +25,25 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     session: async ({ session, token }: { session: any; token: any }) => {
-      if (session?.user) {
-        session.user.id = token.sub!;
-        session.user.role = token.role ?? "admin";
-        session.user.roles = token.roles ?? [];
+      if (session?.user && token.sub) {
+        // Verify user still exists in database
+        try {
+          const user = await db.query.users.findFirst({
+            where: (users, { eq }) => eq(users.id, token.sub),
+          });
+
+          if (!user) {
+            // User no longer exists in database, invalidate session
+            return null;
+          }
+
+          session.user.id = token.sub;
+          session.user.role = user.role ?? "admin";
+          session.user.roles = token.roles ?? [];
+        } catch (error) {
+          console.error('Error verifying user in session callback:', error);
+          return null;
+        }
       }
       return session;
     },
@@ -36,6 +51,24 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.sub = user.id;
       }
+
+      // For existing tokens, verify user still exists
+      if (token.sub && !user) {
+        try {
+          const existingUser = await db.query.users.findFirst({
+            where: (users, { eq }) => eq(users.id, token.sub),
+          });
+
+          if (!existingUser) {
+            // User no longer exists, invalidate token
+            return {};
+          }
+        } catch (error) {
+          console.error('Error verifying user in JWT callback:', error);
+          return {};
+        }
+      }
+
       return token;
     },
   },

@@ -110,10 +110,10 @@ export async function POST(request: Request) {
       session: labSession,
       message: labSession ? 'Enrolled and lab session started successfully' : 'Enrolled successfully'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error enrolling in lab:', error)
     return NextResponse.json(
-      { error: 'Failed to enroll in lab' },
+      { error: 'Failed to enroll in lab', details: error.message },
       { status: 500 }
     )
   }
