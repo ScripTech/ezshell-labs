@@ -4,6 +4,8 @@ import { taskAttempts, validationSteps, labProgressSessions } from '../db/schema
 import { labEnrollments } from '../db/schemas/LabSchema'
 import { eq, and, desc } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
+import { ScoringService } from './ScoringService'
+import { ValidationResult, ScoreResult, ScoringConfig, SCORING_PRESETS } from '../interfaces/IScoring'
 
 export interface ValidationStepResult {
   id: string
@@ -27,6 +29,10 @@ export interface ValidationContext {
   labId: string;
   labEnrollmentId: string;
   sessionId?: string;
+  /** Scoring configuration for this validation question */
+  scoringConfig?: ScoringConfig;
+  /** Question type for automatic scoring preset selection */
+  questionType?: 'BASIC' | 'INTERMEDIATE' | 'ADVANCED' | 'CRITICAL';
 }
 
 /**
@@ -388,13 +394,30 @@ export class ValidationTrackingService {
         // Save validation steps to database
         await this.saveValidationSteps(attempt.id, results)
 
-        // Update task attempt with final results
-        await this.updateTaskAttempt(attempt.id, results, totalPoints, maxPoints, passed)
+        // Calculate enhanced score using ScoringService
+        const passedStepsArray = results
+          .map((result, index) => ({ stepNumber: index + 1, passed: result.passed }))
+          .filter(step => step.passed)
+          .map(step => step.stepNumber);
 
-        // Calculate progressive scoring based on attempt number
-        const progressiveScore = this.calculateProgressiveScore(totalPoints, maxPoints, attemptNumber)
+        const scoreResult = this.calculateEnhancedScore(
+          passedSteps,
+          totalSteps,
+          attemptNumber,
+          context,
+          passedStepsArray
+        );
 
-        // Emit final validation result
+        // Get scoring config for compatibility
+        const scoringConfig = this.getScoringConfig(context);
+
+        // Update task attempt with enhanced scoring results
+        await this.updateTaskAttempt(attempt.id, results, scoreResult.final_score, scoringConfig.basePoints, passed)
+
+        // Calculate legacy progressive scoring for backward compatibility
+        const legacyProgressiveScore = this.calculateProgressiveScore(totalPoints, maxPoints, attemptNumber)
+
+        // Emit final validation result with enhanced scoring
         socket.emit('validation-completed', {
           questionId,
           passed,
@@ -402,12 +425,32 @@ export class ValidationTrackingService {
           passedSteps,
           totalPoints,
           maxPoints,
-          progressiveScore,
-          results,
+          progressiveScore: legacyProgressiveScore, // Legacy for backward compatibility
+          // Enhanced scoring information
+          enhancedScoring: {
+            scorePercent: scoreResult.score_percent,
+            finalScore: scoreResult.final_score,
+            basePoints: scoringConfig.basePoints,
+            attemptNumber: scoreResult.attempt_number,
+            penaltyApplied: scoreResult.penalty_applied,
+            bonusApplied: scoreResult.bonus_applied,
+            minimumFloorApplied: scoreResult.minimum_floor_applied,
+            stepBreakdown: scoreResult.step_breakdown
+          },
+          results: results.map((result, index) => {
+            const stepBreakdown = scoreResult.step_breakdown[index];
+            return {
+              ...result,
+              enhancedPoints: stepBreakdown ? stepBreakdown.points : result.points,
+              percentage: stepBreakdown ? stepBreakdown.percentage : 0,
+              weight: stepBreakdown ? stepBreakdown.weight : 0
+            };
+          }),
           tracking: {
             attemptNumber,
             remainingAttempts: Math.max(0, 3 - attemptNumber),
-            totalScore: progressiveScore,
+            totalScore: legacyProgressiveScore, // Legacy score
+            enhancedTotalScore: scoreResult.final_score, // Enhanced score
             sessionId: session.id,
             attemptId: attempt.id
           }
@@ -503,16 +546,40 @@ export class ValidationTrackingService {
       const trackedSteps = this.currentAttemptSteps.get(attempt.id) || []
       const totalSteps = trackedSteps.length
       const passedSteps = trackedSteps.filter(step => step.status === 'success').length
+      
+      // Create array of passed step numbers for detailed analysis
+      const passedStepsArray = trackedSteps
+        .map((step, index) => ({ stepNumber: index + 1, passed: step.status === 'success' }))
+        .filter(step => step.passed)
+        .map(step => step.stepNumber);
+
+      // Calculate enhanced score using ScoringService
+      const scoreResult = this.calculateEnhancedScore(
+        passedSteps, 
+        totalSteps, 
+        attemptNumber, 
+        context,
+        passedStepsArray
+      );
+
+      // Legacy calculations for backward compatibility
       const totalPoints = passedSteps * 10 // 10 points per passed step
       const maxPoints = totalSteps * 10
+      const legacyProgressiveScore = this.calculateProgressiveScore(totalPoints, maxPoints, attemptNumber)
 
-      // Update task attempt with final results
-      await this.updateTaskAttempt(attempt.id, [], totalPoints, maxPoints, overallSuccess)
+      // Get scoring config for max points calculation
+      const scoringConfig = this.getScoringConfig(context);
 
-      // Calculate progressive scoring based on attempt number
-      const progressiveScore = this.calculateProgressiveScore(totalPoints, maxPoints, attemptNumber)
+      // Update task attempt with enhanced scoring results
+      await this.updateTaskAttempt(
+        attempt.id, 
+        [], 
+        scoreResult.final_score, // Use enhanced final score
+        scoringConfig.basePoints, // Use scoring config base points
+        overallSuccess
+      )
 
-      // Emit final validation result
+      // Emit final validation result with enhanced scoring data
       socket.emit('validation-completed', {
         questionId,
         passed: overallSuccess,
@@ -520,18 +587,35 @@ export class ValidationTrackingService {
         passedSteps,
         totalPoints,
         maxPoints,
-        progressiveScore,
-        results: trackedSteps.map(step => ({
-          id: step.step.toLowerCase().replace(/\s+/g, '_'),
-          description: step.step,
-          passed: step.status === 'success',
-          points: step.status === 'success' ? 10 : 0,
-          errorMessage: step.message
-        })),
+        progressiveScore: legacyProgressiveScore, // Keep for backward compatibility
+        // Enhanced scoring information
+        enhancedScoring: {
+          scorePercent: scoreResult.score_percent,
+          finalScore: scoreResult.final_score,
+          basePoints: scoringConfig.basePoints,
+          attemptNumber: scoreResult.attempt_number,
+          penaltyApplied: scoreResult.penalty_applied,
+          bonusApplied: scoreResult.bonus_applied,
+          minimumFloorApplied: scoreResult.minimum_floor_applied,
+          stepBreakdown: scoreResult.step_breakdown
+        },
+        results: trackedSteps.map((step, index) => {
+          const stepBreakdown = scoreResult.step_breakdown[index];
+          return {
+            id: step.step.toLowerCase().replace(/\s+/g, '_'),
+            description: step.step,
+            passed: step.status === 'success',
+            points: stepBreakdown ? stepBreakdown.points : (step.status === 'success' ? 10 : 0),
+            percentage: stepBreakdown ? stepBreakdown.percentage : 0,
+            weight: stepBreakdown ? stepBreakdown.weight : 0,
+            errorMessage: step.message
+          };
+        }),
         tracking: {
           attemptNumber,
           remainingAttempts: Math.max(0, 3 - attemptNumber),
-          totalScore: progressiveScore,
+          totalScore: legacyProgressiveScore, // Legacy score
+          enhancedTotalScore: scoreResult.final_score, // Enhanced score
           sessionId: session.id,
           attemptId: attempt.id
         }
@@ -600,6 +684,57 @@ export class ValidationTrackingService {
    * 1st attempt: 100% of points
    * 2nd attempt: 75% of points
    * 3rd attempt: 50% of points
+   */
+  /**
+   * Enhanced scoring calculation using the ScoringService
+   * Replaces the basic progressive score calculation with sophisticated algorithm
+   */
+  private calculateEnhancedScore(
+    passedSteps: number,
+    totalSteps: number,
+    attemptNumber: number,
+    context: ValidationContext,
+    passedStepsArray?: number[]
+  ): ScoreResult {
+    // Get scoring configuration
+    const scoringConfig = this.getScoringConfig(context);
+    
+    // Prepare validation result for scoring service
+    const validationResult: ValidationResult = {
+      stepsPassed: passedSteps,
+      totalSteps,
+      attemptNumber,
+      config: scoringConfig,
+      passedSteps: passedStepsArray,
+      questionId: context.questionId,
+      userId: context.userId
+    };
+    
+    // Calculate score using enhanced scoring service
+    return ScoringService.calculateScore(validationResult);
+  }
+  
+  /**
+   * Get scoring configuration for the current validation context
+   */
+  private getScoringConfig(context: ValidationContext): ScoringConfig {
+    // Use explicit scoring config if provided
+    if (context.scoringConfig) {
+      return context.scoringConfig;
+    }
+    
+    // Use question type preset if available
+    if (context.questionType) {
+      return ScoringService.getScoringConfig(context.questionType);
+    }
+    
+    // Default to BASIC preset for backward compatibility
+    return ScoringService.getScoringConfig('BASIC');
+  }
+
+  /**
+   * Legacy method kept for backward compatibility
+   * @deprecated Use calculateEnhancedScore instead
    */
   private calculateProgressiveScore(earnedPoints: number, maxPoints: number, attemptNumber: number): number {
     const percentage = earnedPoints / maxPoints
