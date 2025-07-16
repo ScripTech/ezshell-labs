@@ -5,6 +5,7 @@ import {
   integer,
   boolean,
   jsonb,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { users } from "./UserSchema";
 import { relations } from "drizzle-orm";
@@ -75,9 +76,13 @@ export const labTasks = pgTable("lab_tasks", {
 export const labTaskProgress = pgTable("lab_task_progress", {
   id: text("id").primaryKey(),
   userId: text("userId").references(() => users.id, { onDelete: "cascade" }),
-  labTaskId: text("labTaskId").references(() => labTasks.id, { onDelete: "cascade" }),
-  labEnrollmentId: text("labEnrollmentId").references(() => labEnrollments.id, { onDelete: "cascade" }),
-  score: integer("score").default(0),
+  labTaskId: text("labTaskId").references(() => labTasks.id, {
+    onDelete: "cascade",
+  }),
+  labEnrollmentId: text("labEnrollmentId").references(() => labEnrollments.id, {
+    onDelete: "cascade",
+  }),
+  score: decimal("score", { precision: 5, scale: 2 }).default("0"),
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
   attempts: integer("attempts").default(0), // Track number of attempts

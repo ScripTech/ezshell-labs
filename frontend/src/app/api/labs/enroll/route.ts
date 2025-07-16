@@ -81,7 +81,7 @@ export async function POST(request: Request) {
           userId,
           labTaskId: task.id,
           labEnrollmentId: enrollment.id,
-          score: 0,
+          score: "0", // Convert score to string to match schema
           completed: false,
           createdAt: new Date(),
         }))

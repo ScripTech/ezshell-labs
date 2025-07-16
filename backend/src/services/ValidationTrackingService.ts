@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io'
 import { db } from '../db'
 import { taskAttempts, validationSteps, labProgressSessions } from '../db/schemas/ProgressSchema'
-import { labEnrollments } from '../db/schemas/LabSchema'
+import { labEnrollments, labTaskProgress } from '../db/schemas/LabSchema'
 import { eq, and, desc } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { ScoringService } from './ScoringService'
@@ -302,6 +302,124 @@ export class ValidationTrackingService {
   }
 
   /**
+   * Update or create lab_task_progress record with latest score and validation history
+   */
+  private async updateLabTaskProgress(
+    userId: string,
+    labTaskId: string,
+    labEnrollmentId: string,
+    attemptNumber: number,
+    finalScore: number,
+    maxAttempts: number,
+    passed: boolean,
+    currentAttemptData: any
+  ) {
+    try {
+      // Check if record exists
+      const existingProgress = await db
+        .select({
+          id: labTaskProgress.id,
+          userId: labTaskProgress.userId,
+          labTaskId: labTaskProgress.labTaskId,
+          labEnrollmentId: labTaskProgress.labEnrollmentId,
+          score: labTaskProgress.score,
+          completed: labTaskProgress.completed,
+          completedAt: labTaskProgress.completedAt,
+          attempts: labTaskProgress.attempts,
+          maxAttempts: labTaskProgress.maxAttempts,
+          lastAttemptAt: labTaskProgress.lastAttemptAt,
+          validationResults: labTaskProgress.validationResults,
+          createdAt: labTaskProgress.createdAt,
+          updatedAt: labTaskProgress.updatedAt
+        })
+        .from(labTaskProgress)
+        .where(
+          and(
+            eq(labTaskProgress.userId, userId),
+            eq(labTaskProgress.labTaskId, labTaskId),
+            eq(labTaskProgress.labEnrollmentId, labEnrollmentId)
+          )
+        )
+        .limit(1)
+
+      // Get existing validation history or create new one
+      let validationHistory: any = {
+        attempts: [],
+        totalAttempts: 0,
+        hasAttempts: false,
+        maxAttemptsReached: false,
+        remainingAttempts: maxAttempts
+      }
+
+      if (existingProgress.length > 0 && existingProgress[0].validationResults) {
+        validationHistory = existingProgress[0].validationResults as any
+      }
+
+      // Add current attempt to history
+      validationHistory.attempts.unshift({
+        id: uuidv4(),
+        attemptNumber,
+        status: passed ? 'completed' : 'failed',
+        score: finalScore.toString(),
+        maxPossibleScore: currentAttemptData.maxPossibleScore?.toString() || '100',
+        completedAt: new Date().toISOString(),
+        steps: currentAttemptData.steps || []
+      })
+
+      // Update validation history metadata
+      validationHistory.totalAttempts = attemptNumber
+      validationHistory.hasAttempts = true
+      validationHistory.maxAttemptsReached = attemptNumber >= maxAttempts
+      validationHistory.remainingAttempts = Math.max(0, maxAttempts - attemptNumber)
+
+      // Keep only last 10 attempts to prevent bloat
+      if (validationHistory.attempts.length > 10) {
+        validationHistory.attempts = validationHistory.attempts.slice(0, 10)
+      }
+
+      const isCompleted = passed || attemptNumber >= maxAttempts
+      const progressData = {
+        score: Math.round(finalScore).toString(),
+        completed: isCompleted,
+        completedAt: isCompleted ? new Date() : null,
+        attempts: attemptNumber,
+        maxAttempts: maxAttempts,
+        lastAttemptAt: new Date(),
+        validationResults: validationHistory, // Save accumulated validation history
+        updatedAt: new Date(),
+      }
+
+      if (existingProgress.length > 0) {
+        // Update existing record
+        await db
+          .update(labTaskProgress)
+          .set(progressData)
+          .where(
+            and(
+              eq(labTaskProgress.userId, userId),
+              eq(labTaskProgress.labTaskId, labTaskId),
+              eq(labTaskProgress.labEnrollmentId, labEnrollmentId)
+            )
+          )
+      } else {
+        // Create new record
+        await db.insert(labTaskProgress).values({
+          id: uuidv4(),
+          userId,
+          labTaskId,
+          labEnrollmentId,
+          createdAt: new Date(),
+          ...progressData,
+        })
+      }
+
+      console.log(`Updated lab_task_progress: userId=${userId}, taskId=${labTaskId}, attempt=${attemptNumber}/${maxAttempts}, score=${finalScore}, completed=${isCompleted}, totalAttempts=${validationHistory.totalAttempts}`)
+    } catch (error) {
+      console.error('Error updating lab_task_progress:', error)
+    }
+  }
+
+  /**
    * Execute validation steps and track results using direct database access
    */
   async executeValidationWithTracking(
@@ -413,6 +531,43 @@ export class ValidationTrackingService {
 
         // Update task attempt with enhanced scoring results
         await this.updateTaskAttempt(attempt.id, results, scoreResult.final_score, scoringConfig.basePoints, passed)
+
+        // Update lab_task_progress with latest score and validation history
+        const validationHistoryData = {
+          attempts: [{
+            attemptNumber,
+            score: scoreResult.final_score,
+            maxPossibleScore: scoringConfig.basePoints,
+            passed,
+            completedAt: new Date().toISOString(),
+            steps: results.map((result, index) => ({
+              stepNumber: index + 1,
+              stepName: result.description,
+              stepDescription: result.description,
+              status: result.passed ? 'success' : 'failed',
+              passed: result.passed,
+              message: result.errorMessage || '',
+              completedAt: new Date().toISOString()
+            }))
+          }],
+          lastAttempt: {
+            attemptNumber,
+            score: scoreResult.final_score,
+            passed,
+            enhancedScoring: scoreResult
+          }
+        }
+
+        await this.updateLabTaskProgress(
+          userId,
+          questionId, // Using questionId as labTaskId - may need to map this properly
+          labEnrollmentId,
+          attemptNumber,
+          scoreResult.final_score,
+          3, // maxAttempts
+          passed,
+          validationHistoryData
+        )
 
         // Calculate legacy progressive scoring for backward compatibility
         const legacyProgressiveScore = this.calculateProgressiveScore(totalPoints, maxPoints, attemptNumber)
@@ -577,6 +732,43 @@ export class ValidationTrackingService {
         scoreResult.final_score, // Use enhanced final score
         scoringConfig.basePoints, // Use scoring config base points
         overallSuccess
+      )
+
+      // Update lab_task_progress with latest score and validation history
+      const validationHistoryData = {
+        attempts: [{
+          attemptNumber,
+          score: scoreResult.final_score,
+          maxPossibleScore: scoringConfig.basePoints,
+          passed: overallSuccess,
+          completedAt: new Date().toISOString(),
+          steps: trackedSteps.map((step, index) => ({
+            stepNumber: index + 1,
+            stepName: step.step,
+            stepDescription: step.step,
+            status: step.status,
+            passed: step.status === 'success',
+            message: step.message,
+            completedAt: new Date().toISOString()
+          }))
+        }],
+        lastAttempt: {
+          attemptNumber,
+          score: scoreResult.final_score,
+          passed: overallSuccess,
+          enhancedScoring: scoreResult
+        }
+      }
+
+      await this.updateLabTaskProgress(
+        userId,
+        questionId, // Using questionId as labTaskId - may need to map this properly
+        labEnrollmentId,
+        attemptNumber,
+        scoreResult.final_score,
+        3, // maxAttempts
+        overallSuccess,
+        validationHistoryData
       )
 
       // Emit final validation result with enhanced scoring data

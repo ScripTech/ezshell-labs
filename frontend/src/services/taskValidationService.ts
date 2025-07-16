@@ -70,15 +70,15 @@ export class TaskValidationService {
         userId: record.userId!,
         labTaskId: record.labTaskId!,
         labEnrollmentId: record.labEnrollmentId!,
-        score,
+        score: score ? parseFloat(score.toString()) : 0, // Ensure score is a number
         completed,
         attempts,
         maxAttempts,
         remainingAttempts,
         canAttempt: remainingAttempts > 0 && !completed,
         lastAttemptAt: record.lastAttemptAt,
-        validationResults: record.validationResults as any[] || []
-      }
+        validationResults: (record.validationResults as any[]) || [],
+      };
     } catch (error) {
       console.error('Error getting task progress:', error)
       throw new Error('Failed to get task progress')
@@ -103,7 +103,7 @@ export class TaskValidationService {
         userId,
         labTaskId,
         labEnrollmentId,
-        score: 0,
+        score: "0", // Ensure score is a string
         completed: false,
         attempts: 0,
         maxAttempts: 3,
@@ -208,7 +208,7 @@ export class TaskValidationService {
         .update(labTaskProgress)
         .set({
           attempts: newAttempts,
-          score: Math.max(progress.score, score), // Keep best score
+          score: Math.max(progress.score, score).toString(), // Keep best score as string
           completed: isCompleted && allStepsPassed,
           completedAt: isCompleted && allStepsPassed ? new Date() : null,
           lastAttemptAt: new Date(),
@@ -256,7 +256,7 @@ export class TaskValidationService {
         .update(labTaskProgress)
         .set({
           attempts: 0,
-          score: 0,
+          score: "0", // Ensure score is a string
           completed: false,
           completedAt: null,
           lastAttemptAt: null,
