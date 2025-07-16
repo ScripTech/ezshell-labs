@@ -4,12 +4,12 @@ import { ColumnDef } from "@tanstack/react-table"
 import Link from "next/link"
 
 export const columns: ColumnDef<any>[] = [
-	{
-		accessorKey: "labId",
-		header: "Lab ID",
-    cell: ({ row }: any) => <span className="uppercase">{row.original.lab}</span>,
-		enableSorting: true,
-	},
+	// {
+	// 	accessorKey: "labId",
+	// 	header: "Lab ID",
+	// 	cell: ({ row }: any) => <span className="uppercase">{row.original.labId}</span>,
+	// 	enableSorting: true,
+	// },
 	{
 		accessorKey: "title",
 		header: "Challenge",

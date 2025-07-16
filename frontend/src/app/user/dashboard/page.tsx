@@ -76,7 +76,12 @@ export default function UserDashboardPage() {
           <CardContent className="p-4">
             <div className="bg-green-500/70 text-primary rounded px-4 py-2 text-center font-bold text-xl mb-2">
               TOTAL POINTS
-              <div className="text-3xl mt-2">{tasks.reduce((acc, t) => acc + (t.score ?? 0), 0)}</div>
+              <div className="text-3xl mt-2">
+                {tasks.reduce((acc, t) => {
+                  const score = parseInt(String(t.score ?? 0), 10) || 0;
+                  return acc + score;
+                }, 0).toLocaleString()}
+              </div>
             </div>
             <div className="text-muted-foreground text-center py-2 border-t">
               COMPLETED
