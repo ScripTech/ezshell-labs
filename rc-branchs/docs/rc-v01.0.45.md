@@ -61,7 +61,7 @@ pvs --noheadings | wc -l              # Physical volumes
 vgs --noheadings --units m -o vg_free # Volume group space
 lvs --noheadings --units m -o lv_size # Logical volume size
 
-# Swap Commands  
+# Swap Commands
 swapon --show | wc -l                 # Active swap
 free -m | awk '/^Swap:/ {print $2}'   # Swap size
 grep -c "swap" /etc/fstab             # Persistence
@@ -104,7 +104,7 @@ export class LVMConfigurationController {
     const hasPhysicalVolumes = await this.checkPhysicalVolumes();
     const hasVolumeGroups = await this.checkVolumeGroups();
     const hasLogicalVolumes = await this.checkLogicalVolumes();
-    
+
     return hasLVMTools && hasPhysicalVolumes && hasVolumeGroups && hasLogicalVolumes;
   }
 }
@@ -120,7 +120,7 @@ export class LVMConfigurationController {
 
 ### **Build Status**: ✅ All components compile successfully
 ### **New Features**: ✅ 5 advanced validation controllers implemented
-### **Integration**: ✅ Complete socket tracking and database integration  
+### **Integration**: ✅ Complete socket tracking and database integration
 ### **Test Coverage**: ✅ Real system command validation tested
 ### **Performance**: ✅ Efficient multi-step validation with live feedback
 

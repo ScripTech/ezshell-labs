@@ -42,7 +42,7 @@
 - **Q1-3**: Network config, YUM repos, SELinux port management
 - **Q4**: User group management with socket tracking
 - **Q5**: Collaborative directory permissions with socket tracking
-- **Q6**: Cron job configuration with socket tracking  
+- **Q6**: Cron job configuration with socket tracking
 - **Q7**: Autofs/NFS configuration with socket tracking
 - **Q8-10**: Tar archives, file permissions, time synchronization
 - **Q12**: String search validation

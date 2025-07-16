@@ -35,9 +35,9 @@ export class AdvancedContainerController {
         step: "Container runtime installed",
         status: "loading",
       });
-      
+
       const hasContainerRuntime = await this.checkContainerRuntime();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Container runtime installed",
         status: hasContainerRuntime ? "success" : "failed",
@@ -49,9 +49,9 @@ export class AdvancedContainerController {
         step: "Containers running",
         status: "loading",
       });
-      
+
       const hasRunningContainers = await this.checkRunningContainers();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Containers running",
         status: hasRunningContainers ? "success" : "failed",
@@ -63,9 +63,9 @@ export class AdvancedContainerController {
         step: "Container networking configured",
         status: "loading",
       });
-      
+
       const hasNetworking = await this.checkContainerNetworking();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Container networking configured",
         status: hasNetworking ? "success" : "warning",
@@ -77,9 +77,9 @@ export class AdvancedContainerController {
         step: "Persistent storage configured",
         status: "loading",
       });
-      
+
       const hasPersistentStorage = await this.checkPersistentStorage();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Persistent storage configured",
         status: hasPersistentStorage ? "success" : "warning",
@@ -91,9 +91,9 @@ export class AdvancedContainerController {
         step: "Container systemd services",
         status: "loading",
       });
-      
+
       const hasSystemdServices = await this.checkContainerSystemdServices();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Container systemd services",
         status: hasSystemdServices ? "success" : "warning",
@@ -105,9 +105,9 @@ export class AdvancedContainerController {
         step: "Container security configured",
         status: "loading",
       });
-      
+
       const hasSecuritySettings = await this.checkContainerSecurity();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Container security configured",
         status: hasSecuritySettings ? "success" : "warning",

@@ -35,9 +35,9 @@ export class LVMResizeController {
         step: "Logical volume exists",
         status: "loading",
       });
-      
+
       const lvExists = await this.checkLogicalVolumeExists(lvPath);
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Logical volume exists",
         status: lvExists ? "success" : "failed",
@@ -53,9 +53,9 @@ export class LVMResizeController {
         step: "Current LV size detected",
         status: "loading",
       });
-      
+
       const currentSize = await this.getLogicalVolumeSize(lvPath);
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Current LV size detected",
         status: currentSize > 0 ? "success" : "failed",
@@ -67,9 +67,9 @@ export class LVMResizeController {
         step: "Filesystem resize capability",
         status: "loading",
       });
-      
+
       const canResize = await this.checkFilesystemResizeCapability(lvPath);
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Filesystem resize capability",
         status: canResize ? "success" : "failed",
@@ -81,9 +81,9 @@ export class LVMResizeController {
         step: "Volume group free space",
         status: "loading",
       });
-      
+
       const freeSpace = await this.getVolumeGroupFreeSpace(lvPath);
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Volume group free space",
         status: freeSpace > 0 ? "success" : "warning",
@@ -96,9 +96,9 @@ export class LVMResizeController {
           step: "Target size achievable",
           status: "loading",
         });
-        
+
         const isAchievable = await this.validateTargetSize(lvPath, targetSize, freeSpace);
-        
+
         socket.emit(`validation-${questionId}-step`, {
           step: "Target size achievable",
           status: isAchievable ? "success" : "failed",
@@ -148,10 +148,10 @@ export class LVMResizeController {
   private async getLogicalVolumeSize(lvPath?: string): Promise<number> {
     const { exec } = require('child_process');
     return new Promise((resolve) => {
-      const command = lvPath ? 
+      const command = lvPath ?
         `lvs --noheadings --units m --nosuffix -o lv_size ${lvPath}` :
         `lvs --noheadings --units m --nosuffix -o lv_size | head -1`;
-      
+
       exec(command, (error: any, stdout: string) => {
         if (error) {
           resolve(0);
@@ -170,7 +170,7 @@ export class LVMResizeController {
         resolve(true); // Assume capability exists if no specific path
         return;
       }
-      
+
       exec(`file -s ${lvPath} | grep -E "(ext[234]|xfs)"`, (error: any, stdout: string) => {
         if (error) {
           resolve(false);
@@ -193,7 +193,7 @@ export class LVMResizeController {
       } else {
         command = `vgs --noheadings --units m --nosuffix -o vg_free | head -1`;
       }
-      
+
       exec(command, (error: any, stdout: string) => {
         if (error) {
           resolve(0);
@@ -207,14 +207,14 @@ export class LVMResizeController {
 
   private async validateTargetSize(lvPath?: string, targetSize?: string, freeSpace?: number): Promise<boolean> {
     if (!targetSize) return true;
-    
+
     // Parse target size (handle formats like "1G", "500M", etc.)
     const sizeMatch = targetSize.match(/^(\d+(?:\.\d+)?)\s*([KMGT]?)$/i);
     if (!sizeMatch) return false;
-    
+
     const value = parseFloat(sizeMatch[1]);
     const unit = sizeMatch[2].toUpperCase() || 'M';
-    
+
     let targetMB = value;
     switch (unit) {
       case 'K': targetMB = value / 1024; break;
@@ -222,10 +222,10 @@ export class LVMResizeController {
       case 'T': targetMB = value * 1024 * 1024; break;
       default: break; // M is default
     }
-    
+
     const currentSize = await this.getLogicalVolumeSize(lvPath);
     const requiredSpace = targetMB - currentSize;
-    
+
     return requiredSpace <= (freeSpace || 0);
   }
 }

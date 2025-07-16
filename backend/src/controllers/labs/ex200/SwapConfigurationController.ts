@@ -35,9 +35,9 @@ export class SwapConfigurationController {
         step: "Swap space active",
         status: "loading",
       });
-      
+
       const isSwapActive = await this.checkSwapStatus();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap space active",
         status: isSwapActive ? "success" : "failed",
@@ -49,10 +49,10 @@ export class SwapConfigurationController {
         step: "Swap size adequate",
         status: "loading",
       });
-      
+
       const swapSize = await this.checkSwapSize();
       const isSizeAdequate = swapSize > 0;
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap size adequate",
         status: isSizeAdequate ? "success" : "failed",
@@ -64,9 +64,9 @@ export class SwapConfigurationController {
         step: "Swap persistent on boot",
         status: "loading",
       });
-      
+
       const isPersistent = await this.checkSwapPersistence();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap persistent on boot",
         status: isPersistent ? "success" : "failed",
@@ -78,9 +78,9 @@ export class SwapConfigurationController {
         step: "Swap priority configured",
         status: "loading",
       });
-      
+
       const hasPriority = await this.checkSwapPriority();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap priority configured",
         status: hasPriority ? "success" : "warning",

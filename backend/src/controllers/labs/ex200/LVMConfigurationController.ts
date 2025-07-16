@@ -35,9 +35,9 @@ export class LVMConfigurationController {
         step: "LVM tools installed",
         status: "loading",
       });
-      
+
       const hasLVMTools = await this.checkLVMInstallation();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "LVM tools installed",
         status: hasLVMTools ? "success" : "failed",
@@ -49,9 +49,9 @@ export class LVMConfigurationController {
         step: "Physical volumes configured",
         status: "loading",
       });
-      
+
       const hasPhysicalVolumes = await this.checkPhysicalVolumes();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Physical volumes configured",
         status: hasPhysicalVolumes ? "success" : "failed",
@@ -63,9 +63,9 @@ export class LVMConfigurationController {
         step: "Volume groups created",
         status: "loading",
       });
-      
+
       const hasVolumeGroups = await this.checkVolumeGroups();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Volume groups created",
         status: hasVolumeGroups ? "success" : "failed",
@@ -77,9 +77,9 @@ export class LVMConfigurationController {
         step: "Logical volumes configured",
         status: "loading",
       });
-      
+
       const hasLogicalVolumes = await this.checkLogicalVolumes();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Logical volumes configured",
         status: hasLogicalVolumes ? "success" : "failed",

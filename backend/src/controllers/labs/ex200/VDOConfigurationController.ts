@@ -35,9 +35,9 @@ export class VDOConfigurationController {
         step: "VDO tools installed",
         status: "loading",
       });
-      
+
       const hasVDOTools = await this.checkVDOInstallation();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO tools installed",
         status: hasVDOTools ? "success" : "failed",
@@ -49,9 +49,9 @@ export class VDOConfigurationController {
         step: "VDO service active",
         status: "loading",
       });
-      
+
       const isVDOServiceActive = await this.checkVDOServiceStatus();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO service active",
         status: isVDOServiceActive ? "success" : "failed",
@@ -63,9 +63,9 @@ export class VDOConfigurationController {
         step: "VDO volumes configured",
         status: "loading",
       });
-      
+
       const hasVDOVolumes = await this.checkVDOVolumes();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO volumes configured",
         status: hasVDOVolumes ? "success" : "failed",
@@ -77,9 +77,9 @@ export class VDOConfigurationController {
         step: "VDO compression enabled",
         status: "loading",
       });
-      
+
       const compressionEnabled = await this.checkVDOCompression();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO compression enabled",
         status: compressionEnabled ? "success" : "warning",
@@ -91,9 +91,9 @@ export class VDOConfigurationController {
         step: "VDO deduplication enabled",
         status: "loading",
       });
-      
+
       const deduplicationEnabled = await this.checkVDODeduplication();
-      
+
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO deduplication enabled",
         status: deduplicationEnabled ? "success" : "warning",
