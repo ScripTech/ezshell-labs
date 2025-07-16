@@ -9,6 +9,11 @@ import { BasicValidationController } from '../controllers/labs/ex200/BasicValida
 import { CollaborativeDirectoryControllerV1 } from '../controllers/labs/ex200/CollaborativeDirectoryControllerV1';
 import { CronJobController } from '../controllers/labs/ex200/CronJobController';
 import { AdditionalValidationController } from '../controllers/labs/ex200/AdditionalValidationController';
+import { LVMConfigurationController } from '../controllers/labs/ex200/LVMConfigurationController';
+import { SwapConfigurationController } from '../controllers/labs/ex200/SwapConfigurationController';
+import { LVMResizeController } from '../controllers/labs/ex200/LVMResizeController';
+import { VDOConfigurationController } from '../controllers/labs/ex200/VDOConfigurationController';
+import { AdvancedContainerController } from '../controllers/labs/ex200/AdvancedContainerController';
 import { AuthenticatedSocket } from '../middleware/socketAuth';
 import { SocketUserService } from '../services/SocketUserService';
 import { validationTrackingService, ValidationContext } from '../services/ValidationTrackingService';
@@ -23,7 +28,12 @@ export class EX200ValidationHandler implements ILabValidationHandler {
     private readonly cronJob: CronJobController,
     private readonly autofsConfig: AutofsConfigurationController,
     private readonly basicController: BasicValidationController,
-    private readonly additionalController: AdditionalValidationController
+    private readonly additionalController: AdditionalValidationController,
+    private readonly lvmController: LVMConfigurationController,
+    private readonly swapController: SwapConfigurationController,
+    private readonly lvmResizeController: LVMResizeController,
+    private readonly vdoController: VDOConfigurationController,
+    private readonly advancedContainerController: AdvancedContainerController
   ) {}
 
   private async executeWithAuthentication(
@@ -414,6 +424,71 @@ export class EX200ValidationHandler implements ILabValidationHandler {
             labId,
             validationQuestionId,
             labEnrollmentId: userContext17.labEnrollmentId,
+          });
+        }
+        break;
+      case "question-19-lvm-configuration":
+        const authSocket19 = socket as AuthenticatedSocket;
+        const userContext19 = await SocketUserService.getUserContextWithLab(authSocket19, labId);
+        if (userContext19?.labEnrollmentId) {
+          await this.lvmController.handleLVMValidationWithSocketTracking(socket, {
+            questionId,
+            userId: userContext19.userId,
+            labId,
+            validationQuestionId,
+            labEnrollmentId: userContext19.labEnrollmentId,
+          });
+        }
+        break;
+      case "question-20-swap-configuration":
+        const authSocket20 = socket as AuthenticatedSocket;
+        const userContext20 = await SocketUserService.getUserContextWithLab(authSocket20, labId);
+        if (userContext20?.labEnrollmentId) {
+          await this.swapController.handleSwapValidationWithSocketTracking(socket, {
+            questionId,
+            userId: userContext20.userId,
+            labId,
+            validationQuestionId,
+            labEnrollmentId: userContext20.labEnrollmentId,
+          });
+        }
+        break;
+      case "question-21-lvm-resize":
+        const authSocket21 = socket as AuthenticatedSocket;
+        const userContext21 = await SocketUserService.getUserContextWithLab(authSocket21, labId);
+        if (userContext21?.labEnrollmentId) {
+          await this.lvmResizeController.handleLVMResizeValidationWithSocketTracking(socket, {
+            questionId,
+            userId: userContext21.userId,
+            labId,
+            validationQuestionId,
+            labEnrollmentId: userContext21.labEnrollmentId,
+          });
+        }
+        break;
+      case "question-22-vdo-configuration":
+        const authSocket22 = socket as AuthenticatedSocket;
+        const userContext22 = await SocketUserService.getUserContextWithLab(authSocket22, labId);
+        if (userContext22?.labEnrollmentId) {
+          await this.vdoController.handleVDOValidationWithSocketTracking(socket, {
+            questionId,
+            userId: userContext22.userId,
+            labId,
+            validationQuestionId,
+            labEnrollmentId: userContext22.labEnrollmentId,
+          });
+        }
+        break;
+      case "question-23-advanced-containers":
+        const authSocket23 = socket as AuthenticatedSocket;
+        const userContext23 = await SocketUserService.getUserContextWithLab(authSocket23, labId);
+        if (userContext23?.labEnrollmentId) {
+          await this.advancedContainerController.handleAdvancedContainerValidationWithSocketTracking(socket, {
+            questionId,
+            userId: userContext23.userId,
+            labId,
+            validationQuestionId,
+            labEnrollmentId: userContext23.labEnrollmentId,
           });
         }
         break;

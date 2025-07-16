@@ -17,6 +17,11 @@ const CronJobController_1 = require("./controllers/labs/ex200/CronJobController"
 const AutofsConfigurationController_1 = require("./controllers/labs/ex200/AutofsConfigurationController");
 const BasicValidationController_1 = require("./controllers/labs/ex200/BasicValidationController");
 const AdditionalValidationController_1 = require("./controllers/labs/ex200/AdditionalValidationController");
+const LVMConfigurationController_1 = require("./controllers/labs/ex200/LVMConfigurationController");
+const SwapConfigurationController_1 = require("./controllers/labs/ex200/SwapConfigurationController");
+const LVMResizeController_1 = require("./controllers/labs/ex200/LVMResizeController");
+const VDOConfigurationController_1 = require("./controllers/labs/ex200/VDOConfigurationController");
+const AdvancedContainerController_1 = require("./controllers/labs/ex200/AdvancedContainerController");
 const EX200ValidationHandler_1 = require("./handlers/EX200ValidationHandler");
 const EX280ValidationHandler_1 = require("./handlers/EX280ValidationHandler");
 const LabValidationHandlerFactory_1 = require("./handlers/LabValidationHandlerFactory");
@@ -78,7 +83,12 @@ const deploymentController = new DeploymentController_1.DeploymentController();
 const autoScalingController = new AutoScalingController_1.AutoScalingController();
 // Initialize handlers
 const additionalController = new AdditionalValidationController_1.AdditionalValidationController();
-const ex200Handler = new EX200ValidationHandler_1.EX200ValidationHandler(networkConfigValidationController, userGroupMnt, yumManagement, selinuxMnt, collabDirV1, cronJob, autofsConfig, basicController, additionalController);
+const lvmController = new LVMConfigurationController_1.LVMConfigurationController();
+const swapController = new SwapConfigurationController_1.SwapConfigurationController();
+const lvmResizeController = new LVMResizeController_1.LVMResizeController();
+const vdoController = new VDOConfigurationController_1.VDOConfigurationController();
+const advancedContainerController = new AdvancedContainerController_1.AdvancedContainerController();
+const ex200Handler = new EX200ValidationHandler_1.EX200ValidationHandler(networkConfigValidationController, userGroupMnt, yumManagement, selinuxMnt, collabDirV1, cronJob, autofsConfig, basicController, additionalController, lvmController, swapController, lvmResizeController, vdoController, advancedContainerController);
 const ex280Handler = new EX280ValidationHandler_1.EX280ValidationHandler(authController, groupRoleController);
 const do280Handler = new DO280ValidationHandler_1.DO280ValidationHandler(identityProvidersController, projectPermissionController, groupManagementController, resourceQuotaController, limitRangeController, scalingController, deploymentController, autoScalingController);
 // Initialize factory

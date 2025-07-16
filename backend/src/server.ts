@@ -13,6 +13,11 @@ import { CronJobController } from "./controllers/labs/ex200/CronJobController";
 import { AutofsConfigurationController } from "./controllers/labs/ex200/AutofsConfigurationController";
 import { BasicValidationController } from "./controllers/labs/ex200/BasicValidationController";
 import { AdditionalValidationController } from "./controllers/labs/ex200/AdditionalValidationController";
+import { LVMConfigurationController } from "./controllers/labs/ex200/LVMConfigurationController";
+import { SwapConfigurationController } from "./controllers/labs/ex200/SwapConfigurationController";
+import { LVMResizeController } from "./controllers/labs/ex200/LVMResizeController";
+import { VDOConfigurationController } from "./controllers/labs/ex200/VDOConfigurationController";
+import { AdvancedContainerController } from "./controllers/labs/ex200/AdvancedContainerController";
 import { EX200ValidationHandler } from "./handlers/EX200ValidationHandler";
 import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
 import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
@@ -85,6 +90,11 @@ const autoScalingController = new AutoScalingController();
 
 // Initialize handlers
 const additionalController = new AdditionalValidationController();
+const lvmController = new LVMConfigurationController();
+const swapController = new SwapConfigurationController();
+const lvmResizeController = new LVMResizeController();
+const vdoController = new VDOConfigurationController();
+const advancedContainerController = new AdvancedContainerController();
 
 const ex200Handler = new EX200ValidationHandler(
   networkConfigValidationController,
@@ -95,7 +105,12 @@ const ex200Handler = new EX200ValidationHandler(
   cronJob,
   autofsConfig,
   basicController,
-  additionalController
+  additionalController,
+  lvmController,
+  swapController,
+  lvmResizeController,
+  vdoController,
+  advancedContainerController
 );
 
 const ex280Handler = new EX280ValidationHandler(
