@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { authenticateRequest } from '@/lib/auth-utils'
 import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    // Require admin authentication
+    const { result, response } = await authenticateRequest(true)
 
-    if (!session?.user?.role || session.user.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!result.isAuthenticated || result.error) {
+      return response!
     }
 
     // Clear NextAuth session cookies
-    const cookieStore = cookies()
     const cookieNames = [
       'next-auth.session-token',
       '__Secure-next-auth.session-token',
@@ -23,23 +22,26 @@ export async function POST(request: Request) {
     ]
 
     // Instructions for clearing all user sessions
-    const response = NextResponse.json({
+    const responseData = NextResponse.json({
       success: true,
       message: 'Session invalidation initiated',
+      admin: result.user?.name || 'Admin',
+      timestamp: new Date().toISOString(),
       instructions: [
         'Database has been reset',
         'User JWT tokens may still be valid in browsers',
         'Users should clear browser cookies or use private/incognito mode',
-        'Alternatively, restart NextAuth secret to invalidate all tokens'
+        'Alternatively, restart NextAuth secret to invalidate all tokens',
+        'Updated auth middleware will now validate users against database'
       ]
     })
 
     // Clear admin's session cookies
     cookieNames.forEach(name => {
-      response.cookies.delete(name)
+      responseData.cookies.delete(name)
     })
 
-    return response
+    return responseData
 
   } catch (error) {
     console.error('Error in session invalidation:', error)

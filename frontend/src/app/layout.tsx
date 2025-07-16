@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { AuthErrorHandler } from '@/components/providers/AuthErrorHandler'
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -20,7 +21,9 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`light:bg-muted/40 antialiased`}>
         <AuthProvider>
+          <AuthErrorHandler>
             {children}
+          </AuthErrorHandler>
         </AuthProvider>
         <Toaster />
       </body>
