@@ -80,7 +80,7 @@ EOF
 backup_database() {
     log_info "Creating database backup..."
     BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).sql"
-    
+
     if docker-compose exec -T postgres pg_dump -U postgres ezshell_labs > "$BACKUP_FILE"; then
         log_info "Database backup created: $BACKUP_FILE"
     else
@@ -98,33 +98,33 @@ pull_images() {
 
 deploy() {
     log_info "Deploying EZShell Labs version: $VERSION"
-    
+
     # Set image versions in environment
     export FRONTEND_IMAGE="$REGISTRY/$REPO_NAME-frontend:$VERSION"
     export BACKEND_IMAGE="$REGISTRY/$REPO_NAME-backend:$VERSION"
     export SHELL_NODE_IMAGE="$REGISTRY/$REPO_NAME-shell-node:$VERSION"
-    
+
     # Deploy with docker-compose
     if docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d; then
         log_info "Deployment successful!"
-        
+
         # Wait for services to be ready
         log_info "Waiting for services to be ready..."
         sleep 30
-        
+
         # Health check
         if curl -f "http://localhost:3000/api/health" >/dev/null 2>&1; then
             log_info "Frontend health check passed"
         else
             log_warn "Frontend health check failed - please verify manually"
         fi
-        
+
         if curl -f "http://localhost:3001/health" >/dev/null 2>&1; then
             log_info "Backend health check passed"
         else
             log_warn "Backend health check failed - please verify manually"
         fi
-        
+
         log_info "Deployment completed successfully!"
     else
         log_error "Deployment failed"

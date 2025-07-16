@@ -9,17 +9,17 @@ jobs:
   dependency-review:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-    
+
     - name: Dependency Review
       uses: actions/dependency-review-action@v4
 
   security-audit:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
   update-dependencies:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -84,20 +84,20 @@ jobs:
         title: 'Automated dependency updates'
         body: |
           ## Automated Dependency Updates
-          
+
           This PR contains automated dependency updates and security fixes.
-          
+
           ### Changes
           - Updated npm dependencies to latest versions
           - Applied security fixes where available
-          
+
           Please review the changes before merging.
         branch: chore/dependency-updates
         delete-branch: true
 
   docker-security-scan:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4

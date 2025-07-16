@@ -22,7 +22,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
         mkdir -p deployment
         cp docker-compose.yml deployment/
         cp -r scripts deployment/
-        
+
         # Create environment-specific docker-compose override
         cat > deployment/docker-compose.override.yml << EOF
         version: '3.8'
@@ -66,7 +66,7 @@ jobs:
               - NEXTAUTH_URL=\${NEXTAUTH_URL}
               - NEXTAUTH_SECRET=\${NEXTAUTH_SECRET}
               - DATABASE_URL=\${DATABASE_URL}
-          
+
           backend:
             image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ steps.version.outputs.version }}
             environment:
@@ -76,7 +76,7 @@ jobs:
               - SSH_HOST=\${SSH_HOST}
               - SSH_USER=\${SSH_USER}
               - SSH_PASSWORD=\${SSH_PASSWORD}
-          
+
           shell-node:
             image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-shell-node:${{ steps.version.outputs.version }}
         EOF
@@ -112,7 +112,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     if: success()
-    
+
     steps:
     - name: Wait for deployment
       run: sleep 30

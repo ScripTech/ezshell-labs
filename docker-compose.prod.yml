@@ -33,15 +33,6 @@ services:
       - "traefik.http.routers.backend.rule=Host(`${BACKEND_DOMAIN}`)"
       - "traefik.http.routers.backend.tls=true"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-
-  shell-node:
-    image: ghcr.io/scriptech/ezshell-labs-shell-node:latest
-    restart: unless-stopped
-    cap_add:
-      - SYS_ADMIN
-    security_opt:
-      - seccomp:unconfined
-
   postgres:
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

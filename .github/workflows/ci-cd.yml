@@ -9,7 +9,7 @@ on:
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
 
   test-backend:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -95,7 +95,7 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
