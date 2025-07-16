@@ -25,7 +25,7 @@ export function AvailableLabsComponent({
   }
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-5 gap-6">
       {data.map((lab) => (
         <Card key={lab.id} className="group hover:shadow-lg transition-shadow">
           <CardHeader className="border-b p-0">

@@ -3,6 +3,18 @@
 @tailwind utilities;
 
 
+pre {
+  overflow-x: auto; /* Enables horizontal scrolling */
+  overflow-y: auto; /* Enables vertical scrolling if content exceeds height */
+  max-height: 300px;
+  max-width: 90%;
+  padding: 0px !important;
+}
+
+pre > div {
+  margin: 0px !important;
+}
+
 .xterm-viewport, .xterm-screen{
   background-color: rgb(0, 0, 0, 0) !important;
   height: calc(100vh - 4rem) !important;

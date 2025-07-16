@@ -11,6 +11,7 @@ export type LabExercise = {
 export type Lab = {
   id: string;
   name: string;
+  labId: string;
   description?: string;
   duration: number;
   createdAt: Date;

@@ -1,11 +1,11 @@
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { AuthErrorHandler } from '@/components/providers/AuthErrorHandler'
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-// import "./xterm.css"
 import { Toaster } from "sonner"
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] });${ inter.className}
 
 export const metadata: Metadata = {
   title: "eZetsu-Labs @ ezShell",
@@ -19,9 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${ inter.className} light:bg-muted/40 antialiased`}>
+      <body className={`light:bg-muted/40 antialiased`}>
         <AuthProvider>
+          <AuthErrorHandler>
             {children}
+          </AuthErrorHandler>
         </AuthProvider>
         <Toaster />
       </body>

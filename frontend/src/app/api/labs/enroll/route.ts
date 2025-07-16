@@ -2,9 +2,10 @@ import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { eq } from 'drizzle-orm'
-import { authOptions } from '../../auth/[...nextauth]/route'
-import { labs, labEnrollments } from '@/db/schemas/LabSchema'
+import { labs, labEnrollments, labTasks, labTaskProgress } from '@/db/schemas/LabSchema'
+import { labSessionService } from '@/services/labSessionService'
 import { nanoid } from 'nanoid'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { labId } = await request.json()
+    const { labId, startSession = false } = await request.json()
 
     // Check if user is already enrolled
     const existingEnrollment = await db.query.labEnrollments.findFirst({
@@ -23,6 +24,23 @@ export async function POST(request: Request) {
     });
 
     if (existingEnrollment) {
+      // If already enrolled and startSession is requested, try to start a session
+      if (startSession) {
+        try {
+          const labSession = await labSessionService.startLabSession(userId, labId)
+          return NextResponse.json({
+            enrollment: existingEnrollment,
+            session: labSession,
+            message: 'Already enrolled, lab session started'
+          })
+        } catch (sessionError) {
+          return NextResponse.json({
+            enrollment: existingEnrollment,
+            message: 'Already enrolled but failed to start session',
+            sessionError: sessionError instanceof Error ? sessionError.message : 'Unknown error'
+          })
+        }
+      }
       return NextResponse.json(
         { error: 'Already enrolled in this lab' },
         { status: 400 }
@@ -54,17 +72,48 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    // Initialize lab_task_progress for all tasks in the lab
+    const tasks = await db.select().from(labTasks).where(eq(labTasks.labId, labId));
+    if (tasks.length > 0) {
+      await db.insert(labTaskProgress).values(
+        tasks.map(task => ({
+          id: nanoid(),
+          userId,
+          labTaskId: task.id,
+          labEnrollmentId: enrollment.id,
+          score: "0", // Convert score to string to match schema
+          completed: false,
+          createdAt: new Date(),
+        }))
+      );
+    }
+
+    // Start lab session if requested
+    let labSession = null
+    if (startSession) {
+      try {
+        labSession = await labSessionService.startLabSession(userId, labId)
+      } catch (sessionError) {
+        console.error('Failed to start lab session after enrollment:', sessionError)
+        // Continue without session - user can start it manually later
+      }
+    }
+
     return NextResponse.json({
-      ...enrollment,
-      lab: {
-        ...lab,
-        isEnrolled: true,
+      enrollment: {
+        ...enrollment,
+        lab: {
+          ...lab,
+          isEnrolled: true,
+        },
       },
+      session: labSession,
+      message: labSession ? 'Enrolled and lab session started successfully' : 'Enrolled successfully'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error enrolling in lab:', error)
     return NextResponse.json(
-      { error: 'Failed to enroll in lab' },
+      { error: 'Failed to enroll in lab', details: error.message },
       { status: 500 }
     )
   }

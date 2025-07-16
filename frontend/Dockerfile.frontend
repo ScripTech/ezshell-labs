@@ -1,0 +1,29 @@
+# Install dependencies and build Next.js app
+FROM node:current-alpine3.22 AS builder
+
+WORKDIR /app
+
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+RUN \
+  if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; \
+  else npm install; fi
+
+COPY . .
+RUN npm run build
+
+# Production image
+FROM node:current-alpine3.22
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app .
+
+RUN apk update && apk upgrade
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

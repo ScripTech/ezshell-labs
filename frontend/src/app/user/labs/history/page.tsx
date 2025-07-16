@@ -109,7 +109,7 @@ export default function HistoryPage() {
           <Terminal className="h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold">No Lab History</h3>
           <p className="text-sm text-muted-foreground">
-            You haven't completed any labs yet. Start a lab to see your history.
+            You haven&apos;t completed any labs yet. Start a lab to see your history.
           </p>
         </div>
       )}

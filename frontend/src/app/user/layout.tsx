@@ -1,6 +1,7 @@
 'use client'
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { NavMain } from "@/components/nav-main"
 import { BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -21,6 +22,35 @@ const pathLabels: Record<string, string> = {
   profile: "Profile",
 }
 
+const userNavItems = [
+  {
+    title: "Dashboard",
+    url: "/user/dashboard",
+    isActive: "true",
+    items: [],
+  },
+  {
+    title: "Playground",
+    url: "/user",
+    isActive: "true",
+    items: [
+      { title: "Labs", url: "/user/labs" },
+      { title: "History", url: "/user/labs/history" },
+      { title: "Enrolled Labs", url: "/user/labs?q=enrolled" },
+    ],
+  },
+  {
+    title: "Billing",
+    url: "/user/billing",
+    isActive: "true",
+    items: [
+      { title: "Overview", url: "/user/billing/overview" },
+      { title: "Subscription Plans", url: "/user/billing/plans" },
+      { title: "Billing & Payments", url: "/user/billing" },
+    ],
+  },
+]
+
 export default function UserLayout({
   children,
   ...props
@@ -29,6 +59,17 @@ export default function UserLayout({
 }>) {
   const { data: session } = useSession()
   const pathname = usePathname()
+
+  const navMain = (userNavItems).map(item => ({
+    ...item,
+    isActive: pathname.startsWith(item.url),
+    items: item.items?.map(subItem => ({
+      ...subItem,
+      // Optionally, set active state for subitems if needed
+    })),
+  }))
+
+  const data = { navMain }
 
   const breadcrumbs = useMemo(() => {
     const paths = pathname.split('/').filter(Boolean)
@@ -48,7 +89,9 @@ export default function UserLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar session={session} props={props}/>
+      <AppSidebar session={session} props={props}>
+        <NavMain items={data.navMain} groupLabel="Navigation Menu"/>
+      </AppSidebar>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">

@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { eq } from 'drizzle-orm'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { labSessions } from '@/db/schemas'
 
 // Used to get List of labs

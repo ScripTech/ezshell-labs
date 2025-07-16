@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { CaretSortIcon, GearIcon } from "@radix-ui/react-icons"
 import { SquareTerminal } from "lucide-react"
+import Link from "next/link"
 
 export function TeamSwitcher({
   teams,
@@ -62,7 +63,7 @@ export function TeamSwitcher({
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Teams
+              Tenant
             </DropdownMenuLabel>
             {teams.map((team, index) => (
               <DropdownMenuItem
@@ -73,7 +74,7 @@ export function TeamSwitcher({
                 <div className="flex size-6 items-center justify-center rounded-sm border">
                   <team.logo className="size-4 shrink-0" />
                 </div>
-                {team.name}
+                <Link href={`/user/labs`}>{team.name}</Link>
                 {/* <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut> */}
               </DropdownMenuItem>
             ))}
@@ -82,7 +83,9 @@ export function TeamSwitcher({
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <GearIcon className="size-4" />
               </div>
-              <div className="font-medium">Administration</div>
+              <div className="font-medium">
+                <Link href={"/admin"}>Administration</Link>
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -53,6 +53,20 @@ services:
     networks:
       - ezshell-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    hostname: frontend
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - ezshell-network
+
 
   # OpenSSH server
   # openssh-server:

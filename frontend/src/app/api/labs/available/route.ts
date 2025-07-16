@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next'
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { eq, sql } from 'drizzle-orm'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { labEnrollments } from '@/db/schemas/LabSchema'
 import { Lab } from '@/types/labs'
 
@@ -39,6 +39,7 @@ export async function GET() {
       return {
         id: lab.id,
         name: lab.name,
+        labId: lab.labId,
         description: lab.description ?? undefined,
         duration: lab.duration,
         imageUrl: lab.imageUrl ?? undefined,

@@ -1,29 +1,100 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValidationController = void 0;
-const validationService_1 = require("../services/validationService");
+const ValidationTaskService_1 = require("../services/ValidationTaskService");
+const NetworkValidationExecutor_1 = require("../services/executors/NetworkValidationExecutor");
 class ValidationController {
     constructor() {
-        this.handleValidation = async (socket, username) => {
-            socket.emit("validation-step", {
-                step: "file-existence",
-                status: "loading",
+        this.validationService = new ValidationTaskService_1.ValidationTaskService();
+        // Register available executors
+        this.validationService.registerExecutor(new NetworkValidationExecutor_1.NetworkValidationExecutor());
+    }
+    /**
+     * Execute validation for a specific task
+     */
+    async executeTaskValidation(req, res) {
+        try {
+            const { taskId } = req.params;
+            const { userId, labId, sessionData } = req.body;
+            if (!taskId || !userId || !labId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Missing required fields: taskId, userId, labId'
+                });
+            }
+            const context = {
+                taskId,
+                userId,
+                labId,
+                sessionData,
+                sshConfig: {
+                    host: process.env.LAB_SSH_HOST || 'localhost',
+                    port: parseInt(process.env.LAB_SSH_PORT || '22'),
+                    username: process.env.LAB_SSH_USERNAME || 'lab-user',
+                    password: process.env.LAB_SSH_PASSWORD || 'password'
+                }
+            };
+            const summary = await this.validationService.executeValidation(taskId, context);
+            res.status(200).json({
+                success: true,
+                data: summary,
+                message: summary.passed ? 'Validation completed successfully' : 'Validation completed with failures'
             });
-            const fileExists = await this.validationService.validateFileExistence(username);
-            socket.emit("validation-step", {
-                step: "file-existence",
-                status: fileExists ? "success" : "error",
+        }
+        catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Validation execution failed',
+                error: error instanceof Error ? error.message : 'Unknown error'
             });
-            socket.emit("validation-step", { step: "file-content", status: "loading" });
-            const contentValid = await this.validationService.validateFileContent(username);
-            socket.emit("validation-step", {
-                step: "file-content",
-                status: contentValid ? "success" : "error",
+        }
+    }
+    /**
+     * Get validation configuration for a task
+     */
+    async getTaskValidationConfig(req, res) {
+        try {
+            const { taskId } = req.params;
+            const config = await this.validationService.getTaskValidationConfig(taskId);
+            if (!config) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Task validation configuration not found'
+                });
+            }
+            res.status(200).json({
+                success: true,
+                data: config,
+                message: 'Validation configuration retrieved successfully'
             });
-            const result = await this.validationService.validateChallenge(username);
-            socket.emit("validation-complete", result);
-        };
-        this.validationService = new validationService_1.ValidationService();
+        }
+        catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to retrieve validation configuration',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+    /**
+     * Get available validation types
+     */
+    async getAvailableValidationTypes(req, res) {
+        try {
+            const types = this.validationService.getAvailableValidationTypes();
+            res.status(200).json({
+                success: true,
+                data: types,
+                message: 'Available validation types retrieved successfully'
+            });
+        }
+        catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to retrieve validation types',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
     }
 }
 exports.ValidationController = ValidationController;
