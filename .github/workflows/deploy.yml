@@ -1,0 +1,125 @@
+name: Production Deployment
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get release version
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=latest" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Pull Docker images
+      run: |
+        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ steps.version.outputs.version }}
+        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ steps.version.outputs.version }}
+        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-shell-node:${{ steps.version.outputs.version }}
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment
+        cp docker-compose.yml deployment/
+        cp -r scripts deployment/
+        
+        # Create environment-specific docker-compose override
+        cat > deployment/docker-compose.override.yml << EOF
+        version: '3.8'
+        services:
+          frontend:
+            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ steps.version.outputs.version }}
+            environment:
+              - NODE_ENV=production
+              - NEXTAUTH_URL=\${NEXTAUTH_URL}
+              - NEXTAUTH_SECRET=\${NEXTAUTH_SECRET}
+              - DATABASE_URL=\${DATABASE_URL}
+          
+          backend:
+            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ steps.version.outputs.version }}
+            environment:
+              - NODE_ENV=production
+              - DATABASE_URL=\${DATABASE_URL}
+              - JWT_SECRET=\${JWT_SECRET}
+              - SSH_HOST=\${SSH_HOST}
+              - SSH_USER=\${SSH_USER}
+              - SSH_PASSWORD=\${SSH_PASSWORD}
+          
+          shell-node:
+            image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-shell-node:${{ steps.version.outputs.version }}
+        EOF
+
+    - name: Archive deployment package
+      run: |
+        tar -czf ezshell-labs-${{ steps.version.outputs.version }}.tar.gz -C deployment .
+
+    - name: Upload deployment artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-package-${{ steps.version.outputs.version }}
+        path: ezshell-labs-${{ steps.version.outputs.version }}.tar.gz
+        retention-days: 30
+
+    # Uncomment and configure for your deployment target
+    # - name: Deploy to server
+    #   uses: appleboy/ssh-action@v1.0.0
+    #   with:
+    #     host: ${{ secrets.DEPLOY_HOST }}
+    #     username: ${{ secrets.DEPLOY_USER }}
+    #     key: ${{ secrets.DEPLOY_KEY }}
+    #     script: |
+    #       cd /opt/ezshell-labs
+    #       wget -O ezshell-labs-${{ steps.version.outputs.version }}.tar.gz \
+    #         "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/deployment-package-${{ steps.version.outputs.version }}"
+    #       tar -xzf ezshell-labs-${{ steps.version.outputs.version }}.tar.gz
+    #       docker-compose down
+    #       docker-compose up -d
+    #       docker system prune -f
+
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: Wait for deployment
+      run: sleep 30
+
+    - name: Health check
+      run: |
+        # Add your health check endpoints here
+        echo "Deployment completed successfully!"
+        # curl -f ${{ secrets.FRONTEND_URL }}/api/health || exit 1
+        # curl -f ${{ secrets.BACKEND_URL }}/health || exit 1
