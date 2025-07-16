@@ -18,6 +18,7 @@ import { SwapConfigurationController } from "./controllers/labs/ex200/SwapConfig
 import { LVMResizeController } from "./controllers/labs/ex200/LVMResizeController";
 import { VDOConfigurationController } from "./controllers/labs/ex200/VDOConfigurationController";
 import { AdvancedContainerController } from "./controllers/labs/ex200/AdvancedContainerController";
+import { FindUserFilesController } from "./controllers/labs/ex200/FindUserFilesController";
 import { EX200ValidationHandler } from "./handlers/EX200ValidationHandler";
 import { EX280ValidationHandler } from "./handlers/EX280ValidationHandler";
 import { LabValidationHandlerFactory } from "./handlers/LabValidationHandlerFactory";
@@ -95,6 +96,7 @@ const swapController = new SwapConfigurationController();
 const lvmResizeController = new LVMResizeController();
 const vdoController = new VDOConfigurationController();
 const advancedContainerController = new AdvancedContainerController();
+const findUserFilesController = new FindUserFilesController();
 
 const ex200Handler = new EX200ValidationHandler(
   networkConfigValidationController,
@@ -110,7 +112,8 @@ const ex200Handler = new EX200ValidationHandler(
   swapController,
   lvmResizeController,
   vdoController,
-  advancedContainerController
+  advancedContainerController,
+  findUserFilesController
 );
 
 const ex280Handler = new EX280ValidationHandler(

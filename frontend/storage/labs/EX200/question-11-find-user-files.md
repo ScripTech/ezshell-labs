@@ -6,6 +6,7 @@ difficulty: "medium"
 points: 10
 hint: "find-files-hint"
 validationSteps:
+  - "Check find-all-files.sh script"
   - "Verify search criteria"
   - "Check file locations"
   - "Validate file ownership"
@@ -14,8 +15,9 @@ validationSteps:
 ---
 ### Finding and Copying User Files
 
+* Create a bash script named: find-all-files.sh
 * Find all files and directories created by user "natasha" in this system
-* Copy these files and directories into the "/root/natashafiles" directory
+* Copy these files and directories into the "/task-11/natashafiles" directory
 
 #### Expected Result
 - All matching files located

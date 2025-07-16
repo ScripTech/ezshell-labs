@@ -3,16 +3,15 @@
 
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { CheckCheckIcon, LoaderCircle, LucideLock, LucideXCircle } from 'lucide-react'
+import { CheckCheckIcon, LoaderCircle, LucideLock } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import QuestionNavigator from './lab-exercise-navigation'
 import { FaCheckCircle } from 'react-icons/fa'
 import React from 'react'
-import { getExerciseData, getExerciseDataFromDB, getFirstLabQuestionFromDB, LabQuestion } from '@/lib/services/labServices'
+import { getExerciseDataFromDB, getFirstLabQuestionFromDB, LabQuestion } from '@/lib/services/labServices'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism"
-import { metadata } from '../../layout';
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { toast } from 'sonner'
@@ -154,7 +153,7 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           const data = await getExerciseDataFromDB(labId, questionId)
           setExerciseNotes(firstLabQuestion ? firstLabQuestion.metadata.markdown : data.metadata.markdown)
           // setExerciseHint(data.exerciseHintHtml)
-          sethasCheckAnswer(false)
+          // sethasCheckAnswer(false)
           setValidationStatus([])
           setValidationHistory(null)
           setShowHistory(false)
@@ -201,7 +200,7 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
 
   const checkExerciseAnswer = async (questionId: string) => {
     if (!hasCheckAnswer) {
-      const labId = searchParams.get('lab') ?? 'EX200';
+      const labId = searchParams.get('lab') ?? 'invalid-lab';
 
       try {
         // Get the task metadata to find the order for mapping
@@ -252,7 +251,7 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           });
         })
 
-        socketRef.current.on(`validation-${ validationQuestionId }-complete`, (data: { success: string, message: string }) => {
+        socketRef.current.on(`validation-${ validationQuestionId }-complete`, async (data: { success: string, message: string }) => {
           console.log('Validation complete:', data);
           if (data.success) {
             sethasCheckAnswer(true)
@@ -260,12 +259,13 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           }
         })
 
-        socketRef.current.on(`validation-lab-complete`, (data: { success: string, message: string }) => {
+        socketRef.current.on(`validation-lab-complete`, async (data: { success: string, message: string }) => {
           console.log("lab complete", data)
           if (data.success) {
             sethasCheckAnswer(true)
           }
         })
+
       } catch (error) {
         console.error('Error mapping question ID:', error);
         // Fallback to original questionId if mapping fails
@@ -280,12 +280,17 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           });
         })
 
-        socketRef.current.on(`validation-${ questionId }-complete`, (data: { success: string, message: string }) => {
+        socketRef.current.on(`validation-${ questionId }-complete`, async (data: { success: string, message: string }) => {
           console.log('Validation complete (fallback):', data);
           if (data.success) {
             sethasCheckAnswer(true)
             setIsCorrect(true)
           }
+
+          // Small delay to ensure backend has saved the data, then refresh validation history
+          setTimeout(async () => {
+            await fetchValidationHistory(questionId, labId);
+          }, 500);
         })
       }
     }
@@ -431,13 +436,20 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                 ))}
               </div>
               <div className="mt-8 space-x-4">
-                {/* Show history button if there are previous attempts but not at max */}
-                {validationHistory && validationHistory.hasAttempts && !validationHistory.maxAttemptsReached && !showHistory && (
+                {/* Show history button if there are previous attempts or after current validation completes */}
+                {validationHistory && (validationHistory.hasAttempts || hasCheckAnswer) && !validationHistory.maxAttemptsReached && !showHistory && (
                   <Button
                     type='button'
                     variant={'outline'}
                     size="sm"
-                    onClick={() => setShowHistory(true)}
+                    onClick={() => {
+                      // Small delay to ensure backend has saved the data, then refresh validation history
+                      setTimeout(async () => {
+                        const labId = searchParams.get('lab') ?? 'invalid-lab';
+                        await fetchValidationHistory(questionId, labId);
+                      }, 500);
+                      setShowHistory(true);
+                    }}
                     className="mb-4"
                   >
                     Show Previous Attempts ({validationHistory.totalAttempts || 0}/3)

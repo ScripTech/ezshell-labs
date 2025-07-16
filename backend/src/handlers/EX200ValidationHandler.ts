@@ -14,6 +14,7 @@ import { SwapConfigurationController } from '../controllers/labs/ex200/SwapConfi
 import { LVMResizeController } from '../controllers/labs/ex200/LVMResizeController';
 import { VDOConfigurationController } from '../controllers/labs/ex200/VDOConfigurationController';
 import { AdvancedContainerController } from '../controllers/labs/ex200/AdvancedContainerController';
+import { FindUserFilesController } from '../controllers/labs/ex200/FindUserFilesController';
 import { AuthenticatedSocket } from '../middleware/socketAuth';
 import { SocketUserService } from '../services/SocketUserService';
 import { validationTrackingService, ValidationContext } from '../services/ValidationTrackingService';
@@ -33,7 +34,8 @@ export class EX200ValidationHandler implements ILabValidationHandler {
     private readonly swapController: SwapConfigurationController,
     private readonly lvmResizeController: LVMResizeController,
     private readonly vdoController: VDOConfigurationController,
-    private readonly advancedContainerController: AdvancedContainerController
+    private readonly advancedContainerController: AdvancedContainerController,
+    private readonly findUserFilesController: FindUserFilesController
   ) {}
 
   private async executeWithAuthentication(
@@ -364,7 +366,22 @@ export class EX200ValidationHandler implements ILabValidationHandler {
         await this.executeWithBasicValidation(socket, questionId, labId, validationQuestionId, 'timeSynchronization');
         break;
       case "question-11-find-user-files":
-        // This case was empty - maintaining for compatibility
+        const authSocket11 = socket as AuthenticatedSocket;
+        const userContext11 = await SocketUserService.getUserContextWithLab(authSocket11, labId);
+        if (userContext11?.labEnrollmentId) {
+          await this.findUserFilesController.handleFindUserFilesValidation(socket, {
+            questionId,
+            userId: userContext11.userId,
+            labId,
+            validationQuestionId,
+            labEnrollmentId: userContext11.labEnrollmentId,
+          });
+        } else {
+          socket.emit("validation-error", {
+            validationQuestionId,
+            error: "Authentication required or lab enrollment not found",
+          });
+        }
         break;
       case "question-12-string-search":
         await this.executeWithBasicValidation(socket, questionId, labId, validationQuestionId, 'stringSearch');
