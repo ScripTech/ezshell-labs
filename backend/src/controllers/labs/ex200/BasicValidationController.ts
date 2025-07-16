@@ -11,90 +11,8 @@ export class BasicValidationController {
     this.trackingService = new ValidationTrackingService();
   }
 
-  // Legacy methods for backward compatibility
-  handleTarValidation = async (
-    socket: Socket,
-    questionId: string,
-    userId?: string,
-    labEnrollmentId?: string
-  ) => {
-    // Fallback to original manual validation for backward compatibility
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Create a tar archive",
-      status: "loading",
-    });
-    const isValid = await this.service.tarValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Create a tar archive",
-      status: isValid ? "success" : "failed",
-    });
-  };
-
-  handleFilePermissionsValidation = async (
-    socket: Socket,
-    questionId: string,
-    userId?: string,
-    labEnrollmentId?: string
-  ) => {
-    // Fallback to original manual validation for backward compatibility
-    socket.emit(`validation-${questionId}-step`, {
-      step: "File permissions validation",
-      status: "loading",
-    });
-    const isValid = await this.service.filePermissionsValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "File permissions validation",
-      status: isValid ? "success" : "failed",
-    });
-  };
-
-  handleTimeSynchronizationValidation = async (
-    socket: Socket,
-    questionId: string
-  ) => {
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Time synchronization",
-      status: "loading",
-    });
-    const isValid = await this.service.timeSynchronizationValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Time synchronization",
-      status: isValid ? "success" : "failed",
-    });
-  };
-
-  handleStringSearchValidation = async (
-    socket: Socket,
-    questionId: string
-  ) => {
-    socket.emit(`validation-${questionId}-step`, {
-      step: "String search",
-      status: "loading",
-    });
-    const isValid = await this.service.stringSearchValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "String search",
-      status: isValid ? "success" : "failed",
-    });
-  };
-
-  handleTunedProfileValidation = async (
-    socket: Socket,
-    questionId: string
-  ) => {
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Tuned profile configuration",
-      status: "loading",
-    });
-    const isValid = await this.service.tunedProfileValidation();
-    socket.emit(`validation-${questionId}-step`, {
-      step: "Tuned profile configuration",
-      status: isValid ? "success" : "failed",
-    });
-  };
-
-  // New socket tracking methods
-  handleTarValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+  // Main validation methods using socket tracking
+  handleTarValidation = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
@@ -140,7 +58,7 @@ export class BasicValidationController {
     }
   }
 
-  handleFilePermissionsValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+  handleFilePermissionsValidation = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
@@ -209,7 +127,7 @@ export class BasicValidationController {
     }
   }
 
-  handleTimeSynchronizationValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+  handleTimeSynchronizationValidation = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
@@ -255,7 +173,7 @@ export class BasicValidationController {
     }
   }
 
-  handleStringSearchValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+  handleStringSearchValidation = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
@@ -301,7 +219,7 @@ export class BasicValidationController {
     }
   }
 
-  handleTunedProfileValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
+  handleTunedProfileValidation = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 

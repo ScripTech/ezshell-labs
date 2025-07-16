@@ -153,7 +153,7 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           const data = await getExerciseDataFromDB(labId, questionId)
           setExerciseNotes(firstLabQuestion ? firstLabQuestion.metadata.markdown : data.metadata.markdown)
           // setExerciseHint(data.exerciseHintHtml)
-          // sethasCheckAnswer(false)
+          sethasCheckAnswer(false)
           setValidationStatus([])
           setValidationHistory(null)
           setShowHistory(false)

@@ -254,19 +254,19 @@ export class EX200ValidationHandler implements ILabValidationHandler {
       // Call the appropriate validation method based on type
       switch (validationType) {
         case 'tar':
-          await this.basicController.handleTarValidationWithSocketTracking(authSocket, validationData);
+          await this.basicController.handleTarValidation(authSocket, validationData);
           break;
         case 'filePermissions':
-          await this.basicController.handleFilePermissionsValidationWithSocketTracking(authSocket, validationData);
+          await this.basicController.handleFilePermissionsValidation(authSocket, validationData);
           break;
         case 'timeSynchronization':
-          await this.basicController.handleTimeSynchronizationValidationWithSocketTracking(authSocket, validationData);
+          await this.basicController.handleTimeSynchronizationValidation(authSocket, validationData);
           break;
         case 'stringSearch':
-          await this.basicController.handleStringSearchValidationWithSocketTracking(authSocket, validationData);
+          await this.basicController.handleStringSearchValidation(authSocket, validationData);
           break;
         case 'tunedProfile':
-          await this.basicController.handleTunedProfileValidationWithSocketTracking(authSocket, validationData);
+          await this.basicController.handleTunedProfileValidation(authSocket, validationData);
           break;
       }
 
