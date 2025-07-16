@@ -1,6 +1,7 @@
 import { NetworkConfigValidationService } from "../../../services/ex200/NetworkConfigValidationService";
 import { Socket } from "socket.io";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { ScoringUtils } from "../../../utils/ScoringUtils";
 
 export class NetworkConfigValidationController {
   private service: NetworkConfigValidationService;
@@ -15,9 +16,18 @@ export class NetworkConfigValidationController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      // Use the new socket tracking validation method
-      await this.trackingService.executeValidationWithSocketTracking(
+      // Create enhanced scoring context - INTERMEDIATE preset for network configuration
+      const context = ScoringUtils.createScoringContext(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        'INTERMEDIATE', // 15 points, 10% penalty per attempt
+        {
+          penaltyPerAttempt: 12.5, // Higher penalty for network configuration
+        }
+      );
+
+      // Use the new socket tracking validation method with enhanced scoring
+      await this.trackingService.executeValidationWithSocketTracking(
+        context,
         async (trackedSocket: Socket) => {
           return await this.performNetworkConfigValidation(trackedSocket, validationQuestionId);
         }

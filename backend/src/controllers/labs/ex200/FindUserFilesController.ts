@@ -4,6 +4,7 @@ import {
   ValidationTrackingService,
   ValidationContext,
 } from "../../../services/ValidationTrackingService";
+import { ScoringUtils } from "../../../utils/ScoringUtils";
 
 export class FindUserFilesController {
   private service: FindUserFilesValidationService;
@@ -27,14 +28,15 @@ export class FindUserFilesController {
   }) => {
     const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-    const context: ValidationContext = {
-      socket,
-      questionId,
-      userId,
-      labId,
-      validationQuestionId,
-      labEnrollmentId
-    };
+    // Create enhanced scoring context - INTERMEDIATE preset for multi-step file operations
+    const context = ScoringUtils.createScoringContext(
+      { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+      'INTERMEDIATE', // 15 points, 10% penalty per attempt
+      {
+        // Custom weights for file operation steps - script creation is most critical
+        stepWeights: [25, 20, 20, 15, 10, 10] // script=25%, permissions=20%, execution=20%, results=15%, copy=10%, validation=10%
+      }
+    );
 
     await this.trackingService.executeValidationWithSocketTracking(
       context,

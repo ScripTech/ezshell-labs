@@ -16,6 +16,13 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
+import EnhancedScoringDisplay from '@/components/EnhancedScoringDisplay'
+import {
+  ValidationCompletedEvent,
+  ValidationStepEvent,
+  EnhancedScoringData,
+  ValidationTrackingInfo
+} from '@/types/enhanced-scoring'
 
 
 type validationResult = {
@@ -71,6 +78,12 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
   const [validationStatus, setValidationStatus] = React.useState<validationResult[]>([]);
   const [validationHistory, setValidationHistory] = React.useState<ValidationHistory | null>(null);
   const [showHistory, setShowHistory] = React.useState(false);
+
+  // Enhanced scoring state
+  const [enhancedScoring, setEnhancedScoring] = React.useState<EnhancedScoringData | null>(null);
+  const [validationTracking, setValidationTracking] = React.useState<ValidationTrackingInfo | null>(null);
+  const [currentAttemptSteps, setCurrentAttemptSteps] = React.useState<ValidationStepEvent[]>([]);
+  const [showEnhancedScoring, setShowEnhancedScoring] = React.useState(false);
 
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -136,6 +149,16 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
 
 
    React.useEffect(() => {
+      // Clear current attempt steps
+      setCurrentAttemptSteps([]);
+      // Clear previous validation status
+      setValidationStatus([]);
+      // Clear enhanced scoring state
+      setEnhancedScoring(null);
+      setValidationTracking(null);
+      // Clear history state
+      setValidationHistory(null);
+      // Handle route change to update question and fetch data
       const handleRouteChange = async () => {
         try {
           setIsLoading(true)
@@ -179,6 +202,13 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           // This is not ideal but ensures cleanup works
           socketRef.current.off(`validation-${currentQuestion}-step`)
           socketRef.current.off(`validation-${currentQuestion}-complete`)
+
+          // Clean up enhanced scoring event listeners
+          socketRef.current.off('validation-step')
+          socketRef.current.off('validation-completed')
+          socketRef.current.off('validation-start')
+          socketRef.current.off('validation-error')
+          socketRef.current.off('validation-attempts-reached')
 
           // Also clean up potential mapped question IDs
           const possibleMappedIds = [
@@ -251,8 +281,55 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
           });
         })
 
+        // Enhanced validation step tracking
+        socketRef.current.on('validation-step', (data: ValidationStepEvent) => {
+          console.log('Enhanced validation step:', data);
+          setCurrentAttemptSteps(prevSteps => {
+            const updatedSteps = prevSteps.filter(step => step.step !== data.step);
+            updatedSteps.push(data);
+            return updatedSteps;
+          });
+        });
+
+        // Enhanced validation completion with detailed scoring
+        socketRef.current.on('validation-completed', (data: ValidationCompletedEvent) => {
+          console.log('Enhanced validation completed:', data);
+
+          // Update basic validation state
+          if (data.passed) {
+            sethasCheckAnswer(true);
+            setIsCorrect(true);
+            toast.success('Validation Passed!', {
+              description: `Score: ${data.enhancedScoring?.finalScore.toFixed(1) || data.progressiveScore} points`,
+              duration: 4000,
+            });
+          } else {
+            setIsCorrect(false);
+            toast.error('Validation Failed', {
+              description: `${data.passedSteps}/${data.totalSteps} steps passed. Try again!`,
+              duration: 4000,
+            });
+          }
+
+          // Update enhanced scoring state
+          if (data.enhancedScoring) {
+            setEnhancedScoring(data.enhancedScoring);
+            setValidationTracking(data.tracking);
+            setShowEnhancedScoring(true);
+          }
+
+          // Clear current attempt steps
+          // setCurrentAttemptSteps([]);
+
+          // Refresh validation history after a short delay
+          setTimeout(async () => {
+            await fetchValidationHistory(questionId, labId);
+          }, 500);
+        });
+
+        // Legacy validation handlers (kept for backward compatibility)
         socketRef.current.on(`validation-${ validationQuestionId }-complete`, async (data: { success: string, message: string }) => {
-          console.log('Validation complete:', data);
+          console.log('Legacy validation complete:', data);
           if (data.success) {
             sethasCheckAnswer(true)
             setIsCorrect(true)
@@ -419,22 +496,61 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                   </div>
                 )}
 
+
+                {/* Enhanced Scoring Display */}
+                {showEnhancedScoring && enhancedScoring && validationTracking && (
+                  <EnhancedScoringDisplay
+                    enhancedScoring={enhancedScoring}
+                    tracking={validationTracking}
+                    totalSteps={enhancedScoring.stepBreakdown.length}
+                    passedSteps={enhancedScoring.stepBreakdown.filter(step => step.passed).length}
+                    isVisible={showEnhancedScoring}
+                  />
+                )}
+
                 {/* Current validation status */}
-                {validationStatus.map((status, index) => (
-                  <li key={index} className='flex space-x-2 items-center' style={{ marginBottom: '8px' }}>
-                    {getStatusIcon(status.status)}
-                    <span style={{ marginLeft: '8px' }}>
-                      {status.step}
-                      {
-                        status.status === 'success' ? (<span style={{ color: 'green' }}> - Passed</span>) : (<></>)
-                      }
-                      {
-                        status.status === 'failed' ? (<span style={{ color: 'red' }}> - Failed</span>) : (<></>)
-                      }
-                    </span>
-                  </li>
-                ))}
+                <div className="mt-4">
+                  {/* {validationStatus.map((status, index) => (
+                    <li key={index} className='flex space-x-2 items-center' style={{ marginBottom: '8px' }}>
+                      {getStatusIcon(status.status)}
+                      <span style={{ marginLeft: '8px' }}>
+                        {status.step}
+                        {
+                          status.status === 'success' ? (<span style={{ color: 'green' }}> - Passed</span>) : (<></>)
+                        }
+                        {
+                          status.status === 'failed' ? (<span style={{ color: 'red' }}> - Failed</span>) : (<></>)
+                        }
+                      </span>
+                    </li>
+                  ))} */}
+
+                </div>
+
+                {/* Enhanced scoring display for current attempt steps */}
+                {currentAttemptSteps.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-semibold text-sm mb-2">Current Attempt Progress:</h4>
+                    {currentAttemptSteps.map((step, index) => (
+                      <li key={`current-${index}`} className='flex space-x-2 items-center mb-2'>
+                        {getStatusIcon(step.status)}
+                        <span style={{ marginLeft: '8px' }}>
+                          {step.step}
+                          {step.status === 'success' && <span style={{ color: 'green' }}> - Passed</span>}
+                          {step.status === 'failed' && <span style={{ color: 'red' }}> - Failed</span>}
+                          {step.status === 'running' && <span style={{ color: 'blue' }}> - Running...</span>}
+                        </span>
+                        {step.message && (
+                          <span className="text-xs text-gray-600 ml-2">
+                            {step.message}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </div>
+                )}
               </div>
+
               <div className="mt-8 space-x-4">
                 {/* Show history button if there are previous attempts or after current validation completes */}
                 {validationHistory && (validationHistory.hasAttempts || hasCheckAnswer) && !validationHistory.maxAttemptsReached && !showHistory && (

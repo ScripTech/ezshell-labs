@@ -539,14 +539,14 @@ export class ValidationTrackingService {
         overallSuccess = false
       }
 
-      // Complete step tracking and save to database
-      await this.completeStepTracking(attempt.id)
-
-      // Get the tracked steps for final calculation
+      // Get the tracked steps for final calculation BEFORE completing step tracking
       const trackedSteps = this.currentAttemptSteps.get(attempt.id) || []
       const totalSteps = trackedSteps.length
       const passedSteps = trackedSteps.filter(step => step.status === 'success').length
-      
+
+      // Complete step tracking and save to database (this will delete from Map)
+      await this.completeStepTracking(attempt.id)
+
       // Create array of passed step numbers for detailed analysis
       const passedStepsArray = trackedSteps
         .map((step, index) => ({ stepNumber: index + 1, passed: step.status === 'success' }))
@@ -555,9 +555,9 @@ export class ValidationTrackingService {
 
       // Calculate enhanced score using ScoringService
       const scoreResult = this.calculateEnhancedScore(
-        passedSteps, 
-        totalSteps, 
-        attemptNumber, 
+        passedSteps,
+        totalSteps,
+        attemptNumber,
         context,
         passedStepsArray
       );
@@ -572,8 +572,8 @@ export class ValidationTrackingService {
 
       // Update task attempt with enhanced scoring results
       await this.updateTaskAttempt(
-        attempt.id, 
-        [], 
+        attempt.id,
+        [],
         scoreResult.final_score, // Use enhanced final score
         scoringConfig.basePoints, // Use scoring config base points
         overallSuccess
@@ -640,6 +640,15 @@ export class ValidationTrackingService {
       emit: (event: string, data: any) => {
         // Check if this is a validation step emission
         if (event === `validation-${validationQuestionId}-step`) {
+          // Emit enhanced validation-step event for real-time frontend updates
+          originalSocket.emit('validation-step', {
+            step: data.step,
+            status: data.status,
+            message: data.message,
+            stepNumber: this.getStepNumber(attemptId, data.step),
+            attemptId: attemptId
+          })
+
           // Only track final states (success, failed, error), ignore loading states
           if (data.status !== 'loading') {
             // Check if we already have a result for this step and update it
@@ -657,6 +666,15 @@ export class ValidationTrackingService {
     } as Socket
 
     return trackedSocket
+  }
+
+  /**
+   * Get step number for a given step name in the current attempt
+   */
+  private getStepNumber(attemptId: string, stepName: string): number {
+    const steps = this.currentAttemptSteps.get(attemptId) || []
+    const existingIndex = steps.findIndex(step => step.step === stepName)
+    return existingIndex !== -1 ? existingIndex + 1 : steps.length + 1
   }
 
   /**
@@ -698,7 +716,7 @@ export class ValidationTrackingService {
   ): ScoreResult {
     // Get scoring configuration
     const scoringConfig = this.getScoringConfig(context);
-    
+
     // Prepare validation result for scoring service
     const validationResult: ValidationResult = {
       stepsPassed: passedSteps,
@@ -709,11 +727,11 @@ export class ValidationTrackingService {
       questionId: context.questionId,
       userId: context.userId
     };
-    
+
     // Calculate score using enhanced scoring service
     return ScoringService.calculateScore(validationResult);
   }
-  
+
   /**
    * Get scoring configuration for the current validation context
    */
@@ -722,12 +740,12 @@ export class ValidationTrackingService {
     if (context.scoringConfig) {
       return context.scoringConfig;
     }
-    
+
     // Use question type preset if available
     if (context.questionType) {
       return ScoringService.getScoringConfig(context.questionType);
     }
-    
+
     // Default to BASIC preset for backward compatibility
     return ScoringService.getScoringConfig('BASIC');
   }

@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import { BasicValidationService } from "../../../services/ex200/BasicValidationService";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { ScoringUtils } from "../../../utils/ScoringUtils";
 
 export class BasicValidationController {
   private service: BasicValidationService;
@@ -11,13 +12,19 @@ export class BasicValidationController {
     this.trackingService = new ValidationTrackingService();
   }
 
-  // Main validation methods using socket tracking
+  // Main validation methods using enhanced socket tracking with scoring
   handleTarValidation = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      await this.trackingService.executeValidationWithSocketTracking(
+      // Create enhanced scoring context - BASIC preset for simple file validation
+      const context = ScoringUtils.createScoringContext(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        'BASIC' // 10 points, 7.5% penalty per attempt
+      );
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        context,
         async (trackedSocket: Socket) => {
           return await this.performTarValidation(trackedSocket, validationQuestionId);
         }
@@ -62,8 +69,18 @@ export class BasicValidationController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      await this.trackingService.executeValidationWithSocketTracking(
+      // Create enhanced scoring context - INTERMEDIATE preset for multi-step file permissions
+      const context = ScoringUtils.createScoringContext(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        'INTERMEDIATE', // 15 points, 10% penalty per attempt
+        {
+          // Custom weights: ownership verification is most critical
+          stepWeights: [40, 40, 20] // owner=40%, group=40%, not-executable=20%
+        }
+      );
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        context,
         async (trackedSocket: Socket) => {
           return await this.performFilePermissionsValidation(trackedSocket, validationQuestionId);
         }
@@ -131,8 +148,18 @@ export class BasicValidationController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      await this.trackingService.executeValidationWithSocketTracking(
+      // Create enhanced scoring context - ADVANCED preset for system configuration
+      const context = ScoringUtils.createScoringContext(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        'ADVANCED', // 20 points, 12.5% penalty per attempt, 25% minimum
+        {
+          penaltyPerAttempt: 15, // Higher penalty for system configuration
+          stepWeights: [70, 30]  // Service active=70%, NTP config=30%
+        }
+      );
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        context,
         async (trackedSocket: Socket) => {
           return await this.performTimeSynchronizationValidation(trackedSocket, validationQuestionId);
         }
@@ -177,8 +204,14 @@ export class BasicValidationController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      await this.trackingService.executeValidationWithSocketTracking(
+      // Create enhanced scoring context - BASIC preset for string search task
+      const context = ScoringUtils.createScoringContext(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        'BASIC' // 10 points, 7.5% penalty per attempt - simple search task
+      );
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        context,
         async (trackedSocket: Socket) => {
           return await this.performStringSearchValidation(trackedSocket, validationQuestionId);
         }
@@ -223,8 +256,19 @@ export class BasicValidationController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
-      await this.trackingService.executeValidationWithSocketTracking(
+      // Create enhanced scoring context - CRITICAL preset for system performance tuning
+      const context = ScoringUtils.createScoringContext(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
+        'CRITICAL', // 25 points, 15% penalty per attempt, 30% minimum, 3 max attempts
+        {
+          penaltyPerAttempt: 20,   // Heavy penalty for system performance config
+          minimumScorePercent: 40, // Higher minimum for critical system config
+          firstAttemptBonus: 10    // Higher bonus for getting it right first time
+        }
+      );
+
+      await this.trackingService.executeValidationWithSocketTracking(
+        context,
         async (trackedSocket: Socket) => {
           return await this.performTunedProfileValidation(trackedSocket, validationQuestionId);
         }

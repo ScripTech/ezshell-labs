@@ -116,7 +116,7 @@ The enhanced scoring system emits detailed scoring information in the `validatio
 socket.on('validation-completed', (data) => {
   // Legacy fields (backward compatibility)
   console.log('Legacy score:', data.progressiveScore);
-  
+
   // Enhanced scoring information
   const enhanced = data.enhancedScoring;
   console.log('Score percentage:', enhanced.scorePercent);
@@ -124,7 +124,7 @@ socket.on('validation-completed', (data) => {
   console.log('Penalty applied:', enhanced.penaltyApplied);
   console.log('Bonus applied:', enhanced.bonusApplied);
   console.log('Step breakdown:', enhanced.stepBreakdown);
-  
+
   // Enhanced step details
   data.results.forEach((step, index) => {
     console.log(`Step ${index + 1}:`, {
@@ -151,7 +151,7 @@ socket.on('validation-completed', (data) => {
    ```typescript
    // Before
    const context = { socket, questionId, validationQuestionId, userId, labId, labEnrollmentId };
-   
+
    // After
    const context = ScoringUtils.createScoringContext(
      { socket, questionId, validationQuestionId, userId, labId, labEnrollmentId },
@@ -182,7 +182,7 @@ const context = ScoringUtils.createScoringContext(
   {
     stepWeights: [
       60, // Critical configuration (60%)
-      25, // Service setup (25%) 
+      25, // Service setup (25%)
       15  // Verification (15%)
     ]
   }
@@ -200,7 +200,7 @@ const getDynamicConfig = (userLevel: string, questionDifficulty: string) => {
       maxAttempts: 6           // More attempts
     });
   }
-  
+
   return ScoringUtils.createCustomConfig(20, {
     penaltyPerAttempt: 15,    // Stricter penalties
     minimumScorePercent: 15,  // Lower minimum
