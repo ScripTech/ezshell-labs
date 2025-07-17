@@ -34,6 +34,7 @@ services:
       - "traefik.http.routers.backend.tls=true"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
   postgres:
+    image: ghcr.io/scriptech/ezshell-labs-database:latest
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
