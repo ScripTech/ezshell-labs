@@ -17,14 +17,17 @@ RUN apk add --no-cache \
 # Copy package files
 COPY package*.json ./
 
-# Clear npm cache and install dependencies
+# Install all dependencies first (including devDependencies for build)
 RUN npm cache clean --force && \
-    npm ci --only=production && \
+    npm ci && \
     npm rebuild node-pty
 
 # Copy source code and build
 COPY . .
 RUN npm run build
+
+# Clean up and install only production dependencies
+RUN npm prune --production
 
 # Production stage
 FROM node:18-alpine AS production
