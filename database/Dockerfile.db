@@ -1,0 +1,41 @@
+# Custom PostgreSQL image with EZShell Labs schema pre-initialized
+FROM postgres:15-alpine
+
+# Install necessary tools
+RUN apk add --no-cache \
+    nodejs \
+    npm \
+    git
+
+# Set environment variables
+ENV POSTGRES_DB=ezshell_labs
+ENV POSTGRES_USER=ezshell_user
+ENV POSTGRES_PASSWORD=ezshell_password
+
+# Create app directory for schema files
+WORKDIR /app
+
+# Copy package.json and install drizzle-kit for schema generation
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --only=production && npm install drizzle-kit tsx bcryptjs
+
+# Copy database schema and migration files
+COPY frontend/src/db ./src/db
+COPY frontend/drizzle.config.ts ./
+COPY frontend/drizzle ./drizzle
+
+# Copy custom initialization script
+COPY database/init-db.sh /docker-entrypoint-initdb.d/01-init-schema.sh
+RUN chmod +x /docker-entrypoint-initdb.d/01-init-schema.sh
+
+# Copy environment file for database connection
+COPY database/.env.docker ./
+
+# Set proper ownership
+RUN chown -R postgres:postgres /app
+
+# Switch back to postgres user
+USER postgres
+
+# Expose PostgreSQL port
+EXPOSE 5432

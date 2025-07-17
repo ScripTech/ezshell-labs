@@ -81,10 +81,20 @@ backup_database() {
     log_info "Creating database backup..."
     BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).sql"
 
-    if docker-compose exec -T postgres pg_dump -U postgres ezshell_labs > "$BACKUP_FILE"; then
+    if docker-compose exec -T postgres-db pg_dump -U "${POSTGRES_USER}" "${POSTGRES_DB}" > "$BACKUP_FILE"; then
         log_info "Database backup created: $BACKUP_FILE"
     else
         log_error "Failed to create database backup"
+        exit 1
+    fi
+}
+
+build_database() {
+    log_info "Building custom database image..."
+    if ./database/build-db.sh; then
+        log_info "✅ Database image built successfully!"
+    else
+        log_error "❌ Failed to build database image"
         exit 1
     fi
 }
@@ -98,6 +108,9 @@ pull_images() {
 
 deploy() {
     log_info "Deploying EZShell Labs version: $VERSION"
+
+    # Build custom database image with pre-initialized schema
+    build_database
 
     # Set image versions in environment
     export FRONTEND_IMAGE="$REGISTRY/$REPO_NAME-frontend:$VERSION"
