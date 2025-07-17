@@ -85,7 +85,7 @@ export default async function middleware(req: NextRequestWithAuth) {
       }
 
       // Check admin access for admin routes
-      if (isAdminRoute && token.role !== 'admin') {
+      if (isAdminRoute && token.role === 'admin') {
         console.log(`🔒 Non-admin user accessing admin route: ${path}`)
         const redirectUrl = new URL('/user/dashboard', req.url)
         return NextResponse.redirect(redirectUrl)

@@ -15,7 +15,8 @@ interface UserLabsProps {
   labs: LabSession[]
 }
 
-export function UserLabs({ labs }: UserLabsProps) {
+export function UserLabsComponent({ labs }: UserLabsProps) {
+  console.log('Rendering UserLabs with labs:', labs)
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {labs.map((lab) => (
