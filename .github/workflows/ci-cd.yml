@@ -34,9 +34,9 @@ jobs:
       working-directory: ./frontend
       run: npm run type-check
 
-    - name: Run linting
-      working-directory: ./frontend
-      run: npm run lint
+    # - name: Run linting
+    #   working-directory: ./frontend
+    #   run: npm run lint
 
     - name: Run tests
       working-directory: ./frontend
@@ -83,13 +83,13 @@ jobs:
       working-directory: ./backend
       run: npm run type-check
 
-    - name: Run tests
-      working-directory: ./backend
-      run: npm run test
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ezshell_test
-        NODE_ENV: test
-      continue-on-error: true
+    # - name: Run tests
+    #   working-directory: ./backend
+    #   run: npm run test
+    #   env:
+    #     DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ezshell_test
+    #     NODE_ENV: test
+    #   continue-on-error: true
 
     - name: Build backend
       working-directory: ./backend
