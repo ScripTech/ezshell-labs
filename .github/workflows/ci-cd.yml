@@ -35,7 +35,7 @@ jobs:
 
     - name: Run tests
       working-directory: ./frontend
-      run: npm run test:ci
+      run: npm run test
       continue-on-error: true
 
     - name: Build frontend
@@ -87,6 +87,7 @@ jobs:
       run: npm run test
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ezshell_test
+        NODE_ENV: test
       continue-on-error: true
 
     - name: Build backend
