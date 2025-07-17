@@ -104,7 +104,7 @@ export const AdminDashboard: React.FC = () => {
         clearInterval(refreshInterval);
       }
     };
-  }, [autoRefresh, selectedTimeRange]);
+  }, [autoRefresh, selectedTimeRange, analytics]);
 
   const loadAnalytics = async () => {
     try {
