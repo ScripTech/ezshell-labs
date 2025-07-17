@@ -1,59 +1,57 @@
 ---
 services:
 
-  backend-service:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.backend
-    container_name: backend-service
-    hostname: backend-service
-    environment:
-      - LAB_SSH_HOST=shell-node
-      - LAB_SSH_PORT=22
-      - LAB_SSH_USERNAME=lab-user
-      - LAB_SSH_PASSWORD=password
-      - SSH_PRIVATE_KEY=key
-      - SERVER_PORT=3001
+  nginx:
+    image: nginx:alpine
+    container_name: ezshell-nginx
     ports:
-      - 3001:3001
-    restart: unless-stopped
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend-service
+      - backend-service
     networks:
-      - ezshell-network
-
-  shell-node:
-    build:
-      context: ./shell-node
-      dockerfile: Dockerfile
-      args:
-        - SSH_USER=lab-user
-        - SSH_PASSWORD=password
-        - RootPassword=password
-    container_name: shell-lab
-    hostname: shell-lab
-    privileged: true
-    environment:
-      - USER_NAME=lab-user
-    ports:
-      - 82:82
-      - 8080:80
-      - 2222:22
+      - ezshell-network-dev
     restart: unless-stopped
-    networks:
-      - ezshell-network
 
-  db:
+  postgres-db:
     image: postgres:latest
-    container_name: ezshell-db
+    container_name: ezshell-postgres-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5434:5432"
+      - "5438:5432"
     networks:
-      - ezshell-network
+      - ezshell-network-dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
-  frontend:
+  backend-service:
+    depends_on:
+      - postgres-db
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: backend-service
+    hostname: backend-service
+    env_file:
+      - ./backend/.env
+    expose:
+      - "3001"
+    restart: unless-stopped
+    networks:
+      - ezshell-network-dev
+
+  frontend-service:
+    depends_on:
+      - postgres-db
     build:
       context: ./frontend
       dockerfile: Dockerfile.frontend
@@ -61,40 +59,15 @@ services:
     hostname: frontend
     environment:
       - NODE_ENV=production
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     restart: unless-stopped
     networks:
-      - ezshell-network
-
-
-  # OpenSSH server
-  # openssh-server:
-  #   image: lscr.io/linuxserver/openssh-server:latest
-  #   container_name: openssh-server
-  #   hostname: openssh-server
-  #   environment:
-  #     - PUID=1000
-  #     - PGID=1000
-  #     - TZ=Etc/UTC
-  #     # - PUBLIC_KEY=yourpublickey #optional
-  #     # - PUBLIC_KEY_FILE=/path/to/file #optional
-  #     # - PUBLIC_KEY_DIR=/path/to/directory/containing/_only_/pubkeys #optional
-  #     - SUDO_ACCESS=false #optional
-  #     - PASSWORD_ACCESS=true #optional
-  #     - USER_PASSWORD=password #optional
-  #     # - USER_PASSWORD_FILE=/path/to/file #optional
-  #     - USER_NAME=lab-user #optional
-  #     - LOG_STDOUT=true #optional
-  #   volumes:
-  #     - ../lab-node-0001:/lab-node-0001:Z
-  #     - ../lab-node-0001/home/lab-user:/home/lab-user:Z
-  #   ports:
-  #     - 2223:2222
-  #   restart: unless-stopped
-  #   networks:
-  #     - ezshell-network
+      - ezshell-network-dev
 
 networks:
-  ezshell-network:
+  ezshell-network-dev:
     driver: bridge
+volumes:
+  postgres_data:
+    driver: local

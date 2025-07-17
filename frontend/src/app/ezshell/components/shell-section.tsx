@@ -1,6 +1,9 @@
-import TermView from "./TermView";
+import dynamic from 'next/dynamic'
 
-
+const TermView = dynamic(() => import('./TermView'), {
+  ssr: false,
+  loading: () => <p>Loading terminal...</p>
+})
 
 export const ShellSectionComponent = ({ questionId }: { questionId: string}) => {
   return (

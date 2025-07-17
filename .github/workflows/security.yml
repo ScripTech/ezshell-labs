@@ -1,0 +1,136 @@
+name: Security and Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Every Monday at 2 AM
+  workflow_dispatch:
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Audit frontend dependencies
+      working-directory: ./frontend
+      run: |
+        npm audit --audit-level high
+        npm audit fix --dry-run
+
+    - name: Audit backend dependencies
+      working-directory: ./backend
+      run: |
+        npm audit --audit-level high
+        npm audit fix --dry-run
+
+    - name: Run Snyk security scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --all-projects --severity-threshold=high
+      continue-on-error: true
+
+  update-dependencies:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Update frontend dependencies
+      working-directory: ./frontend
+      run: |
+        npm update
+        npm audit fix --force
+
+    - name: Update backend dependencies
+      working-directory: ./backend
+      run: |
+        npm update
+        npm audit fix --force
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update dependencies and security fixes'
+        title: 'Automated dependency updates'
+        body: |
+          ## Automated Dependency Updates
+
+          This PR contains automated dependency updates and security fixes.
+
+          ### Changes
+          - Updated npm dependencies to latest versions
+          - Applied security fixes where available
+
+          Please review the changes before merging.
+        branch: chore/dependency-updates
+        delete-branch: true
+
+  docker-security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Docker images for scanning
+      run: |
+        docker build -t ezshell-frontend:scan ./frontend -f ./frontend/Dockerfile.frontend
+        docker build -t ezshell-backend:scan ./backend -f ./backend/Dockerfile.backend
+        docker build -t ezshell-shell-node:scan ./shell-node
+
+    - name: Scan frontend image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ezshell-frontend:scan'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+
+    - name: Scan backend image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ezshell-backend:scan'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
+
+    - name: Scan shell-node image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ezshell-shell-node:scan'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'

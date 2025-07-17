@@ -1,7 +1,8 @@
 'use client'
-import { GalleryVerticalEnd } from "lucide-react"
-
 import { LoginForm } from "@/components/login-form"
+import { GalleryVerticalEnd } from "lucide-react"
+import { Suspense } from "react"
+
 
 export default function LoginPage() {
   return (
@@ -13,7 +14,9 @@ export default function LoginPage() {
           </div>
           EZSShell Lda.
         </button>
-        <LoginForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   )
