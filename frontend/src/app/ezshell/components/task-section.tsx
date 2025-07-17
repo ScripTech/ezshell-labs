@@ -7,7 +7,7 @@ import { CheckCheckIcon, LoaderCircle, LucideLock } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import QuestionNavigator from './lab-exercise-navigation'
 import { FaCheckCircle } from 'react-icons/fa'
-import React from 'react'
+import React, { Suspense } from 'react'
 import { getExerciseDataFromDB, getFirstLabQuestionFromDB, LabQuestion } from '@/lib/services/labServices'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
@@ -64,10 +64,9 @@ interface TaskSectionProps {
   socketRef: React.RefObject<any>
 }
 
-export const TaskSection = ({ socketRef}: TaskSectionProps) => {
+export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
-  const questionId = searchParams.get('question') ?? ''
 
   const [question, setQuestion] = React.useState<string>("")
   const [exerciseNotes, setExerciseNotes] = React.useState("What about a coffe while we load data....");
@@ -508,25 +507,6 @@ export const TaskSection = ({ socketRef}: TaskSectionProps) => {
                   />
                 )}
 
-                {/* Current validation status */}
-                <div className="mt-4">
-                  {/* {validationStatus.map((status, index) => (
-                    <li key={index} className='flex space-x-2 items-center' style={{ marginBottom: '8px' }}>
-                      {getStatusIcon(status.status)}
-                      <span style={{ marginLeft: '8px' }}>
-                        {status.step}
-                        {
-                          status.status === 'success' ? (<span style={{ color: 'green' }}> - Passed</span>) : (<></>)
-                        }
-                        {
-                          status.status === 'failed' ? (<span style={{ color: 'red' }}> - Failed</span>) : (<></>)
-                        }
-                      </span>
-                    </li>
-                  ))} */}
-
-                </div>
-
                 {/* Enhanced scoring display for current attempt steps */}
                 {currentAttemptSteps.length > 0 && (
                   <div className="mt-4">
@@ -650,3 +630,12 @@ const getValidationQuestionId = (dbQuestionId: string, order: number): string =>
 
   return questionMap[order] || dbQuestionId;
 };
+
+// Wrapper component with Suspense boundary
+export default function TaskSectionWithSuspense({ questionId, socketRef }: TaskSectionProps) {
+  return (
+    <Suspense fallback={<div className="p-4">Loading task section...</div>}>
+      <TaskSection questionId={questionId} socketRef={socketRef} />
+    </Suspense>
+  )
+}

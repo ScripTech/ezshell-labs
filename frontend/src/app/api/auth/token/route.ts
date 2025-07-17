@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { getToken } from 'next-auth/jwt';
 import jwt from 'jsonwebtoken';
 
+// Mark this route as dynamic to prevent static generation
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     // Get the session to verify the user is authenticated
