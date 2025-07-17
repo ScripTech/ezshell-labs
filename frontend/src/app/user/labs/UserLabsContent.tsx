@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "next/navigation";
+import { AvailableLabsComponent } from "./components/available-labs";
 
 function UserLabsContent() {
   const params = useSearchParams()
@@ -21,7 +22,7 @@ function UserLabsContent() {
       const response = await fetch('/api/labs/available')
       if (!response.ok) throw new Error('Failed to fetch labs')
       const data = await response.json()
-      setAvailableLabs(data.labs || [])
+      setAvailableLabs(data || [])
     } catch (error) {
       console.error('Error fetching labs:', error)
       toast.error('Failed to fetch available labs')
@@ -74,19 +75,9 @@ function UserLabsContent() {
       {availableLabs.length === 0 ? (
         <LabsEmptyPlaceholder />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {availableLabs.map((lab) => (
-            <Card key={lab.id}>
-              <CardHeader>
-                <h3 className="text-lg font-semibold">{lab.name}</h3>
-                <p className="text-sm text-muted-foreground">{lab.description}</p>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">Duration: {lab.duration} minutes</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          <AvailableLabsComponent
+            data={availableLabs}
+          />
       )}
     </div>
   )
