@@ -1,0 +1,94 @@
+name: Docker Image Export
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform for export'
+        required: true
+        default: 'linux/amd64'
+        type: choice
+        options:
+        - linux/amd64
+        - linux/arm64
+      component:
+        description: 'Component to export'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+        - frontend
+        - backend
+        - both
+
+permissions:
+  contents: read
+
+jobs:
+  export-frontend:
+    if: ${{ inputs.component == 'frontend' || inputs.component == 'both' }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build frontend Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile.frontend
+        load: true
+        tags: ezshell-frontend:export
+        platforms: ${{ inputs.platform }}
+
+    - name: Export frontend Docker image
+      run: |
+        mkdir -p /tmp/exports
+        docker save ezshell-frontend:export -o /tmp/exports/ezshell-frontend-${{ inputs.platform }}.tar
+        # Replace / with - for filename compatibility
+        mv /tmp/exports/ezshell-frontend-${{ inputs.platform }}.tar /tmp/exports/ezshell-frontend-$(echo "${{ inputs.platform }}" | tr '/' '-').tar
+
+    - name: Upload frontend Docker image
+      uses: actions/upload-artifact@v4
+      with:
+        name: ezshell-frontend-$(echo "${{ inputs.platform }}" | tr '/' '-')
+        path: /tmp/exports/ezshell-frontend-*.tar
+        retention-days: 30
+
+  export-backend:
+    if: ${{ inputs.component == 'backend' || inputs.component == 'both' }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build backend Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile.backend
+        load: true
+        tags: ezshell-backend:export
+        platforms: ${{ inputs.platform }}
+
+    - name: Export backend Docker image
+      run: |
+        mkdir -p /tmp/exports
+        docker save ezshell-backend:export -o /tmp/exports/ezshell-backend-${{ inputs.platform }}.tar
+        # Replace / with - for filename compatibility
+        mv /tmp/exports/ezshell-backend-${{ inputs.platform }}.tar /tmp/exports/ezshell-backend-$(echo "${{ inputs.platform }}" | tr '/' '-').tar
+
+    - name: Upload backend Docker image
+      uses: actions/upload-artifact@v4
+      with:
+        name: ezshell-backend-$(echo "${{ inputs.platform }}" | tr '/' '-')
+        path: /tmp/exports/ezshell-backend-*.tar
+        retention-days: 30
