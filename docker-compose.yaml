@@ -36,9 +36,7 @@ services:
   backend-service:
     depends_on:
       - postgres-db
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.backend
+    image: backend-export:latest
     container_name: backend-service
     hostname: backend-service
     env_file:
@@ -52,9 +50,7 @@ services:
   frontend-service:
     depends_on:
       - postgres-db
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.frontend
+    image: frontend-export:latest
     container_name: frontend
     hostname: frontend
     environment:
