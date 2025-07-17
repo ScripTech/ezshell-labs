@@ -104,7 +104,7 @@ export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
         params.append('enrollmentId', enrollmentId)
       }
 
-      const apiUrl = `${ process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' }/api/validation/task/${ taskId }/detailed-history?${ params.toString() }`
+      const apiUrl = `${ process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' }/ws/api/validation/task/${ taskId }/detailed-history?${ params.toString() }`
 
       console.log('Fetching validation history from:', apiUrl)
 

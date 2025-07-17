@@ -114,7 +114,7 @@ export function useTaskValidation(taskId: string, enrollmentId: string) {
 
   const fetchValidationHistory = useCallback(async () => {
     try {
-      const response = await fetch(`/api/task-validation/${taskId}/history?enrollmentId=${enrollmentId}`)
+      const response = await fetch(`/ws/api/task-validation/${taskId}/history?enrollmentId=${enrollmentId}`)
 
       if (response.ok) {
         const data = await response.json()

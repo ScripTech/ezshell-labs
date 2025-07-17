@@ -51,7 +51,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
-app.use('/api', apiRoutes);
+app.use('/ws/api', apiRoutes);
 
 const port = Number.parseInt(process.env.SERVER_PORT!) ?? 3001;
 const host = process.env.SERVER_WSHOST! ?? "localhost";
