@@ -1,7 +1,24 @@
 ---
 services:
 
+  postgres-db:
+    image: postgres:latest
+    container_name: ezshell-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5434:5432"
+    networks:
+      - ezshell-network-dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   backend-service:
+    depends_on:
+      - postgres-db
     build:
       context: ./backend
       dockerfile: Dockerfile.backend
@@ -18,21 +35,11 @@ services:
       - 3001:3001
     restart: unless-stopped
     networks:
-      - ezshell-network
+      - ezshell-network-dev
 
-  db:
-    image: postgres:latest
-    container_name: ezshell-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5434:5432"
-    networks:
-      - ezshell-network
-
-  frontend:
+  frontend-service:
+    depends_on:
+      - postgres-db
     build:
       context: ./frontend
       dockerfile: Dockerfile.frontend
@@ -44,8 +51,11 @@ services:
       - "3000:3000"
     restart: unless-stopped
     networks:
-      - ezshell-network
+      - ezshell-network-dev
 
 networks:
-  ezshell-network:
+  ezshell-network-dev:
     driver: bridge
+volumes:
+  postgres_data:
+    driver: local

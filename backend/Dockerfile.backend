@@ -4,8 +4,12 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install Python and build tools for native dependencies like node-pty
+RUN apk add --no-cache python3 make g++
+
 COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
+EXPOSE 3001
 CMD ["node", "dist/server.js"]

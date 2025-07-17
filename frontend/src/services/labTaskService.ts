@@ -135,7 +135,7 @@ export async function updateUserTaskScore({ userId, labTaskId, labEnrollmentId, 
     // Update existing progress
     await db.update(labTaskProgress)
       .set({
-        score,
+        score: score.toString(),
         completed,
         completedAt: completed ? new Date() : null,
       })
@@ -149,7 +149,7 @@ export async function updateUserTaskScore({ userId, labTaskId, labEnrollmentId, 
         userId,
         labTaskId,
         labEnrollmentId,
-        score,
+        score: score.toString(),
         completed,
         completedAt: completed ? new Date() : null,
         createdAt: new Date(),

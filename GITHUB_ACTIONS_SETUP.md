@@ -3,7 +3,7 @@
 ## ✅ Completed Setup
 
 ### 🐳 **Docker Configuration Fixed**
-- **Frontend Dockerfile**: Updated to use `node:18-alpine` 
+- **Frontend Dockerfile**: Updated to use `node:18-alpine`
 - **Backend Dockerfile**: Updated to use `node:18-alpine`
 - **Shell-node Dockerfile**: CentOS-based lab environment ✅
 - **Environment File**: Created `.env` with PostgreSQL defaults
@@ -15,7 +15,7 @@
 Triggers: Push to main/develop, tags, PRs
 Images Built:
   - ghcr.io/scriptech/ezshell-labs-frontend
-  - ghcr.io/scriptech/ezshell-labs-backend  
+  - ghcr.io/scriptech/ezshell-labs-backend
   - ghcr.io/scriptech/ezshell-labs-shell-node
 Platforms: linux/amd64, linux/arm64
 Features: Build caching, automated tagging
@@ -63,7 +63,7 @@ Features:
 ```bash
 # Required GitHub Secrets:
 SNYK_TOKEN=your_snyk_token
-DEPLOY_HOST=your_server_host  
+DEPLOY_HOST=your_server_host
 DEPLOY_USER=your_deploy_user
 DEPLOY_KEY=your_ssh_private_key
 NEXTAUTH_SECRET=your_nextauth_secret
@@ -137,7 +137,7 @@ cp .env .env.prod
 ```bash
 # Test Docker builds locally
 docker build -t ezshell-frontend -f frontend/Dockerfile.frontend ./frontend
-docker build -t ezshell-backend -f backend/Dockerfile.backend ./backend  
+docker build -t ezshell-backend -f backend/Dockerfile.backend ./backend
 docker build -t ezshell-shell-node ./shell-node
 
 # Test Docker Compose (when network allows)
