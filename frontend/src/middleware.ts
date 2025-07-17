@@ -26,7 +26,8 @@ const authPublicPages = [
   '/auth/signup',
   '/auth/forgot-password',
   '/auth/reset-password',
-  '/auth/error'
+  '/auth/error',
+  '/auth/setup'
 ]
 
 // Define admin-only routes
@@ -61,7 +62,15 @@ export default async function middleware(req: NextRequestWithAuth) {
     // Handle auth pages
     if (isAuthPage) {
       console.log(`✅ Allowing access to auth page: ${path}`)
-      // If we have a valid token, redirect authenticated users away from auth pages
+
+      // Special handling for setup page - allow access even if authenticated
+      // The setup page itself will check if admin exists and redirect accordingly
+      if (path === '/auth/setup') {
+        console.log(`✅ Allowing access to setup page: ${path}`)
+        return NextResponse.next()
+      }
+
+      // If we have a valid token, redirect authenticated users away from other auth pages
       if (token?.sub && token?.email) {
         console.log(`🔄 Redirecting authenticated user away from auth page: ${path}`)
         const redirectUrl = token.role === 'admin'
@@ -85,7 +94,7 @@ export default async function middleware(req: NextRequestWithAuth) {
       }
 
       // Check admin access for admin routes
-      if (isAdminRoute && token.role === 'admin') {
+      if (isAdminRoute && token.role !== 'admin') {
         console.log(`🔒 Non-admin user accessing admin route: ${path}`)
         const redirectUrl = new URL('/user/dashboard', req.url)
         return NextResponse.redirect(redirectUrl)

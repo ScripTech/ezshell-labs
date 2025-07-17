@@ -57,6 +57,9 @@ export const user = pgTable("user", {
 	emailVerified: timestamp({ mode: 'string' }),
 	image: text(),
 	role: userRole().default('user').notNull(),
+	password: text(), // For credential-based authentication
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 }, (table) => {
 	return {
 		userEmailUnique: unique("user_email_unique").on(table.email),
