@@ -10,6 +10,7 @@ permissions:
   contents: read
   packages: write
   security-events: write
+  id-token: write
 
 jobs:
   test-frontend:
@@ -83,39 +84,9 @@ jobs:
       working-directory: ./backend
       run: npm run type-check
 
-    # - name: Run tests
-    #   working-directory: ./backend
-    #   run: npm run test
-    #   env:
-    #     DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ezshell_test
-    #     NODE_ENV: test
-    #   continue-on-error: true
-
     - name: Build backend
       working-directory: ./backend
       run: npm run build
-
-  # security-scan:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #   - name: Checkout code
-  #     uses: actions/checkout@v4
-
-  #   - name: Run Trivy vulnerability scanner
-  #     uses: aquasecurity/trivy-action@master
-  #     with:
-  #       scan-type: 'fs'
-  #       scan-ref: '.'
-  #       format: 'sarif'
-  #       output: 'trivy-results.sarif'
-
-  #   - name: Upload Trivy scan results to GitHub Security tab
-  #     uses: github/codeql-action/upload-sarif@v3
-  #     if: always()
-  #     with:
-  #       sarif_file: 'trivy-results.sarif'
-
   docker-build:
     needs: [test-frontend, test-backend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
