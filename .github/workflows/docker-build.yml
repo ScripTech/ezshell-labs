@@ -14,8 +14,8 @@ permissions:
 
 env:
   AWS_REGION: us-west-2
-  ECR_REPOSITORY_FRONTEND: ezshell-labs/frontend
-  ECR_REPOSITORY_BACKEND: ezshell-labs/backend
+  ECR_REPOSITORY_FRONTEND: ezshell/frontend
+  ECR_REPOSITORY_BACKEND: ezshell/backend
 
 jobs:
   build-frontend:
