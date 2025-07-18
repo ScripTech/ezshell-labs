@@ -23,6 +23,9 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified"),
   image: text("image"),
   role: userBuiltRoleEnum("role").default("user").notNull(),
+  password: text("password"), // For credential-based authentication
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 interface Account {

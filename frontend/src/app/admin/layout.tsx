@@ -42,6 +42,15 @@ const adminNavItems = [
     ],
   },
   {
+    title: "Authentication",
+    url: "/admin/auth",
+    isActive: true,
+    items: [
+      { title: "User Management", url: "/admin/auth/users" },
+      { title: "Role Management", url: "/admin/auth/roles" },
+    ],
+  },
+  {
     title: "Content",
     url: "/admin/content",
     isActive: true,
