@@ -10,7 +10,7 @@ RUN apk add --no-cache \
 # Set environment variables
 ENV POSTGRES_DB=ezshell_labs
 ENV POSTGRES_USER=ezshell_user
-ENV POSTGRES_PASSWORD=ezshell_password
+# Do not set POSTGRES_PASSWORD; pass it securely at runtime or via secrets
 
 # Create app directory for schema files
 WORKDIR /app
@@ -19,13 +19,22 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --only=production && npm install drizzle-kit tsx bcryptjs
 
-# Copy database schema and migration files
+# Copy database schema and configuration files
 COPY frontend/src/db ./src/db
 COPY frontend/drizzle.config.ts ./
+
+# Generate initial schema during build
+ENV POSTGRES_HOST=localhost
+ENV POSTGRES_PORT=5432
+ENV POSTGRES_DB=ezshell_labs
+ENV POSTGRES_USER=ezshell_user
+RUN npm run db:generate
+
+# Copy migration SQL files
 COPY frontend/drizzle ./drizzle
 
 # Copy custom initialization script
-COPY database/init-db.sh /docker-entrypoint-initdb.d/01-init-schema.sh
+COPY database/init-db-simple.sh /docker-entrypoint-initdb.d/01-init-schema.sh
 RUN chmod +x /docker-entrypoint-initdb.d/01-init-schema.sh
 
 # Copy environment file for database connection

@@ -3,13 +3,9 @@ set -e
 
 echo "🚀 Initializing EZShell Labs Database..."
 
-# Wait for PostgreSQL to be ready
-until pg_isready -h localhost -p 5432 -U "$POSTGRES_USER"; do
-  echo "⏳ Waiting for PostgreSQL to be ready..."
-  sleep 2
-done
-
-echo "✅ PostgreSQL is ready!"
+# During docker-entrypoint-initdb.d execution, PostgreSQL is already running
+# and we can connect directly without waiting
+echo "✅ PostgreSQL is ready (running in init mode)!"
 
 # Set up environment for schema operations
 export DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB"
