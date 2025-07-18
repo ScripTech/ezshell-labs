@@ -44,3 +44,4 @@ frontend/drizzle/*
 frontend/storage/generate_ex280_files.sh
 backend/dist/*
 test-jwt.js
+scripts/get-from-build.sh
