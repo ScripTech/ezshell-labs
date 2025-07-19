@@ -1,69 +1,71 @@
-# Docker Compose override for production
-# Copy this file to docker-compose.override.yml for production deployment
-
-version: '3.8'
-
+---
 services:
-  frontend:
-    image: ghcr.io/scriptech/ezshell-labs-frontend:latest
-    environment:
-      - NODE_ENV=production
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - DATABASE_URL=${DATABASE_URL}
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
-      - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
-    volumes:
-      - /opt/application/ezshell-labs/frontend/storage:/app/storage
 
-  backend:
-    image: ghcr.io/scriptech/ezshell-labs-backend:latest
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SSH_HOST=${SSH_HOST}
-      - SSH_USER=${SSH_USER}
-      - SSH_PASSWORD=${SSH_PASSWORD}
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`${BACKEND_DOMAIN}`)"
-      - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-  postgres:
-    image: ghcr.io/scriptech/ezshell-labs-database:latest
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  # Optional: Add Traefik for reverse proxy and SSL
-  traefik:
-    image: traefik:v2.10
-    command:
-      - "--api.insecure=false"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+  nginx:
+    image: nginx:alpine
+    container_name: ezshell-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "letsencrypt:/letsencrypt"
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/ssl-validation:/var/www/ssl-validation:ro
+    depends_on:
+      - frontend-service
+      - backend-service
+    networks:
+      - ezshell-network-dev
     restart: unless-stopped
+
+  postgres-db:
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/database:latest
+    container_name: ezshell-postgres-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5438:5432"
+    networks:
+      - ezshell-network-dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend-service:
+    depends_on:
+      - postgres-db
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/backend:latest
+    container_name: backend-service
+    hostname: backend-service
+    env_file:
+      - ./backend/.env
+    expose:
+      - "3001"
+    restart: unless-stopped
+    networks:
+      - ezshell-network-dev
+
+  frontend-service:
+    depends_on:
+      - postgres-db
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/frontend:latest
+    container_name: frontend
+    hostname: frontend
+    env_file:
+      - ./frontend/.env.local
+    expose:
+      - "3000"
+    restart: unless-stopped
+    networks:
+      - ezshell-network-dev
+    volumes:
+      - /opt/application/ezshell-labs/frontend/storage:/app/storage:Z
+
+networks:
+  ezshell-network-dev:
 
 volumes:
   postgres_data:
-  letsencrypt:
