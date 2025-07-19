@@ -76,9 +76,102 @@ services:
     networks:
       - ezshell-network-dev
 
+  # Kafka Infrastructure
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: ezshell-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: ezshell-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_DELETE_TOPIC_ENABLE: true
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Lab Provisioner Service
+  lab-provisioner:
+    build:
+      context: ./lab-provisioner
+      dockerfile: Dockerfile
+    container_name: ezshell-lab-provisioner
+    hostname: lab-provisioner
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://ezshell_user:ezshell_password_dev@postgres-db:5432/ezshell_labs
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_CLIENT_ID=lab-provisioner
+      - KAFKA_TOPIC=lab-enrollment
+      - KAFKA_CONSUMER_GROUP=lab-provisioner-group
+      - LOG_LEVEL=info
+      - PORT=3002
+    env_file:
+      - ./lab-provisioner/.env
+    expose:
+      - "3002"
+    volumes:
+      - ssh_keys_volume:/tmp/ssh-keys
+      - ./logs:/app/logs
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 networks:
   ezshell-network-dev:
     driver: bridge
 volumes:
   postgres_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+  ssh_keys_volume:
     driver: local
