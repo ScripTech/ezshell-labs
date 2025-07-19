@@ -14,6 +14,7 @@ services:
     depends_on:
       - frontend-service
       - backend-service
+      - lab-provisioner
     networks:
       - ezshell-network-dev
     restart: unless-stopped
@@ -48,7 +49,9 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
-    image: backend-export:latest
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.backend
     container_name: backend-service
     hostname: backend-service
     env_file:
@@ -65,8 +68,10 @@ services:
         condition: service_healthy
       backend-service:
         condition: service_started
-    image: frontend-export:latest
-    container_name: frontend
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile.frontend
+    container_name: frontend-service
     hostname: frontend
     environment:
       - NODE_ENV=production
@@ -76,9 +81,121 @@ services:
     networks:
       - ezshell-network-dev
 
+  # Kafka Infrastructure
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: ezshell-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: ezshell-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_DELETE_TOPIC_ENABLE: true
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  #
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest # Use the official Kafdrop image
+    container_name: ezshell-lab-kafdrop
+    hostname: kafdrop
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "9000:9000" # Map container port 9000 to host port 9000
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+      # JVM_OPTS: "-Xms16M -Xmx512M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+
+  # Lab Provisioner Service
+  lab-provisioner:
+    build:
+      context: ./lab-provisioner
+      dockerfile: Dockerfile
+    container_name: ezshell-lab-provisioner
+    hostname: lab-provisioner
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      # kafka:
+      #   condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_CLIENT_ID=lab-provisioner
+      - KAFKA_TOPIC=lab-enrollment
+      - KAFKA_CONSUMER_GROUP=lab-provisioner-group
+      - KAFKA_ENABLED=false  # Disable Kafka by default since service is not available
+      - LOG_LEVEL=info
+      - PORT=3002
+    env_file:
+      - ./lab-provisioner/.env
+    expose:
+      - "3002"
+    volumes:
+      - ssh_keys_volume:/tmp/ssh-keys
+      - ./logs:/app/logs
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 networks:
   ezshell-network-dev:
     driver: bridge
 volumes:
   postgres_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+  ssh_keys_volume:
     driver: local
