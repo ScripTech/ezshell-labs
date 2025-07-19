@@ -270,23 +270,19 @@ export class AWSProvisionerService {
         InstanceIds: [instanceId],
       };
 
-      const result = await this.ec2.describeInstances(params).promise();
+      const result = await this.ec2.describeInstanceStatus(params).promise();
 
-      if (!result.Reservations || result.Reservations.length === 0 ||
-          !result.Reservations[0].Instances || result.Reservations[0].Instances.length === 0) {
+      if (!result.InstanceStatuses || result.InstanceStatuses.length === 0) {
         throw new AWSProvisioningError(
           `Instance ${instanceId} not found`,
           'describeInstances'
         );
       }
 
-      const instance = result.Reservations[0].Instances[0];
+      const instance = result.InstanceStatuses[0];
 
       return {
-        state: parseInstanceState(instance.State?.Name || 'unknown'),
-        publicIp: instance.PublicIpAddress,
-        privateIp: instance.PrivateIpAddress,
-        publicDnsName: instance.PublicDnsName,
+        state: parseInstanceState(instance.InstanceState?.Name || 'unknown'),
       };
     } catch (error) {
       const awsError = error as AWS.AWSError;

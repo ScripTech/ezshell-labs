@@ -235,6 +235,95 @@ router.get('/status/:enrollmentId', async (req: Request, res: Response) => {
     const provisionData = provision[0];
 
     // Build response
+    let instanceDetails = null;
+    let connectionInfo = null;
+
+    if (provisionData && provisionData.instanceId) {
+      // Get real-time instance state from AWS
+      try {
+        const awsDetails = await awsProvisionerService.getInstanceDetails(provisionData.instanceId);
+
+        instanceDetails = {
+          instanceId: provisionData.instanceId,
+          publicIp: awsDetails.publicIp || provisionData.publicIp,
+          privateIp: awsDetails.privateIp || provisionData.privateIp,
+          publicDnsName: awsDetails.publicDnsName,
+          state: awsDetails.state, // Real-time state from AWS
+          keyPairName: provisionData.keyPairName,
+          provisionedAt: provisionData.provisionedAt,
+          terminatedAt: provisionData.terminatedAt,
+        };
+
+        // Provide connection information if instance is ready
+        if (awsDetails.state === 'running' && awsDetails.publicIp) {
+          connectionInfo = {
+            ready: true,
+            message: 'Your lab instance is ready to use!',
+            ssh: {
+              command: `ssh -i keys/${provisionData.keyPairName}.pem labuser@${awsDetails.publicIp}`,
+              host: awsDetails.publicIp,
+              username: 'labuser',
+              keyFile: `${provisionData.keyPairName}.pem`
+            },
+            webAccess: awsDetails.publicDnsName ? {
+              url: `http://${awsDetails.publicDnsName}`,
+              publicDns: awsDetails.publicDnsName
+            } : null
+          };
+        } else {
+          connectionInfo = {
+            ready: false,
+            message: awsDetails.state === 'pending'
+              ? 'Your lab instance is starting up. Please wait a few more minutes...'
+              : `Instance is ${awsDetails.state}. Please check back in a moment.`,
+            estimatedWaitTime: awsDetails.state === 'pending' ? '2-3 minutes' : null
+          };
+        }
+      } catch (error) {
+        logger.warn('Failed to get real-time instance details', {
+          instanceId: provisionData.instanceId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+
+        // Fallback to stored data with helpful message
+        instanceDetails = {
+          instanceId: provisionData.instanceId,
+          publicIp: provisionData.publicIp,
+          privateIp: provisionData.privateIp,
+          state: provisionData.instanceState,
+          keyPairName: provisionData.keyPairName,
+          provisionedAt: provisionData.provisionedAt,
+          terminatedAt: provisionData.terminatedAt,
+        };
+
+        // Provide estimated connection info based on time elapsed
+        const provisionedTime = new Date(provisionData.provisionedAt || '').getTime();
+        const elapsedMinutes = (Date.now() - provisionedTime) / (1000 * 60);
+
+        if (elapsedMinutes > 5 && provisionData.instanceState === 'pending') {
+          // Assume it might be ready after 5 minutes
+          connectionInfo = {
+            ready: 'unknown',
+            message: 'Your lab instance should be ready soon. Try connecting with SSH.',
+            note: 'Unable to check real-time status due to AWS permissions',
+            ssh: {
+              command: `ssh -i keys/${provisionData.keyPairName}.pem labuser@<PUBLIC_IP>`,
+              host: '<Check AWS Console for Public IP>',
+              username: 'labuser',
+              keyFile: `${provisionData.keyPairName}.pem`
+            }
+          };
+        } else {
+          connectionInfo = {
+            ready: false,
+            message: 'Lab instance is being prepared. Please wait a few more minutes.',
+            estimatedWaitTime: '2-5 minutes',
+            note: 'Unable to check real-time status due to AWS permissions'
+          };
+        }
+      }
+    }
+
     const response = {
       enrollmentId,
       userId: enrollmentData.userId,
@@ -251,15 +340,8 @@ router.get('/status/:enrollmentId', async (req: Request, res: Response) => {
         queuedAt: queueData?.createdAt,
         processedAt: queueData?.processedAt,
       },
-      instance: provisionData ? {
-        instanceId: provisionData.instanceId,
-        publicIp: provisionData.publicIp,
-        privateIp: provisionData.privateIp,
-        state: provisionData.instanceState,
-        keyPairName: provisionData.keyPairName,
-        provisionedAt: provisionData.provisionedAt,
-        terminatedAt: provisionData.terminatedAt,
-      } : null,
+      instance: instanceDetails,
+      connection: connectionInfo,
       timestamp: new Date().toISOString(),
     };
 
@@ -478,6 +560,92 @@ router.post('/provision/:enrollmentId', async (req: Request, res: Response) => {
     return res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to provision lab',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
+ * Check if lab instance is ready to use
+ */
+router.get('/ready/:enrollmentId', async (req: Request, res: Response) => {
+  try {
+    const { enrollmentId } = req.params;
+
+    // Get provision details
+    const provision = await db
+      .select()
+      .from(labProvisions)
+      .where(eq(labProvisions.enrollmentId, enrollmentId))
+      .limit(1);
+
+    if (provision.length === 0) {
+      return res.status(404).json({
+        ready: false,
+        message: 'Lab instance not found',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const provisionData = provision[0];
+
+    if (!provisionData.instanceId) {
+      return res.status(200).json({
+        ready: false,
+        message: 'Lab instance is being prepared',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    try {
+      // Check real-time AWS instance state
+      const awsDetails = await awsProvisionerService.getInstanceDetails(provisionData.instanceId);
+
+      const isReady = awsDetails.state === 'running' && awsDetails.publicIp;
+
+      return res.status(200).json({
+        ready: isReady,
+        state: awsDetails.state,
+        publicIp: awsDetails.publicIp,
+        message: isReady
+          ? 'Your lab instance is ready to use!'
+          : awsDetails.state === 'pending'
+            ? 'Lab instance is starting up...'
+            : `Lab instance is ${awsDetails.state}`,
+        estimatedWaitTime: awsDetails.state === 'pending' ? '2-3 minutes' : null,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error('Failed to check instance readiness', {
+        enrollmentId,
+        instanceId: provisionData.instanceId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      // Provide fallback information
+      const provisionedTime = new Date(provisionData.provisionedAt || '').getTime();
+      const elapsedMinutes = (Date.now() - provisionedTime) / (1000 * 60);
+
+      return res.status(200).json({
+        ready: elapsedMinutes > 5 ? 'likely' : false,
+        message: elapsedMinutes > 5
+          ? 'Lab instance should be ready.'
+          : 'Lab instance is starting up...',
+        note: 'Unable to check real-time status due to AWS permissions',
+        elapsedMinutes: Math.round(elapsedMinutes),
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    logger.error('Ready check failed', {
+      enrollmentId: req.params.enrollmentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return res.status(500).json({
+      ready: false,
+      error: 'Internal server error',
+      message: 'Failed to check lab readiness',
       timestamp: new Date().toISOString(),
     });
   }
