@@ -1,4 +1,5 @@
 import winston from 'winston';
+import path from 'path';
 
 // Log levels
 const levels = {
@@ -20,6 +21,24 @@ const colors = {
 
 winston.addColors(colors);
 
+// Generate datetime string for log filename
+const getLogDateTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+// Generate log file paths
+const logDir = path.resolve(__dirname, process.env.LOG_DIR || '../../logs');
+const dateTime = getLogDateTime();
+const logFileName = `lab-provisioner-${dateTime}.log`;
+const errorLogFileName = `lab-provisioner-error-${dateTime}.log`;
+const exceptionsLogFileName = `lab-provisioner-exceptions-${dateTime}.log`;
+const rejectionsLogFileName = `lab-provisioner-rejections-${dateTime}.log`;
+
 // Create custom format
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
@@ -37,7 +56,7 @@ const transports = [
   }),
   // Error log file
   new winston.transports.File({
-    filename: 'logs/error.log',
+    filename: path.join(logDir, errorLogFileName),
     level: 'error',
     format: winston.format.combine(
       winston.format.timestamp(),
@@ -46,7 +65,7 @@ const transports = [
   }),
   // Combined log file
   new winston.transports.File({
-    filename: 'logs/combined.log',
+    filename: path.join(logDir, logFileName),
     format: winston.format.combine(
       winston.format.timestamp(),
       winston.format.json()
@@ -65,10 +84,10 @@ const logger = winston.createLogger({
   ),
   transports,
   exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log' }),
+    new winston.transports.File({ filename: path.join(logDir, exceptionsLogFileName) }),
   ],
   rejectionHandlers: [
-    new winston.transports.File({ filename: 'logs/rejections.log' }),
+    new winston.transports.File({ filename: path.join(logDir, rejectionsLogFileName) }),
   ],
 });
 

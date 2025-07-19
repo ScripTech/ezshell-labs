@@ -31,6 +31,8 @@ export class AWSProvisionerService {
     logger.info('AWS Provisioner initialized', {
       region: this.config.region,
       instanceType: this.config.instanceType,
+      ec2Region: this.ec2.config.region,
+      configRegion: this.config.region
     });
   }
 
@@ -39,7 +41,11 @@ export class AWSProvisionerService {
    */
   async createKeyPair(keyPairName: string): Promise<{ publicKey: string; privateKey: string }> {
     try {
-      logger.info('Creating AWS key pair', { keyPairName });
+      logger.info('Creating AWS key pair', {
+        keyPairName,
+        region: this.config.region,
+        awsRegion: this.ec2.config.region
+      });
 
       const params: AWS.EC2.CreateKeyPairRequest = {
         KeyName: keyPairName,
@@ -75,7 +81,11 @@ export class AWSProvisionerService {
         );
       }
 
-      logger.info('AWS key pair created successfully', { keyPairName });
+      logger.info('AWS key pair created successfully', {
+        keyPairName,
+        region: this.config.region,
+        awsRegion: this.ec2.config.region
+      });
 
       return {
         publicKey: result.KeyFingerprint || '',
@@ -87,6 +97,8 @@ export class AWSProvisionerService {
         keyPairName,
         error: awsError.message,
         code: awsError.code,
+        region: this.config.region,
+        awsRegion: this.ec2.config.region
       });
 
       throw new AWSProvisioningError(
@@ -122,7 +134,8 @@ export class AWSProvisionerService {
         this.config,
         userId,
         labId,
-        enrollmentId
+        enrollmentId,
+        keyPairName
       );
 
       logger.info('Launching EC2 instance', {
@@ -130,6 +143,8 @@ export class AWSProvisionerService {
         labId,
         enrollmentId,
         keyPairName,
+        region: this.config.region,
+        awsRegion: this.ec2.config.region,
         instanceType: launchConfig.instanceType,
       });
 
@@ -141,7 +156,7 @@ export class AWSProvisionerService {
         InstanceType: launchConfig.instanceType as AWS.EC2.InstanceType,
         KeyName: launchConfig.keyName,
         SecurityGroupIds: launchConfig.securityGroupIds,
-        SubnetId: launchConfig.subnetId,
+        // SubnetId: launchConfig.subnetId,
         UserData: launchConfig.userData,
         TagSpecifications: [
           {
@@ -149,13 +164,35 @@ export class AWSProvisionerService {
             Tags: launchConfig.tags,
           },
         ],
-        IamInstanceProfile: {
-          Name: 'EC2-SSM-Role', // For Systems Manager access
-        },
+        ...(process.env.AWS_IAM_INSTANCE_PROFILE && {
+          IamInstanceProfile: {
+            Name: process.env.AWS_IAM_INSTANCE_PROFILE,
+          },
+        }),
         Monitoring: {
           Enabled: true,
         },
       };
+
+      console.log('Launching EC2 instance', {
+        userId,
+        labId,
+        enrollmentId,
+        keyPairName,
+        instanceType: launchConfig.instanceType,
+      });
+
+      logger.info('About to call EC2 runInstances', {
+        region: this.config.region,
+        awsRegion: this.ec2.config.region,
+        keyName: params.KeyName,
+        params: {
+          ImageId: params.ImageId,
+          InstanceType: params.InstanceType,
+          SubnetId: params.SubnetId,
+          SecurityGroupIds: params.SecurityGroupIds
+        }
+      });
 
       const result = await this.ec2.runInstances(params).promise();
 
@@ -207,6 +244,8 @@ export class AWSProvisionerService {
         userId,
         labId,
         enrollmentId,
+        region: this.config.region,
+        awsRegion: this.ec2.config.region
       });
 
       throw new AWSProvisioningError(
@@ -382,7 +421,11 @@ export class AWSProvisionerService {
       };
 
       await this.ec2.deleteKeyPair(params).promise();
-      logger.info('Key pair deleted', { keyPairName });
+      logger.info('Key pair deleted', {
+        keyPairName,
+        region: this.config.region,
+        awsRegion: this.ec2.config.region
+      });
     } catch (error) {
       const awsError = error as AWS.AWSError;
 

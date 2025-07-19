@@ -48,3 +48,4 @@ test-jwt.js
 scripts/get-from-build.sh
 lab-provisioner/dist/*
 lab-provisioner/logs/*
+logs/

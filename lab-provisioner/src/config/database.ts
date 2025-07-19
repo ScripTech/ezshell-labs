@@ -1,12 +1,14 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from '../models/schema';
+import * as dotenv from "dotenv";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "../models/schema";
+dotenv.config();
 
 // Database connection configuration
 const connectionString = process.env.DATABASE_URL!;
 
 if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is required');
+  throw new Error("DATABASE_URL environment variable is required");
 }
 
 // Create postgres client
@@ -20,7 +22,7 @@ const client = postgres(connectionString, {
 export const db = drizzle(client, { schema });
 
 // Export schema types for use in other files
-export * from '../models/schema';
+export * from "../models/schema";
 
 // Health check function
 export const checkDatabaseConnection = async (): Promise<boolean> => {
@@ -28,7 +30,7 @@ export const checkDatabaseConnection = async (): Promise<boolean> => {
     await client`SELECT 1`;
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error("Database connection failed:", error);
     return false;
   }
 };
@@ -37,8 +39,8 @@ export const checkDatabaseConnection = async (): Promise<boolean> => {
 export const closeDatabaseConnection = async (): Promise<void> => {
   try {
     await client.end();
-    console.log('Database connection closed gracefully');
+    console.log("Database connection closed gracefully");
   } catch (error) {
-    console.error('Error closing database connection:', error);
+    console.error("Error closing database connection:", error);
   }
 };

@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { createHash } from 'crypto';
 import { createLogger } from './logger';
 
@@ -19,7 +19,9 @@ export class SSHKeyManager {
   private permissions: number;
 
   constructor() {
-    this.keyDir = process.env.SSH_KEY_DIR || '/tmp/ssh-keys';
+    const keyDirConfig = process.env.SSH_KEY_DIR || './keys';
+    // Resolve relative paths relative to the project root (one level up from src)
+    this.keyDir = resolve(__dirname, '../../', keyDirConfig);
     this.permissions = parseInt(process.env.SSH_KEY_PERMISSIONS || '0600', 8);
   }
 

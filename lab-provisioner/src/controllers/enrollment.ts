@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { eq, and } from 'drizzle-orm';
 import { db, labEnrollments, labProvisions, provisioningQueue } from '../config/database';
 import { kafkaProducerService } from '../services/kafka-producer';
+import { awsProvisionerService } from '../services/aws-provisioner';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('enrollment-controller');
@@ -109,26 +110,45 @@ router.post('/enroll', async (req: Request, res: Response) => {
       });
     });
 
-    // Publish enrollment message to Kafka
-    try {
-      await kafkaProducerService.enrollLab(userId, labId, enrollmentId);
-      logger.info('Enrollment message published to Kafka', {
+    // Publish enrollment message to Kafka (if enabled)
+    const kafkaEnabled = process.env.KAFKA_ENABLED !== 'false';
+
+    if (kafkaEnabled) {
+      try {
+        await kafkaProducerService.enrollLab(userId, labId, enrollmentId);
+        logger.info('Enrollment message published to Kafka', {
+          enrollmentId,
+          userId,
+          labId,
+        });
+      } catch (kafkaError) {
+        logger.error('Failed to publish to Kafka, but enrollment created', {
+          enrollmentId,
+          error: kafkaError instanceof Error ? kafkaError.message : String(kafkaError),
+        });
+
+        // Update queue status to indicate Kafka failure
+        await db
+          .update(provisioningQueue)
+          .set({
+            status: 'failed',
+            lastError: `Kafka publish failed: ${kafkaError instanceof Error ? kafkaError.message : String(kafkaError)}`,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+      }
+    } else {
+      logger.info('Kafka is disabled, skipping message publication', {
         enrollmentId,
         userId,
         labId,
       });
-    } catch (kafkaError) {
-      logger.error('Failed to publish to Kafka, but enrollment created', {
-        enrollmentId,
-        error: kafkaError instanceof Error ? kafkaError.message : String(kafkaError),
-      });
 
-      // Update queue status to indicate Kafka failure
+      // Update queue status to indicate processing without Kafka
       await db
         .update(provisioningQueue)
         .set({
-          status: 'failed',
-          lastError: `Kafka publish failed: ${kafkaError instanceof Error ? kafkaError.message : String(kafkaError)}`,
+          status: 'processing',
           updatedAt: new Date().toISOString(),
         })
         .where(eq(provisioningQueue.enrollmentId, enrollmentId));
@@ -310,6 +330,154 @@ router.get('/list', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to list enrollments',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
+ * POST /provision/:enrollmentId - Manually provision a lab (for testing)
+ */
+router.post('/provision/:enrollmentId', async (req: Request, res: Response) => {
+  try {
+    const { enrollmentId } = req.params;
+
+    logger.info('Manual provision request', { enrollmentId });
+
+    // Get enrollment details
+    const enrollment = await db
+      .select()
+      .from(labEnrollments)
+      .where(eq(labEnrollments.id, enrollmentId))
+      .limit(1);
+
+    if (enrollment.length === 0) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Enrollment not found',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const enrollmentData = enrollment[0];
+    const { userId, labId } = enrollmentData;
+
+    // Validate required fields
+    if (!userId || !labId) {
+      return res.status(400).json({
+        error: 'Invalid enrollment data',
+        message: 'Enrollment missing required userId or labId',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check if already provisioned
+    const existingProvision = await db
+      .select()
+      .from(labProvisions)
+      .where(eq(labProvisions.enrollmentId, enrollmentId))
+      .limit(1);
+
+    if (existingProvision.length > 0) {
+      return res.status(409).json({
+        error: 'Already provisioned',
+        message: 'Lab is already provisioned',
+        instanceId: existingProvision[0].instanceId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    logger.info('Starting manual lab provisioning', {
+      enrollmentId,
+      userId,
+      labId,
+    });
+
+    // Update queue status to processing
+    await db
+      .update(provisioningQueue)
+      .set({
+        status: 'processing',
+        processedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+
+    // Provision AWS resources
+    const provisionResult = await awsProvisionerService.launchLabInstance(
+      userId,
+      labId,
+      enrollmentId
+    );
+
+    // Create provision record
+    const provisionId = uuidv4();
+    await db.insert(labProvisions).values({
+      id: provisionId,
+      enrollmentId,
+      instanceId: provisionResult.instanceId,
+      privateIp: provisionResult.privateIp,
+      keyPairName: provisionResult.keyPairName,
+      instanceState: provisionResult.state as "pending" | "running" | "stopping" | "stopped" | "terminated" | "shutting-down",
+      provisionedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Update queue status to completed
+    await db
+      .update(provisioningQueue)
+      .set({
+        status: 'completed',
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+
+    logger.info('Manual lab provisioning completed', {
+      enrollmentId,
+      instanceId: provisionResult.instanceId,
+      provisionId,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lab provisioned successfully',
+      data: {
+        enrollmentId,
+        provisionId,
+        instanceId: provisionResult.instanceId,
+        privateIp: provisionResult.privateIp,
+        keyPairName: provisionResult.keyPairName,
+        state: provisionResult.state,
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    logger.error('Manual provision failed', {
+      enrollmentId: req.params.enrollmentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    // Update queue status to failed
+    try {
+      await db
+        .update(provisioningQueue)
+        .set({
+          status: 'failed',
+          lastError: error instanceof Error ? error.message : String(error),
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(provisioningQueue.enrollmentId, req.params.enrollmentId));
+    } catch (dbError) {
+      logger.error('Failed to update queue status', {
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to provision lab',
       timestamp: new Date().toISOString(),
     });
   }

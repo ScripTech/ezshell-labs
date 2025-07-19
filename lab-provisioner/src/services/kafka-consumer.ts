@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import {
   getKafkaConfig,
   createKafkaConsumerGroup,
+  testKafkaConnection,
   EnrollmentMessage,
   validateEnrollmentMessage,
   handleKafkaError
@@ -16,19 +17,77 @@ import { v4 as uuidv4 } from 'uuid';
 const logger = createLogger('kafka-consumer');
 
 export class KafkaConsumerService {
-  private consumer: ConsumerGroup;
+  private consumer: ConsumerGroup | null = null;
   private config = getKafkaConfig();
   private isRunning = false;
+  private isEnabled = true;
 
   constructor() {
-    this.consumer = createKafkaConsumerGroup(this.config);
-    this.setupEventHandlers();
+    this.isEnabled = this.config.enabled;
+
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, running without message consumption');
+    }
   }
 
   /**
+   * Initialize Kafka with connection testing
+   */
+  async initialize(): Promise<void> {
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, skipping consumer initialization');
+      return;
+    }
+
+    try {
+      logger.info('Testing Kafka connection...', { broker: this.config.brokerHost });
+
+      const isConnected = await testKafkaConnection(this.config.brokerHost);
+
+      if (!isConnected) {
+        logger.warn('Kafka broker is not available, disabling Kafka functionality', {
+          broker: this.config.brokerHost,
+        });
+        this.isEnabled = false;
+        return;
+      }
+
+      logger.info('Kafka connection test successful, initializing consumer', {
+        broker: this.config.brokerHost,
+        topic: this.config.topic,
+        consumerGroup: this.config.consumerGroup,
+      });
+
+      // Create consumer with additional error handling
+      this.consumer = createKafkaConsumerGroup(this.config);
+      this.setupEventHandlers();
+
+      // Wait a moment to see if consumer fails immediately
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Check if consumer had immediate failures
+      if (!this.isRunning && this.consumer) {
+        logger.warn('Consumer failed to connect properly, disabling Kafka functionality');
+        this.isEnabled = false;
+        this.consumer = null;
+      }
+
+    } catch (error) {
+      logger.error('Failed to initialize Kafka consumer, disabling Kafka functionality', {
+        error: error instanceof Error ? error.message : String(error),
+        broker: this.config.brokerHost,
+      });
+      this.isEnabled = false;
+      this.consumer = null;
+    }
+  }  /**
    * Setup event handlers for consumer
    */
   private setupEventHandlers(): void {
+    if (!this.consumer) {
+      return;
+    }
+
     this.consumer.on('message', (message) => {
       this.handleMessage(message).catch((error) => {
         logger.error('Error handling message', {
@@ -40,7 +99,33 @@ export class KafkaConsumerService {
     });
 
     this.consumer.on('error', (error) => {
-      handleKafkaError(error, 'consumer');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Check for broker connection errors
+      if (errorMessage.includes('Unable to find available brokers') ||
+          errorMessage.includes('refreshBrokerMetadata failed')) {
+        logger.warn('Consumer experiencing broker connectivity issues, disabling Kafka', {
+          error: errorMessage,
+        });
+        this.isEnabled = false;
+        this.isRunning = false;
+
+        // Try to close the consumer gracefully
+        if (this.consumer) {
+          try {
+            this.consumer.close(false, () => {
+              logger.info('Consumer closed due to broker connectivity issues');
+            });
+          } catch (closeError) {
+            logger.error('Error closing consumer', {
+              error: closeError instanceof Error ? closeError.message : String(closeError),
+            });
+          }
+          this.consumer = null;
+        }
+      } else {
+        handleKafkaError(error, 'consumer');
+      }
     });
 
     this.consumer.on('connect', () => {
@@ -302,8 +387,18 @@ export class KafkaConsumerService {
    * Start consuming messages
    */
   start(): void {
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, not starting consumer');
+      return;
+    }
+
     if (this.isRunning) {
       logger.warn('Consumer is already running');
+      return;
+    }
+
+    if (!this.consumer) {
+      logger.error('Cannot start consumer: consumer is not initialized');
       return;
     }
 
@@ -320,6 +415,12 @@ export class KafkaConsumerService {
    * Stop consuming messages
    */
   async stop(): Promise<void> {
+    if (!this.isEnabled || !this.consumer) {
+      logger.info('Kafka consumer not running or disabled');
+      this.isRunning = false;
+      return;
+    }
+
     if (!this.isRunning) {
       logger.warn('Consumer is not running');
       return;
@@ -328,7 +429,7 @@ export class KafkaConsumerService {
     logger.info('Stopping Kafka consumer...');
 
     return new Promise((resolve) => {
-      this.consumer.close(true, (error) => {
+      this.consumer!.close(true, (error) => {
         if (error) {
           logger.error('Error closing consumer', {
             error: error.message,
@@ -347,6 +448,9 @@ export class KafkaConsumerService {
    * Check if consumer is running
    */
   isConsumerRunning(): boolean {
+    if (!this.isEnabled) {
+      return false;
+    }
     return this.isRunning;
   }
 
@@ -356,6 +460,7 @@ export class KafkaConsumerService {
   getStats(): any {
     return {
       isRunning: this.isRunning,
+      isEnabled: this.isEnabled,
       topic: this.config.topic,
       consumerGroup: this.config.consumerGroup,
       brokerHost: this.config.brokerHost,

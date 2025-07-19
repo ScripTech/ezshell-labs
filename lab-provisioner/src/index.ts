@@ -6,6 +6,7 @@ import { createLogger, requestLogger } from './utils/logger';
 import { checkDatabaseConnection, closeDatabaseConnection } from './config/database';
 import { sshKeyManager } from './utils/ssh-key-manager';
 import { kafkaConsumerService } from './services/kafka-consumer';
+import { kafkaProducerService } from './services/kafka-producer';
 import { enrollmentRouter } from './controllers/enrollment';
 
 // Load environment variables
@@ -37,14 +38,16 @@ app.get('/health', async (req, res) => {
     const dbStatus = await checkDatabaseConnection();
 
     res.status(200).json({
-      status: 'healthy',
+      status: "healthy",
       timestamp: new Date().toISOString(),
-      service: 'lab-provisioner',
-      version: '1.0.0',
+      service: "lab-provisioner",
+      version: "1.0.0",
       checks: {
-        database: dbStatus ? 'connected' : 'disconnected',
-        ssh_keys: 'ready',
-        kafka_consumer: kafkaConsumerService.isConsumerRunning() ? 'running' : 'stopped',
+        database: dbStatus ? "connected" : "disconnected",
+        ssh_keys: "ready",
+        kafka_consumer: kafkaConsumerService.isConsumerRunning()
+          ? "running"
+          : "stopped",
       },
     });
   } catch (error) {
@@ -120,11 +123,20 @@ async function initializeServices(): Promise<void> {
     }
     logger.info('Database connection verified');
 
-    // Start Kafka consumer
-    kafkaConsumerService.start();
-    logger.info('Kafka consumer started');
+    // Initialize Kafka services (with connection testing)
+    if (process.env.KAFKA_ENABLED !== 'false') {
+      await kafkaProducerService.initialize();
+      logger.info('Kafka producer initialized');
 
-    // Start cleanup routine for expired keys
+      await kafkaConsumerService.initialize();
+      logger.info('Kafka consumer initialized');
+
+      // Start Kafka consumer
+      kafkaConsumerService.start();
+      logger.info('Kafka consumer started');
+    } else {
+      logger.info('Kafka is disabled, skipping Kafka initialization');
+    }    // Start cleanup routine for expired keys
     setInterval(async () => {
       try {
         await sshKeyManager.cleanupExpiredKeys(2); // Cleanup keys older than 2 hours
@@ -149,8 +161,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
   logger.info(`Received ${signal}, starting graceful shutdown...`);
 
   try {
-    // Stop Kafka consumer
+    // Stop Kafka services
     await kafkaConsumerService.stop();
+    await kafkaProducerService.close();
 
     // Close database connections
     await closeDatabaseConnection();
@@ -172,7 +185,7 @@ async function startServer(): Promise<void> {
     await initializeServices();
 
     const server = app.listen(PORT, () => {
-      logger.info(`Lab Provisioner service started`, {
+      logger.info(`Lab Provisioner service started Port: ${PORT}`, {
         port: PORT,
         environment: process.env.NODE_ENV || 'development',
         timestamp: new Date().toISOString(),
@@ -188,17 +201,21 @@ async function startServer(): Promise<void> {
       logger.error('Uncaught exception', {
         error: error.message,
         stack: error.stack,
+        name: error.name,
       });
-      process.exit(1);
+      // Give some time to flush logs
+      setTimeout(() => process.exit(1), 100);
     });
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
       logger.error('Unhandled promise rejection', {
         reason: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
         promise: promise.toString(),
       });
-      process.exit(1);
+      // Give some time to flush logs
+      setTimeout(() => process.exit(1), 100);
     });
 
   } catch (error) {

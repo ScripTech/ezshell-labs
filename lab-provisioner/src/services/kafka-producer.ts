@@ -3,6 +3,7 @@ import {
   getKafkaConfig,
   createKafkaClient,
   createKafkaProducer,
+  testKafkaConnection,
   EnrollmentMessage,
   ProvisioningStatusMessage,
   handleKafkaError
@@ -12,21 +13,67 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('kafka-producer');
 
 export class KafkaProducerService {
-  private client: KafkaClient;
-  private producer: Producer;
+  private client: KafkaClient | null = null;
+  private producer: Producer | null = null;
   private isReady: boolean = false;
+  private isEnabled: boolean = true;
   private config = getKafkaConfig();
 
   constructor() {
-    this.client = createKafkaClient(this.config);
-    this.producer = createKafkaProducer(this.client);
-    this.setupEventHandlers();
+    this.isEnabled = this.config.enabled;
+
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, running without message publishing');
+    }
   }
 
   /**
+   * Initialize Kafka with connection testing
+   */
+  async initialize(): Promise<void> {
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, skipping producer initialization');
+      return;
+    }
+
+    try {
+      logger.info('Testing Kafka connection...', { broker: this.config.brokerHost });
+
+      const isConnected = await testKafkaConnection(this.config.brokerHost);
+
+      if (!isConnected) {
+        logger.warn('Kafka broker is not available, disabling Kafka functionality', {
+          broker: this.config.brokerHost,
+        });
+        this.isEnabled = false;
+        return;
+      }
+
+      logger.info('Kafka connection test successful, initializing producer', {
+        broker: this.config.brokerHost,
+      });
+
+      this.client = createKafkaClient(this.config);
+      this.producer = createKafkaProducer(this.client);
+      this.setupEventHandlers();
+
+    } catch (error) {
+      logger.error('Failed to initialize Kafka producer, disabling Kafka functionality', {
+        error: error instanceof Error ? error.message : String(error),
+        broker: this.config.brokerHost,
+      });
+      this.isEnabled = false;
+      this.client = null;
+      this.producer = null;
+    }
+  }  /**
    * Setup event handlers for producer
    */
   private setupEventHandlers(): void {
+    if (!this.producer || !this.client) {
+      return;
+    }
+
     this.producer.on('ready', () => {
       this.isReady = true;
       logger.info('Kafka producer is ready', {
@@ -57,6 +104,10 @@ export class KafkaProducerService {
    * Wait for producer to be ready
    */
   async waitForReady(timeoutMs: number = 10000): Promise<void> {
+    if (!this.isEnabled || !this.producer) {
+      throw new Error('Kafka producer is disabled or not initialized');
+    }
+
     return new Promise((resolve, reject) => {
       if (this.isReady) {
         resolve();
@@ -69,11 +120,18 @@ export class KafkaProducerService {
 
       const readyHandler = () => {
         clearTimeout(timeout);
-        this.producer.removeListener('ready', readyHandler);
+        if (this.producer) {
+          this.producer.removeListener('ready', readyHandler);
+        }
         resolve();
       };
 
-      this.producer.on('ready', readyHandler);
+      if (this.producer) {
+        this.producer.on('ready', readyHandler);
+      } else {
+        clearTimeout(timeout);
+        reject(new Error('Kafka producer is not initialized'));
+      }
     });
   }
 
@@ -81,8 +139,20 @@ export class KafkaProducerService {
    * Publish enrollment message to Kafka
    */
   async publishEnrollmentMessage(message: EnrollmentMessage): Promise<void> {
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, skipping enrollment message publication', {
+        messageId: message.messageId,
+        enrollmentId: message.enrollmentId,
+      });
+      return;
+    }
+
     try {
       await this.waitForReady();
+
+      if (!this.producer) {
+        throw new Error('Kafka producer is not initialized');
+      }
 
       const payload = [
         {
@@ -94,7 +164,7 @@ export class KafkaProducerService {
       ];
 
       return new Promise((resolve, reject) => {
-        this.producer.send(payload, (error, data) => {
+        this.producer!.send(payload, (error, data) => {
           if (error) {
             logger.error('Failed to publish enrollment message', {
               error: error.message,
@@ -126,8 +196,20 @@ export class KafkaProducerService {
    * Publish provisioning status update
    */
   async publishProvisioningStatus(message: ProvisioningStatusMessage): Promise<void> {
+    if (!this.isEnabled) {
+      logger.info('Kafka is disabled, skipping provisioning status publication', {
+        enrollmentId: message.enrollmentId,
+        status: message.status,
+      });
+      return;
+    }
+
     try {
       await this.waitForReady();
+
+      if (!this.producer) {
+        throw new Error('Kafka producer is not initialized');
+      }
 
       const statusTopic = `${this.config.topic}-status`;
       const payload = [
@@ -140,7 +222,7 @@ export class KafkaProducerService {
       ];
 
       return new Promise((resolve, reject) => {
-        this.producer.send(payload, (error, data) => {
+        this.producer!.send(payload, (error, data) => {
           if (error) {
             logger.error('Failed to publish provisioning status', {
               error: error.message,
@@ -205,15 +287,32 @@ export class KafkaProducerService {
    * Check if producer is ready
    */
   isProducerReady(): boolean {
-    return this.isReady;
+    return this.isReady && this.isEnabled;
+  }
+
+  /**
+   * Get producer statistics
+   */
+  getStats(): any {
+    return {
+      isReady: this.isReady,
+      isEnabled: this.isEnabled,
+      topic: this.config.topic,
+      brokerHost: this.config.brokerHost,
+      clientId: this.config.clientId,
+    };
   }
 
   /**
    * Get producer metadata
    */
   async getMetadata(timeout: number = 5000): Promise<any> {
+    if (!this.isEnabled || !this.client) {
+      throw new Error('Kafka client is disabled or not initialized');
+    }
+
     return new Promise((resolve, reject) => {
-      this.client.loadMetadataForTopics([this.config.topic], (error, results) => {
+      this.client!.loadMetadataForTopics([this.config.topic], (error, results) => {
         if (error) {
           reject(error);
         } else {
@@ -231,11 +330,16 @@ export class KafkaProducerService {
    * Graceful shutdown
    */
   async close(): Promise<void> {
+    if (!this.isEnabled || !this.producer || !this.client) {
+      logger.info('Kafka producer not initialized or disabled, nothing to close');
+      return;
+    }
+
     return new Promise((resolve) => {
       logger.info('Closing Kafka producer...');
 
-      this.producer.close(() => {
-        this.client.close(() => {
+      this.producer!.close(() => {
+        this.client!.close(() => {
           logger.info('Kafka producer and client closed');
           resolve();
         });

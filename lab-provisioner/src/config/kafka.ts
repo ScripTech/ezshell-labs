@@ -1,4 +1,7 @@
 import { KafkaClient, Producer, Consumer, ConsumerGroup } from 'kafka-node';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('kafka-config');
 
 // Kafka configuration interface
 export interface KafkaConfig {
@@ -6,6 +9,7 @@ export interface KafkaConfig {
   clientId: string;
   topic: string;
   consumerGroup: string;
+  enabled: boolean;
 }
 
 // Get Kafka configuration from environment variables
@@ -15,7 +19,72 @@ export const getKafkaConfig = (): KafkaConfig => {
     clientId: process.env.KAFKA_CLIENT_ID || 'lab-provisioner',
     topic: process.env.KAFKA_TOPIC || 'lab-enrollment',
     consumerGroup: process.env.KAFKA_CONSUMER_GROUP || 'lab-provisioner-group',
+    enabled: process.env.KAFKA_ENABLED !== 'false', // Default to enabled unless explicitly disabled
   };
+};
+
+// Test if Kafka broker is available
+export const testKafkaConnection = (brokerHost: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    try {
+      const testClient = new KafkaClient({
+        kafkaHost: brokerHost,
+        clientId: 'test-connection',
+        connectTimeout: 5000,
+        requestTimeout: 5000,
+        autoConnect: false,
+      });
+
+      let resolved = false;
+
+      const cleanup = () => {
+        if (!resolved) {
+          resolved = true;
+          try {
+            testClient.close();
+          } catch (e) {
+            // Ignore close errors
+          }
+        }
+      };
+
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve(false);
+      }, 10000);
+
+      testClient.connect();
+
+      testClient.on('connect', () => {
+        // Test broker metadata to ensure brokers are actually available
+        testClient.loadMetadataForTopics([], (error, result) => {
+          clearTimeout(timeout);
+          cleanup();
+
+          if (error) {
+            logger.debug('Kafka metadata test failed', { error: error.message });
+            resolve(false);
+          } else {
+            logger.debug('Kafka connection and metadata test successful');
+            resolve(true);
+          }
+        });
+      });
+
+      testClient.on('error', (error) => {
+        clearTimeout(timeout);
+        cleanup();
+        logger.debug('Kafka connection test failed', { error: error.message });
+        resolve(false);
+      });
+
+    } catch (error) {
+      logger.debug('Kafka connection test exception', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      resolve(false);
+    }
+  });
 };
 
 // Create Kafka client

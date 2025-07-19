@@ -33,7 +33,7 @@ export const getAWSConfig = (): AWSConfig => {
     region: process.env.AWS_REGION!,
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    instanceType: process.env.AWS_INSTANCE_TYPE || 't2.micro',
+    instanceType: process.env.AWS_INSTANCE_TYPE || 't3.micro',
     amiId: process.env.AWS_AMI_ID || 'ami-0abcdef1234567890', // Amazon Linux 2
     securityGroupId: process.env.AWS_SECURITY_GROUP_ID!,
     subnetId: process.env.AWS_SUBNET_ID!,
@@ -75,10 +75,9 @@ export const createLabInstanceConfig = (
   config: AWSConfig,
   userId: string,
   labId: string,
-  enrollmentId: string
+  enrollmentId: string,
+  keyPairName: string
 ): EC2LaunchConfig => {
-  const keyPairName = `${config.keyPairPrefix}-${userId}-${labId}-${Date.now()}`;
-
   // User data script to configure the instance
   const userData = Buffer.from(`#!/bin/bash
 # EZShell Lab Instance Setup
@@ -99,10 +98,6 @@ yum install -y docker
 systemctl start docker
 systemctl enable docker
 usermod -aG docker labuser
-
-# Install Node.js for development labs
-curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-yum install -y nodejs
 
 # Install Python and pip
 yum install -y python3 python3-pip
