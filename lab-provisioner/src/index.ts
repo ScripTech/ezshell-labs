@@ -7,6 +7,7 @@ import { checkDatabaseConnection, closeDatabaseConnection } from './config/datab
 import { sshKeyManager } from './utils/ssh-key-manager';
 import { kafkaConsumerService } from './services/kafka-consumer';
 import { kafkaProducerService } from './services/kafka-producer';
+import { statusMonitorService } from './services/status-monitor';
 import { enrollmentRouter } from './controllers/enrollment';
 
 // Load environment variables
@@ -48,6 +49,7 @@ app.get('/health', async (req, res) => {
         kafka_consumer: kafkaConsumerService.isConsumerRunning()
           ? "running"
           : "stopped",
+        status_monitor: "running", // Status monitor is always running once started
       },
     });
   } catch (error) {
@@ -78,6 +80,8 @@ app.get('/', (req, res) => {
       health: '/health',
       enroll: 'POST /api/enrollment/enroll',
       status: 'GET /api/enrollment/status/:enrollmentId',
+      steps: 'GET /api/enrollment/steps/:enrollmentId',
+      ready: 'GET /api/enrollment/ready/:enrollmentId',
     },
   });
 });
@@ -136,7 +140,11 @@ async function initializeServices(): Promise<void> {
       logger.info('Kafka consumer started');
     } else {
       logger.info('Kafka is disabled, skipping Kafka initialization');
-    }    // Start cleanup routine for expired keys
+    }
+
+    // Start status monitoring service
+    statusMonitorService.start();
+    logger.info('Status monitor service started');    // Start cleanup routine for expired keys
     setInterval(async () => {
       try {
         await sshKeyManager.cleanupExpiredKeys(2); // Cleanup keys older than 2 hours
@@ -161,7 +169,8 @@ async function gracefulShutdown(signal: string): Promise<void> {
   logger.info(`Received ${signal}, starting graceful shutdown...`);
 
   try {
-    // Stop Kafka services
+    // Stop services
+    statusMonitorService.stop();
     await kafkaConsumerService.stop();
     await kafkaProducerService.close();
 

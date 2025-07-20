@@ -57,26 +57,43 @@ export class SSHKeyManager {
     const filePath = join(this.keyDir, `${keyPairName}.pem`);
 
     try {
-      // Write private key to file
-      await fs.writeFile(filePath, privateKey, { mode: this.permissions });
+      // Write private key to file with secure permissions in one step
+      await fs.writeFile(filePath, privateKey, {
+        mode: 0o600,  // Use explicit octal for 600 permissions
+        flag: 'w'
+      });
+
+      // Double-check permissions by setting them again
+      await fs.chmod(filePath, 0o600);
 
       // Verify file permissions
       const stats = await fs.stat(filePath);
       const actualMode = stats.mode & parseInt('777', 8);
 
-      if (actualMode !== (this.permissions & parseInt('777', 8))) {
-        logger.warn('Private key file permissions mismatch', {
-          expected: this.permissions.toString(8),
-          actual: actualMode.toString(8),
-          filePath,
-        });
-      }
-
       logger.info('Private key saved securely', {
         keyPairName,
         filePath,
         permissions: actualMode.toString(8),
+        expectedPermissions: '600',
       });
+
+      if (actualMode !== 0o600) {
+        logger.warn('Private key file permissions mismatch', {
+          expected: '600',
+          actual: actualMode.toString(8),
+          filePath,
+        });
+
+        // Try one more time with explicit chmod
+        await fs.chmod(filePath, 0o600);
+        const newStats = await fs.stat(filePath);
+        const newMode = newStats.mode & parseInt('777', 8);
+
+        logger.info('Fixed permissions after retry', {
+          filePath,
+          newPermissions: newMode.toString(8),
+        });
+      }
 
       return filePath;
     } catch (error) {
