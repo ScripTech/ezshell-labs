@@ -115,7 +115,7 @@ export function HeroSection() {
             <div className="flex items-center gap-6 pt-6 text-slate-400">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                <span className="text-sm">10,000+ Engineers</span>
+                <span className="text-sm">500+ Engineers</span>
               </div>
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4" />

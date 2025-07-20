@@ -78,19 +78,19 @@ const benefits = [
   {
     icon: Zap,
     title: "Instant Provisioning",
-    description: "Lab environments ready in under 60 seconds with zero configuration",
+    description: "Lab environments ready in under 7 minutes with zero configuration",
     color: "text-yellow-400"
   },
   {
     icon: Shield,
     title: "Enterprise Grade",
-    description: "Same infrastructure used by Fortune 500 companies for production workloads",
+    description: "Same infrastructure used by companies for production workloads",
     color: "text-blue-400"
   },
   {
     icon: Users,
     title: "Collaborative Learning",
-    description: "Share lab environments with team members and mentors",
+    description: "Team members and mentors",
     color: "text-green-400"
   },
   {
@@ -309,14 +309,14 @@ export function ComparisonSection() {
                     <h3 className="text-2xl font-bold text-white mb-4">
                       95% First-Time Pass Rate
                     </h3>
-                    <p className="text-lg text-slate-300 mb-6 max-w-2xl mx-auto">
-                      "                      &quot;After failing the RHCSA exam twice with other platforms, I passed on my first try
-                      after using ezShell Labs. The real environment made all the difference.&quot;"
+                    <p className="text-lg text-slate-300 mb-6 max-w-2xl mx-auto italic">
+                      After failing the RHCOA exam once with other platforms, I passed on my first try
+                      after using ezShell Labs. The real environment made all the difference.
                     </p>
                     <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
-                      <span>Sarah M., DevOps Engineer</span>
+                      <span>Edilson D Mucanze, DevOps Engineer</span>
                       <span>•</span>
-                      <span>Microsoft</span>
+                      <span>RHCOA Certified</span>
                       <span>•</span>
                       <span>RHCSA Certified</span>
                     </div>

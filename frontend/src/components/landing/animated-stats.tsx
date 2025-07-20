@@ -165,7 +165,7 @@ export function AnimatedStats() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-16 bg-slate-900 rounded-md px-6">
+    <section ref={sectionRef} className="py-16 bg-slate-900/50 rounded-md px-6">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className={`text-3xl md:text-4xl font-bold text-white mb-4 transition-all duration-1000 ${

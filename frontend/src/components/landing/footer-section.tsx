@@ -11,40 +11,38 @@ export function FooterSection() {
     {
       title: "Platform",
       links: [
-        { name: "Lab Catalog", href: "/labs" },
-        { name: "Certification Tracks", href: "/certifications" },
-        { name: "Mook Exams Labs", href: "/mock-labs" },
-        { name: "Documentation", href: "/docs" },
+        { name: "Lab Catalog", href: "/user/labs" },
+        { name: "Certification Tracks", href: "#certifications" },
+        { name: "Mock Exams Labs", href: "/user/dashboard" },
+        { name: "Documentation", href: "#docs" },
       ]
     },
     {
       title: "Resources",
       links: [
-        { name: "Getting Started", href: "/getting-started" },
-        { name: "Study Guides", href: "/guides" },
-        { name: "Blog", href: "/blog" },
-        { name: "Webinars", href: "/webinars" },
-        { name: "Community", href: "/community" }
+        { name: "Getting Started", href: "/user/labs" },
+        { name: "Study Guides", href: "/user/labs" },
+        { name: "Blog", href: "#blog" },
+        { name: "Community", href: "#community" }
       ]
     },
     {
       title: "Company",
       links: [
         { name: "About Us", href: "/about" },
-        { name: "Careers", href: "/careers" },
-        { name: "Partners", href: "/partners" },
-        { name: "Press Kit", href: "/press" },
+        { name: "Join Dev Team", href: "#careers" },
+        { name: "Partners", href: "#partners" },
         { name: "Contact", href: "/contact" }
       ]
     },
     {
       title: "Support",
       links: [
-        { name: "Help Center", href: "/help" },
-        { name: "System Status", href: "/status" },
-        { name: "Report Issue", href: "/support" },
-        { name: "Feature Requests", href: "/feedback" },
-        { name: "Enterprise Support", href: "/enterprise-support" }
+        { name: "Help Center", href: "#help" },
+        { name: "System Status", href: "#status" },
+        { name: "Report Issue", href: "#support" },
+        { name: "Feature Requests", href: "#feedback" },
+        { name: "Enterprise Support", href: "#enterprise-support" }
       ]
     }
   ]
@@ -57,10 +55,10 @@ export function FooterSection() {
   ]
 
   const legalLinks = [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Cookie Policy", href: "/cookies" },
-    { name: "Security", href: "/security" },
+    { name: "Privacy Policy", href: "#privacy" },
+    { name: "Terms of Service", href: "#terms" },
+    { name: "Cookie Policy", href: "#cookies" },
+    { name: "Security", href: "#security" },
   ]
 
   return (

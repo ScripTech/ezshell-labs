@@ -17,15 +17,6 @@ interface Testimonial {
 
 const testimonials: Testimonial[] = [
   {
-    name: "Edilson D Mucanze",
-    role: "Founder & Developer of eZShell Labs",
-    company: "eMucanze Tech",
-    avatar: "👨‍💻",
-    content: "ezShell Labs gave me hands-on experience with real AWS infrastructure. I passed my RHCSA and RHCOA on the first try thanks to their authentic lab environment.",
-    rating: 5,
-    certification: "RHCSA, RHCOA"
-  },
-  {
     name: "Edson Maumane",
     role: "System Administrator",
     company: "Standard Bank Mozambique",
@@ -33,6 +24,15 @@ const testimonials: Testimonial[] = [
     content: "The instant validation and real-time feedback helped me identify knowledge gaps immediately. Best investment for my career advancement.",
     rating: 5,
     certification: "RHCE"
+  },
+  {
+    name: "Edilson D Mucanze",
+    role: "Founder & Developer of eZShell Labs",
+    company: "eMucanze Tech",
+    avatar: "👨‍💻",
+    content: "ezShell Labs gave me hands-on experience with real AWS infrastructure. I passed my RHCSA and RHCOA on the first try thanks to their authentic lab environment.",
+    rating: 5,
+    certification: "RHCSA, RHCOA"
   }
 ]
 
