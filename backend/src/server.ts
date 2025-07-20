@@ -197,7 +197,7 @@ httpSocketServer.on("connection", (socket: AuthenticatedSocket) => {
         userId
       );
 
-      const handler = validationHandlerFactory.getHandler(labId);
+      const handler = validationHandlerFactory.getHandler(labId.toLowerCase());
       if (handler) {
         await handler.handleValidation(
           socket,

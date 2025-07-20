@@ -17,8 +17,22 @@ const publicRoutes = [
 
 // Define exact public routes that require exact match
 const exactPublicRoutes = [
-  '/'
-]
+  "/",
+  "/about",
+  "/contact",
+  "/careers",
+  "/partners",
+  "/help",
+  "/status",
+  "/support",
+  "/enterprise-support",
+
+  "/docs",
+  "/getting-started",
+  "/guides",
+  "/blog",
+  "/community",
+];
 
 // Define auth-related pages
 const authPublicPages = [
