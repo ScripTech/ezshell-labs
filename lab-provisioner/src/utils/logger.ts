@@ -22,18 +22,18 @@ const colors = {
 winston.addColors(colors);
 
 // Generate datetime string for log filename
-const getLogDateTime = () => {
+const getLogDateTime = (logDir: string) => {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  console.log(`Log dir: ${logDir}`); // Debug log to verify date generation
   return `${year}-${month}-${day}`;
 };
 
 // Generate log file paths
-const logDir = path.resolve(__dirname, process.env.LOG_DIR || '../../logs');
-const dateTime = getLogDateTime();
+const logDir = path.resolve(process.env.LOG_DIR || './logs');
+const dateTime = getLogDateTime(logDir);
 const logFileName = `lab-provisioner-${dateTime}.log`;
 const errorLogFileName = `lab-provisioner-error-${dateTime}.log`;
 const exceptionsLogFileName = `lab-provisioner-exceptions-${dateTime}.log`;
