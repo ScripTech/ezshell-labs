@@ -16,6 +16,7 @@ import oneDark from "react-syntax-highlighter/dist/esm/styles/prism/one-dark"
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LabTasksOverview } from '@/components/lab-tasks-overview'
+import { LabProvisioningDialog } from '@/components/lab-provisioning-dialog'
 
 export default function LabDetailsPage() {
   const params = useParams()
@@ -23,6 +24,7 @@ export default function LabDetailsPage() {
   const [lab, setLab] = useState<Lab | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEnrolling, setIsEnrolling] = useState(false)
+  const [showProvisioningDialog, setShowProvisioningDialog] = useState(false)
 
   useEffect(() => {
     const fetchLabDetails = async () => {
@@ -80,39 +82,17 @@ export default function LabDetailsPage() {
   }
 
   const handleEnrollment = async (labId: string) => {
-    try {
-      setIsEnrolling(true)
-      const response = await fetch('/api/labs/enroll', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          labId,
-          startSession: true // Automatically start session on enrollment
-        }),
-      })
+    setShowProvisioningDialog(true)
+  }
 
-      if (!response.ok) {
-        throw new Error('Failed to enroll in lab')
-      }
+  const handleProvisioningComplete = (enrollmentId: string) => {
+    // Update lab state to show as enrolled
+    setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
 
-      const data = await response.json()
-      setLab(prev => prev ? { ...prev, isEnrolled: true } : null)
-
-      if (data.session) {
-        toast.success('Successfully enrolled and lab session started!')
-        router.push(`/ezshell?lab=${labId}&session=${data.session.id}`)
-      } else {
-        toast.success('Successfully enrolled in lab')
-        router.push(`/ezshell?lab=${labId}`)
-      }
-    } catch (error) {
-      console.error('Enrollment error:', error)
-      toast.error('Failed to enroll in lab')
-    } finally {
-      setIsEnrolling(false)
-    }
+    // Close dialog and redirect to lab
+    setShowProvisioningDialog(false)
+    toast.success('Lab environment is ready!')
+    router.push(`/ezshell?lab=${lab?.id}&enrollment=${enrollmentId}`)
   }
 
   return (
@@ -186,6 +166,16 @@ export default function LabDetailsPage() {
             {isEnrolling ? 'Enrolling...' : 'Enroll in Lab'}
           </Button>
         )}
+
+        {/* Lab Provisioning Dialog */}
+        <LabProvisioningDialog
+          isOpen={showProvisioningDialog}
+          onClose={() => setShowProvisioningDialog(false)}
+          callbackIsEnrolling={setIsEnrolling}
+          labId={lab.id}
+          labName={lab.name}
+          onProvisioningComplete={handleProvisioningComplete}
+        />
       </div>
     </div>
   )

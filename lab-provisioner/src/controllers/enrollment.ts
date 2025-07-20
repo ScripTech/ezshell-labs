@@ -2,9 +2,11 @@ import { Router, Request, Response } from 'express';
 import Joi from 'joi';
 import { v4 as uuidv4 } from 'uuid';
 import { eq, and } from 'drizzle-orm';
-import { db, labEnrollments, labProvisions, provisioningQueue } from '../config/database';
+import { db, labEnrollments, labProvisions, provisioningQueue, sshKeys } from '../config/database';
 import { kafkaProducerService } from '../services/kafka-producer';
 import { awsProvisionerService } from '../services/aws-provisioner';
+import { statusMonitorService } from '../services/status-monitor';
+import { sshKeyManager } from '../utils/ssh-key-manager';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('enrollment-controller');
@@ -19,6 +21,101 @@ const enrollmentSchema = Joi.object({
 const statusSchema = Joi.object({
   enrollmentId: Joi.string().required().uuid(),
 });
+
+/**
+ * Process direct provisioning (when Kafka is disabled)
+ */
+async function processDirectProvisioning(
+  enrollmentId: string,
+  userId: string,
+  labId: string
+): Promise<void> {
+  try {
+    logger.info('Starting direct provisioning', {
+      enrollmentId,
+      userId,
+      labId,
+    });
+
+    // Check if provision already exists
+    const existingProvision = await db
+      .select()
+      .from(labProvisions)
+      .where(eq(labProvisions.enrollmentId, enrollmentId))
+      .limit(1);
+
+    if (existingProvision.length > 0) {
+      logger.warn('Provision already exists for enrollment', {
+        enrollmentId,
+        provisionId: existingProvision[0].id,
+        instanceId: existingProvision[0].instanceId,
+      });
+      return;
+    }
+
+    // Provision AWS resources
+    const provisionResult = await awsProvisionerService.launchLabInstance(
+      userId,
+      labId,
+      enrollmentId
+    );
+
+    // Create provision record
+    const provisionId = uuidv4();
+    await db.insert(labProvisions).values({
+      id: provisionId,
+      enrollmentId,
+      instanceId: provisionResult.instanceId,
+      privateIp: provisionResult.privateIp,
+      keyPairName: provisionResult.keyPairName,
+      instanceState: provisionResult.state as "pending" | "running" | "stopping" | "stopped" | "terminated" | "shutting-down",
+      provisionedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Store SSH key information
+    const privateKeyHash = sshKeyManager.generatePrivateKeyHash(
+      await sshKeyManager.readPrivateKey(provisionResult.privateKeyPath)
+    );
+
+    await db.insert(sshKeys).values({
+      id: uuidv4(),
+      provisionId,
+      keyPairName: provisionResult.keyPairName,
+      privateKeyHash,
+      filePath: provisionResult.privateKeyPath,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
+    });
+
+    logger.info('Direct provisioning completed successfully', {
+      enrollmentId,
+      instanceId: provisionResult.instanceId,
+      provisionId,
+    });
+
+    // Status monitor will handle the rest of the updates
+
+  } catch (error) {
+    logger.error('Direct provisioning failed', {
+      enrollmentId,
+      userId,
+      labId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    // Update queue status to failed
+    await db
+      .update(provisioningQueue)
+      .set({
+        status: 'failed',
+        lastError: error instanceof Error ? error.message : String(error),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+  }
+}
 
 /**
  * POST /enroll - Enroll user in lab and queue for provisioning
@@ -138,7 +235,7 @@ router.post('/enroll', async (req: Request, res: Response) => {
           .where(eq(provisioningQueue.enrollmentId, enrollmentId));
       }
     } else {
-      logger.info('Kafka is disabled, skipping message publication', {
+      logger.info('Kafka is disabled, starting direct provisioning', {
         enrollmentId,
         userId,
         labId,
@@ -149,9 +246,22 @@ router.post('/enroll', async (req: Request, res: Response) => {
         .update(provisioningQueue)
         .set({
           status: 'processing',
+          processedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })
         .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+
+      // Start direct provisioning in background
+      setImmediate(async () => {
+        try {
+          await processDirectProvisioning(enrollmentId, userId, labId);
+        } catch (error) {
+          logger.error('Direct provisioning failed', {
+            enrollmentId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      });
     }
 
     // Return success response
@@ -362,71 +472,25 @@ router.get('/status/:enrollmentId', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /list - List all enrollments (for admin/debugging)
+ * GET /steps/:enrollmentId - Get detailed provisioning steps
  */
-router.get('/list', async (req: Request, res: Response) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const offset = (page - 1) * limit;
-
-    logger.debug('Listing enrollments', { page, limit, offset });
-
-    // Get enrollments with basic info
-    const enrollments = await db
-      .select({
-        enrollmentId: labEnrollments.id,
-        userId: labEnrollments.userId,
-        labId: labEnrollments.labId,
-        status: labEnrollments.status,
-        progress: labEnrollments.progress,
-        enrolledAt: labEnrollments.enrolledAt,
-        completedAt: labEnrollments.completedAt,
-        provisioningStatus: provisioningQueue.status,
-        instanceId: labProvisions.instanceId,
-        instanceState: labProvisions.instanceState,
-        publicIp: labProvisions.publicIp,
-      })
-      .from(labEnrollments)
-      .leftJoin(provisioningQueue, eq(labEnrollments.id, provisioningQueue.enrollmentId))
-      .leftJoin(labProvisions, eq(labEnrollments.id, labProvisions.enrollmentId))
-      .limit(limit)
-      .offset(offset)
-      .orderBy(labEnrollments.enrolledAt);
-
-    res.status(200).json({
-      data: enrollments,
-      pagination: {
-        page,
-        limit,
-        total: enrollments.length,
-      },
-      timestamp: new Date().toISOString(),
-    });
-
-  } catch (error) {
-    logger.error('List enrollments failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to list enrollments',
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
-
-/**
- * POST /provision/:enrollmentId - Manually provision a lab (for testing)
- */
-router.post('/provision/:enrollmentId', async (req: Request, res: Response) => {
+router.get('/steps/:enrollmentId', async (req: Request, res: Response) => {
   try {
     const { enrollmentId } = req.params;
 
-    logger.info('Manual provision request', { enrollmentId });
+    // Validate enrollment ID
+    const { error } = statusSchema.validate({ enrollmentId });
+    if (error) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.details.map(d => d.message),
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    // Get enrollment details
+    logger.debug('Fetching provisioning steps', { enrollmentId });
+
+    // Check if enrollment exists
     const enrollment = await db
       .select()
       .from(labEnrollments)
@@ -441,132 +505,80 @@ router.post('/provision/:enrollmentId', async (req: Request, res: Response) => {
       });
     }
 
-    const enrollmentData = enrollment[0];
-    const { userId, labId } = enrollmentData;
+    // Get detailed steps from status monitor
+    const steps = await statusMonitorService.getProvisioningSteps(enrollmentId);
 
-    // Validate required fields
-    if (!userId || !labId) {
-      return res.status(400).json({
-        error: 'Invalid enrollment data',
-        message: 'Enrollment missing required userId or labId',
-        timestamp: new Date().toISOString(),
-      });
+    // Calculate overall progress percentage
+    const completedSteps = steps.filter(step => step.status === 'completed').length;
+    const totalSteps = steps.length;
+    const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
+
+    // Determine overall status
+    const hasFailedSteps = steps.some(step => step.status === 'failed');
+    const hasInProgressSteps = steps.some(step => step.status === 'in_progress');
+    const allCompleted = steps.every(step => step.status === 'completed');
+
+    let overallStatus = 'in_progress';
+    if (hasFailedSteps) {
+      overallStatus = 'failed';
+    } else if (allCompleted) {
+      overallStatus = 'completed';
+    } else if (!hasInProgressSteps && completedSteps === 1) {
+      overallStatus = 'queued';
     }
 
-    // Check if already provisioned
-    const existingProvision = await db
-      .select()
-      .from(labProvisions)
-      .where(eq(labProvisions.enrollmentId, enrollmentId))
-      .limit(1);
+    // Get connection info if lab is ready
+    let connectionInfo = null;
+    const labReadyStep = steps.find(step => step.step === 'lab_ready');
+    if (labReadyStep?.status === 'completed') {
+      const provision = await db
+        .select()
+        .from(labProvisions)
+        .where(eq(labProvisions.enrollmentId, enrollmentId))
+        .limit(1);
 
-    if (existingProvision.length > 0) {
-      return res.status(409).json({
-        error: 'Already provisioned',
-        message: 'Lab is already provisioned',
-        instanceId: existingProvision[0].instanceId,
-        timestamp: new Date().toISOString(),
-      });
+      if (provision.length > 0 && provision[0].publicIp) {
+        connectionInfo = {
+          ready: true,
+          ssh: {
+            command: `ssh -i keys/${provision[0].keyPairName}.pem labuser@${provision[0].publicIp}`,
+            host: provision[0].publicIp,
+            username: 'labuser',
+            keyFile: `${provision[0].keyPairName}.pem`
+          },
+          webAccess: {
+            url: `http://${provision[0].publicIp}`,
+            ip: provision[0].publicIp
+          }
+        };
+      }
     }
-
-    logger.info('Starting manual lab provisioning', {
-      enrollmentId,
-      userId,
-      labId,
-    });
-
-    // Update queue status to processing
-    await db
-      .update(provisioningQueue)
-      .set({
-        status: 'processing',
-        processedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(provisioningQueue.enrollmentId, enrollmentId));
-
-    // Provision AWS resources
-    const provisionResult = await awsProvisionerService.launchLabInstance(
-      userId,
-      labId,
-      enrollmentId
-    );
-
-    // Create provision record
-    const provisionId = uuidv4();
-    await db.insert(labProvisions).values({
-      id: provisionId,
-      enrollmentId,
-      instanceId: provisionResult.instanceId,
-      privateIp: provisionResult.privateIp,
-      keyPairName: provisionResult.keyPairName,
-      instanceState: provisionResult.state as "pending" | "running" | "stopping" | "stopped" | "terminated" | "shutting-down",
-      provisionedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-
-    // Update queue status to completed
-    await db
-      .update(provisioningQueue)
-      .set({
-        status: 'completed',
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(provisioningQueue.enrollmentId, enrollmentId));
-
-    logger.info('Manual lab provisioning completed', {
-      enrollmentId,
-      instanceId: provisionResult.instanceId,
-      provisionId,
-    });
 
     return res.status(200).json({
-      success: true,
-      message: 'Lab provisioned successfully',
-      data: {
-        enrollmentId,
-        provisionId,
-        instanceId: provisionResult.instanceId,
-        privateIp: provisionResult.privateIp,
-        keyPairName: provisionResult.keyPairName,
-        state: provisionResult.state,
-      },
+      enrollmentId,
+      overallStatus,
+      progressPercentage,
+      steps,
+      connection: connectionInfo,
       timestamp: new Date().toISOString(),
     });
 
   } catch (error) {
-    logger.error('Manual provision failed', {
+    logger.error('Steps request failed', {
       enrollmentId: req.params.enrollmentId,
       error: error instanceof Error ? error.message : String(error),
     });
 
-    // Update queue status to failed
-    try {
-      await db
-        .update(provisioningQueue)
-        .set({
-          status: 'failed',
-          lastError: error instanceof Error ? error.message : String(error),
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(provisioningQueue.enrollmentId, req.params.enrollmentId));
-    } catch (dbError) {
-      logger.error('Failed to update queue status', {
-        error: dbError instanceof Error ? dbError.message : String(dbError),
-      });
-    }
-
     return res.status(500).json({
       error: 'Internal server error',
-      message: 'Failed to provision lab',
+      message: 'Failed to fetch provisioning steps',
       timestamp: new Date().toISOString(),
     });
   }
 });
 
 /**
- * Check if lab instance is ready to use
+ * GET /ready/:enrollmentId - Check if lab instance is ready to use
  */
 router.get('/ready/:enrollmentId', async (req: Request, res: Response) => {
   try {

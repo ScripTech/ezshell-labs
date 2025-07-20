@@ -10,6 +10,7 @@ import {
 } from '../config/kafka';
 import { db, provisioningQueue, labProvisions, sshKeys } from '../config/database';
 import { awsProvisionerService } from './aws-provisioner';
+import { statusMonitorService } from './status-monitor';
 import { sshKeyManager } from '../utils/ssh-key-manager';
 import { createLogger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
