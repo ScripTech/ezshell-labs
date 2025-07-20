@@ -17,6 +17,7 @@ env:
   ECR_REPOSITORY_FRONTEND: ezshell/frontend
   ECR_REPOSITORY_BACKEND: ezshell/backend
   ECR_REPOSITORY_DATABASE: ezshell/database
+  ECR_REPOSITORY_LAB_PROVISIONER: ezshell/lab-provisioner
 
 jobs:
 
@@ -45,6 +46,10 @@ jobs:
         # Create database repository
         aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY_DATABASE }} --region ${{ env.AWS_REGION }} || \
         aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY_DATABASE }} --region ${{ env.AWS_REGION }}
+
+        # Create lab provisioner repository
+        aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY_LAB_PROVISIONER }} --region ${{ env.AWS_REGION }} || \
+        aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY_LAB_PROVISIONER }} --region ${{ env.AWS_REGION }}
 
   build-frontend:
     runs-on: ubuntu-latest
@@ -95,24 +100,26 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64
 
-    - name: Build Docker image for tar export (AMD64 only)
-      uses: docker/build-push-action@v6
-      with:
-        context: ./frontend
-        file: ./frontend/Dockerfile.frontend
-        load: true
-        tags: frontend-export:latest
-        platforms: linux/amd64
+    # Uncomment the following lines if you want to build and export the frontend image as a tar file
+    # Note: This is typically not needed unless you have specific requirements for local testing or deployment
+    # - name: Build Docker image for tar export (AMD64 only)
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     context: ./frontend
+    #     file: ./frontend/Dockerfile.frontend
+    #     load: true
+    #     tags: frontend-export:latest
+    #     platforms: linux/amd64
 
-    - name: Export frontend Docker image as tar
-      run: docker save frontend-export:latest -o /tmp/frontend-image.tar
+    # - name: Export frontend Docker image as tar
+    #   run: docker save frontend-export:latest -o /tmp/frontend-image.tar
 
-    - name: Upload frontend Docker image as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-docker-image-${{ github.sha }}
-        path: /tmp/frontend-image.tar
-        retention-days: 7
+    # - name: Upload frontend Docker image as artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: frontend-docker-image-${{ github.sha }}
+    #     path: /tmp/frontend-image.tar
+    #     retention-days: 7
 
   build-backend:
     runs-on: ubuntu-latest
@@ -163,24 +170,96 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64
 
-    - name: Build Docker image for tar export (AMD64 only)
+    # Uncomment the following lines if you want to build and export the backend image as a tar file
+    # Note: This is typically not needed unless you have specific requirements for local testing or deployment
+    # - name: Build Docker image for tar export (AMD64 only)
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     context: ./backend
+    #     file: ./backend/Dockerfile.backend
+    #     load: true
+    #     tags: backend-export:latest
+    #     platforms: linux/amd64
+
+    # - name: Export backend Docker image as tar
+    #   run: docker save backend-export:latest -o /tmp/backend-image.tar
+
+    # - name: Upload backend Docker image as artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: backend-docker-image-${{ github.sha }}
+    #     path: /tmp/backend-image.tar
+    #     retention-days: 7
+
+  build-lab-provisioner:
+    runs-on: ubuntu-latest
+    needs: [create-ecr-repositories]
+    if: github.event_name != 'pull_request'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_LAB_PROVISIONER }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=sha,format=short
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push backend Docker image to ECR
       uses: docker/build-push-action@v6
       with:
-        context: ./backend
-        file: ./backend/Dockerfile.backend
-        load: true
-        tags: backend-export:latest
+        context: ./lab-provisioner
+        file: ./lab-provisioner/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         platforms: linux/amd64
 
-    - name: Export backend Docker image as tar
-      run: docker save backend-export:latest -o /tmp/backend-image.tar
+    # Uncomment the following lines if you want to build and export the lab-provisioner image as a tar file
+    # Note: This is typically not needed unless you have specific requirements for local testing or deployment
+    # - name: Build Docker image for tar export (AMD64 only)
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     context: ./lab-provisioner
+    #     file: ./lab-provisioner/Dockerfile
+    #     load: true
+    #     tags: lab-provisioner-export:latest
+    #     platforms: linux/amd64
 
-    - name: Upload backend Docker image as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend-docker-image-${{ github.sha }}
-        path: /tmp/backend-image.tar
-        retention-days: 7
+    # - name: Export lab-provisioner Docker image as tar
+    #   run: docker save lab-provisioner-export:latest -o /tmp/lab-provisioner-image.tar
+
+    # - name: Upload lab-provisioner Docker image as artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: lab-provisioner-docker-image-${{ github.sha }}
+    #     path: /tmp/lab-provisioner-image.tar
+    #     retention-days: 7
 
   build-database:
     runs-on: ubuntu-latest
@@ -231,28 +310,30 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64
 
-    - name: Build Docker image for tar export (AMD64 only)
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: ./database/Dockerfile.db
-        load: true
-        tags: database-export:latest
-        platforms: linux/amd64
+    # Uncomment the following lines if you want to build and export the database image as a tar file
+    # Note: This is typically not needed unless you have specific requirements for local testing or deployment
+    # - name: Build Docker image for tar export (AMD64 only)
+    #   uses: docker/build-push-action@v6
+    #   with:
+    #     context: .
+    #     file: ./database/Dockerfile.db
+    #     load: true
+    #     tags: database-export:latest
+    #     platforms: linux/amd64
 
-    - name: Export database Docker image as tar
-      run: docker save database-export:latest -o /tmp/database-image.tar
+    # - name: Export database Docker image as tar
+    #   run: docker save database-export:latest -o /tmp/database-image.tar
 
-    - name: Upload database Docker image as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: database-docker-image-${{ github.sha }}
-        path: /tmp/database-image.tar
-        retention-days: 7
+    # - name: Upload database Docker image as artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: database-docker-image-${{ github.sha }}
+    #     path: /tmp/database-image.tar
+    #     retention-days: 7
 
   deploy-summary:
     runs-on: ubuntu-latest
-    needs: [build-frontend, build-backend, build-database]
+    needs: [build-frontend, build-backend, build-database, build-lab-provisioner]
     if: always() && github.event_name != 'pull_request'
 
     steps:
