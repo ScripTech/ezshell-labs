@@ -34,6 +34,7 @@ import { DeploymentController } from './controllers/labs/do280/DeploymentControl
 import { ScalingController } from './controllers/labs/do280/ScalingController';
 import { AutoScalingController } from "./controllers/labs/do280/AutoScalingController";
 import { PtySession } from "./terminal/PtySession";
+import { PtySessionFactory, LabSessionRequest } from "./services/DynamicPtySessionFactory";
 import { ServiceOrientedValidationHandler } from "./handlers/ServiceOrientedValidationHandler";
 import { EnhancedWebSocketService } from "./services/EnhancedWebSocketService";
 import { ValidationTaskService } from "./services/ValidationTaskService";
@@ -149,24 +150,92 @@ const enhancedWebSocketService = new EnhancedWebSocketService(httpSocketServer, 
 
 console.log('✅ Enhanced WebSocket Service initialized with progress persistence and real-time analytics');
 
-httpSocketServer.on("connection", (socket: AuthenticatedSocket) => {
+httpSocketServer.on("connection", async (socket: AuthenticatedSocket) => {
   console.log(`Client connected to Socket server - User: ${socket.user?.sub} (${socket.user?.email})`);
 
   // Enhanced WebSocket Service handles all the new features automatically
   // The EnhancedWebSocketService constructor sets up all event handlers
 
-  // Example: Use SSH session
-  const ptySession = new PtySession(socket, {
-    type: "ssh",
-    cols: 80,
-    rows: 60,
-    sshConfig: {
-      host: process.env.LAB_SSH_HOST!,
-      port: Number.parseInt(process.env.LAB_SSH_PORT!) ?? 22,
-      username: process.env.LAB_SSH_USERNAME ?? "lab-user",
-      password: process.env.LAB_SSH_PASSWORD ?? "password",
-    },
-  });
+  // Extract lab parameters from handshake query
+  const query = socket.handshake.query;
+  const labId = query.lab as string;
+  const sessionId = query.session as string;
+  const userId = socket.user?.sub;
+
+  console.log(`Connection parameters - Lab: ${labId}, Session: ${sessionId}, User: ${userId}`);
+
+  let ptySession: PtySession | null = null;
+
+  try {
+    if (labId && userId) {
+      // Dynamic lab connection
+      console.log(`Creating dynamic lab session for lab ${labId}, user ${userId}`);
+      ptySession = await PtySessionFactory.createLabSession(socket, {
+        labId,
+        cols: 80,
+        rows: 60
+      });
+
+      if (ptySession) {
+        // Emit lab connection status
+        socket.emit("lab-connection-status", {
+          status: "connected",
+          labId,
+          message: "Connected to your provisioned lab environment"
+        });
+      } else {
+        // Factory returned null, create fallback session
+        throw new Error("Lab session creation failed");
+      }
+    } else {
+      // Fallback to static configuration for backwards compatibility
+      console.log("Using fallback static SSH configuration");
+      ptySession = new PtySession(socket, {
+        type: "ssh",
+        cols: 80,
+        rows: 60,
+        sshConfig: {
+          host: process.env.LAB_SSH_HOST!,
+          port: Number.parseInt(process.env.LAB_SSH_PORT!) ?? 22,
+          username: process.env.LAB_SSH_USERNAME ?? "lab-user",
+          password: process.env.LAB_SSH_PASSWORD ?? "password",
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Failed to create PTY session:", error);
+
+    // Emit error to client
+    socket.emit("lab-connection-status", {
+      status: "error",
+      labId,
+      error: error instanceof Error ? error.message : "Unknown connection error"
+    });
+
+    // Fallback to static configuration
+    console.log("Falling back to static SSH configuration due to error");
+    ptySession = new PtySession(socket, {
+      type: "ssh",
+      cols: 80,
+      rows: 60,
+      sshConfig: {
+        host: process.env.LAB_SSH_HOST!,
+        port: Number.parseInt(process.env.LAB_SSH_PORT!) ?? 22,
+        username: process.env.LAB_SSH_USERNAME ?? "lab-user",
+        password: process.env.LAB_SSH_PASSWORD ?? "password",
+      },
+    });
+  }
+
+  // Ensure we have a PTY session before proceeding
+  if (!ptySession) {
+    console.error("Failed to create any PTY session - this should not happen");
+    socket.emit("lab-connection-status", {
+      status: "error",
+      error: "Failed to establish terminal connection"
+    });
+    return;
+  }
 
   socket.emit("connected", {
     message: "Connected to the terminal service with enhanced features",
@@ -175,7 +244,59 @@ httpSocketServer.on("connection", (socket: AuthenticatedSocket) => {
       realtimeAnalytics: true,
       stepByStepValidation: true,
       learningInsights: true,
-      adminDashboard: true
+      adminDashboard: true,
+      dynamicLabConnections: true
+    },
+    labConnection: labId ? {
+      labId,
+      sessionId,
+      connectionType: "dynamic"
+    } : {
+      connectionType: "static"
+    }
+  });
+
+  // Add lab status check event handler
+  socket.on("check-lab-status", async ({ labId: checkLabId }) => {
+    const userId = socket.user?.sub;
+    if (!userId) {
+      socket.emit("lab-status-error", { error: "Authentication required" });
+      return;
+    }
+
+    try {
+      const status = await PtySessionFactory.getLabStatus(checkLabId, userId);
+      socket.emit("lab-status", status);
+    } catch (error) {
+      console.error("Error checking lab status:", error);
+      socket.emit("lab-status-error", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        labId: checkLabId
+      });
+    }
+  });
+
+  // Add lab readiness check event handler
+  socket.on("check-lab-ready", async ({ labId: checkLabId }) => {
+    const userId = socket.user?.sub;
+    if (!userId) {
+      socket.emit("lab-ready-error", { error: "Authentication required" });
+      return;
+    }
+
+    try {
+      const isReady = await PtySessionFactory.isLabReady(checkLabId, userId);
+      socket.emit("lab-ready", {
+        labId: checkLabId,
+        ready: isReady,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error checking lab readiness:", error);
+      socket.emit("lab-ready-error", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        labId: checkLabId
+      });
     }
   });
 

@@ -1,17 +1,23 @@
 import { Socket } from "socket.io";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { LVMResizeService } from "../../../services/ex200/LVMResizeService";
 
 export class LVMResizeController {
   private trackingService: ValidationTrackingService;
+  private lvmResizeService: LVMResizeService;
 
   constructor() {
     this.trackingService = new ValidationTrackingService();
+    this.lvmResizeService = new LVMResizeService();
   }
 
   // Socket tracking method for LVM resize validation
   handleLVMResizeValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string, lvPath?: string, targetSize?: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      // Initialize the LVM resize service with dynamic SSH
+      await this.lvmResizeService.initialize(userId, labId);
 
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
@@ -36,7 +42,9 @@ export class LVMResizeController {
         status: "loading",
       });
 
-      const lvExists = await this.checkLogicalVolumeExists(lvPath);
+      const lvExists = lvPath ?
+        await this.lvmResizeService.validateLVExists(lvPath) :
+        await this.lvmResizeService.checkAnyLVExists();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Logical volume exists",
@@ -54,12 +62,16 @@ export class LVMResizeController {
         status: "loading",
       });
 
-      const currentSize = await this.getLogicalVolumeSize(lvPath);
+      const currentSizeResult = lvPath ?
+        await this.lvmResizeService.getLVSize(lvPath) :
+        { sizeGB: await this.lvmResizeService.getFirstLVSize() / 1024 }; // Convert MB to GB
+
+      const currentSize = typeof currentSizeResult === 'number' ? currentSizeResult : currentSizeResult.sizeGB;
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Current LV size detected",
         status: currentSize > 0 ? "success" : "failed",
-        message: currentSize > 0 ? `Current size: ${currentSize}MB` : "Could not determine LV size"
+        message: currentSize > 0 ? `Current size: ${currentSize}GB` : "Could not determine LV size"
       });
 
       // Check if filesystem can be resized
@@ -68,7 +80,9 @@ export class LVMResizeController {
         status: "loading",
       });
 
-      const canResize = await this.checkFilesystemResizeCapability(lvPath);
+      const canResize = lvPath ?
+        await this.lvmResizeService.validateFilesystemResize(lvPath) :
+        true; // Assume capability if no specific path
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Filesystem resize capability",
@@ -82,12 +96,16 @@ export class LVMResizeController {
         status: "loading",
       });
 
-      const freeSpace = await this.getVolumeGroupFreeSpace(lvPath);
+      const freeSpaceResult = lvPath ?
+        await this.lvmResizeService.getVGFreeSpace(lvPath.split('/')[2] || lvPath.split('-')[0]) :
+        { freeGB: await this.lvmResizeService.getFirstVGFreeSpace() / 1024 }; // Convert MB to GB
+
+      const freeSpace = typeof freeSpaceResult === 'number' ? freeSpaceResult : freeSpaceResult.freeGB;
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Volume group free space",
         status: freeSpace > 0 ? "success" : "warning",
-        message: freeSpace > 0 ? `Free space available: ${freeSpace}MB` : "No free space in volume group"
+        message: freeSpace > 0 ? `Free space available: ${freeSpace}GB` : "No free space in volume group"
       });
 
       // Simulate resize validation (check if target size is achievable)
@@ -97,7 +115,10 @@ export class LVMResizeController {
           status: "loading",
         });
 
-        const isAchievable = await this.validateTargetSize(lvPath, targetSize, freeSpace);
+        const isAchievable = await this.lvmResizeService.validateLVExtension(
+          lvPath || "/dev/mapper/vg-lv",
+          this.parseTargetSizeToGB(targetSize)
+        );
 
         socket.emit(`validation-${questionId}-step`, {
           step: "Target size achievable",
@@ -123,109 +144,25 @@ export class LVMResizeController {
     }
   }
 
-  // Helper methods for LVM resize validation
-  private async checkLogicalVolumeExists(lvPath?: string): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      if (!lvPath) {
-        // Check if any logical volumes exist
-        exec('lvs --noheadings | wc -l', (error: any, stdout: string) => {
-          if (error) {
-            resolve(false);
-          } else {
-            const count = parseInt(stdout.trim());
-            resolve(count > 0);
-          }
-        });
-      } else {
-        exec(`lvs ${lvPath} 2>/dev/null`, (error: any) => {
-          resolve(!error);
-        });
-      }
-    });
-  }
-
-  private async getLogicalVolumeSize(lvPath?: string): Promise<number> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      const command = lvPath ?
-        `lvs --noheadings --units m --nosuffix -o lv_size ${lvPath}` :
-        `lvs --noheadings --units m --nosuffix -o lv_size | head -1`;
-
-      exec(command, (error: any, stdout: string) => {
-        if (error) {
-          resolve(0);
-        } else {
-          const size = parseFloat(stdout.trim()) || 0;
-          resolve(Math.round(size));
-        }
-      });
-    });
-  }
-
-  private async checkFilesystemResizeCapability(lvPath?: string): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      if (!lvPath) {
-        resolve(true); // Assume capability exists if no specific path
-        return;
-      }
-
-      exec(`file -s ${lvPath} | grep -E "(ext[234]|xfs)"`, (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          // ext2/3/4 and xfs support online resizing
-          resolve(stdout.trim().length > 0);
-        }
-      });
-    });
-  }
-
-  private async getVolumeGroupFreeSpace(lvPath?: string): Promise<number> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      let command: string;
-      if (lvPath) {
-        // Extract VG name from LV path
-        const vgName = lvPath.split('/')[2] || lvPath.split('-')[0];
-        command = `vgs --noheadings --units m --nosuffix -o vg_free ${vgName}`;
-      } else {
-        command = `vgs --noheadings --units m --nosuffix -o vg_free | head -1`;
-      }
-
-      exec(command, (error: any, stdout: string) => {
-        if (error) {
-          resolve(0);
-        } else {
-          const freeSpace = parseFloat(stdout.trim()) || 0;
-          resolve(Math.round(freeSpace));
-        }
-      });
-    });
-  }
-
-  private async validateTargetSize(lvPath?: string, targetSize?: string, freeSpace?: number): Promise<boolean> {
-    if (!targetSize) return true;
-
-    // Parse target size (handle formats like "1G", "500M", etc.)
+  /**
+   * Parse target size string to GB number
+   */
+  private parseTargetSizeToGB(targetSize: string): number {
     const sizeMatch = targetSize.match(/^(\d+(?:\.\d+)?)\s*([KMGT]?)$/i);
-    if (!sizeMatch) return false;
+    if (!sizeMatch) return 0;
 
     const value = parseFloat(sizeMatch[1]);
     const unit = sizeMatch[2].toUpperCase() || 'M';
 
-    let targetMB = value;
+    let targetGB = value;
     switch (unit) {
-      case 'K': targetMB = value / 1024; break;
-      case 'G': targetMB = value * 1024; break;
-      case 'T': targetMB = value * 1024 * 1024; break;
-      default: break; // M is default
+      case 'K': targetGB = value / 1024; break;
+      case 'M': targetGB = value / 1024; break;
+      case 'G': targetGB = value; break;
+      case 'T': targetGB = value * 1024; break;
+      default: targetGB = value / 1024; // Default to MB
     }
 
-    const currentSize = await this.getLogicalVolumeSize(lvPath);
-    const requiredSpace = targetMB - currentSize;
-
-    return requiredSpace <= (freeSpace || 0);
+    return Math.round(targetGB * 100) / 100;
   }
 }

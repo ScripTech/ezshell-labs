@@ -1,29 +1,62 @@
+import { dynamicSSHService } from "../../utils/dynamic-ssh-service";
+// Temporary compatibility imports - to be removed after full migration
 import { connectSSH, ssh, executeCommand } from "../../utils/ssh-service";
 
 export class BasicValidationService {
+  private userId?: string;
+  private labId?: string;
+
+  /**
+   * Initialize the service with user and lab context
+   */
+  async initialize(userId: string, labId: string): Promise<boolean> {
+    this.userId = userId;
+    this.labId = labId;
+
+    console.log(`🔧 Initializing BasicValidationService for user ${userId}, lab ${labId}`);
+    return await dynamicSSHService.connectToLab(userId, labId);
+  }
+
   async tarValidation(): Promise<boolean> {
-    if (!ssh.isConnected()) {
-      await connectSSH();
+    if (!this.userId || !this.labId) {
+      throw new Error('Service not initialized. Call initialize() first.');
     }
+
+    if (!dynamicSSHService.isSSHConnected()) {
+      const connected = await dynamicSSHService.connectToLab(this.userId, this.labId);
+      if (!connected) {
+        throw new Error('Failed to connect to lab instance');
+      }
+    }
+
     try {
-      const result = await ssh.execCommand(`test -f /root/myetcbackup.tar.bz2`);
-      console.log(result);
-      return result.code === 0;
+      const result = await dynamicSSHService.executeCommand(`test -f /root/myetcbackup.tar.bz2 && echo "exists" || echo "not found"`);
+      console.log(`Tar validation result: ${result}`);
+      return result.includes("exists");
     } catch (error) {
       console.error("Command exec error:", error);
       return false;
     }
   }
+
   async filePermissionsValidation(): Promise<boolean> {
     return false;
   }
 
   async filePermissionsValidation_OwnedBy(user: string): Promise<boolean> {
-     if (!ssh.isConnected()) {
-       await connectSSH();
-     }
+    if (!this.userId || !this.labId) {
+      throw new Error('Service not initialized. Call initialize() first.');
+    }
+
+    if (!dynamicSSHService.isSSHConnected()) {
+      const connected = await dynamicSSHService.connectToLab(this.userId, this.labId);
+      if (!connected) {
+        throw new Error('Failed to connect to lab instance');
+      }
+    }
+
     try {
-      const result = await executeCommand("ls -l /var/tmp | grep fstab");
+      const result = await dynamicSSHService.executeCommand("ls -l /var/tmp | grep fstab");
       return result.includes("root root");
     } catch (error) {
       console.error("Command exec error:", error);
@@ -31,11 +64,19 @@ export class BasicValidationService {
     }
   }
   async filePermissionsValidation_BelongsTO(group: string): Promise<boolean> {
-    if (!ssh.isConnected()) {
-      await connectSSH();
+    if (!this.userId || !this.labId) {
+      throw new Error('Service not initialized. Call initialize() first.');
     }
+
+    if (!dynamicSSHService.isSSHConnected()) {
+      const connected = await dynamicSSHService.connectToLab(this.userId, this.labId);
+      if (!connected) {
+        throw new Error('Failed to connect to lab instance');
+      }
+    }
+
     try {
-      const result = await executeCommand("ls -l /var/tmp | grep fstab");
+      const result = await dynamicSSHService.executeCommand("ls -l /var/tmp | grep fstab");
       return result.includes("root root");
     } catch (error) {
       console.error("Command exec error:", error);

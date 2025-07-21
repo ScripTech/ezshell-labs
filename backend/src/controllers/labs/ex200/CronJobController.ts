@@ -16,6 +16,10 @@ export class CronJobController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
+      // Initialize service with user and lab context
+      console.log(`🔧 Initializing CronJobController for user ${userId}, lab ${labId}`);
+      await this.service.initialize(userId, labId);
+
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
         async (trackedSocket: Socket) => {

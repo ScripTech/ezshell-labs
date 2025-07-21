@@ -1,7 +1,7 @@
 "use client"
 
 import React, { Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, useParams } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ShellSectionComponent } from './components/shell-section'
@@ -22,8 +22,11 @@ const LoadingSpinner = () => (
 )
 
 const EZSShellViewContent = () => {
+  const params = useParams()
+  const labId = params.labId as string
+
   const { data: session } = useSession()
-  const { socket, isConnected, isAuthenticated, connect, disconnect } = useAuthenticatedSocket()
+  const { socket, isConnected, isAuthenticated, connect, disconnect } = useAuthenticatedSocket(labId)
   const searchParams = useSearchParams()
   const router = useRouter()
   const [termPanelSize, setTermPanelSize] = React.useState<number>(63)
@@ -33,7 +36,6 @@ const EZSShellViewContent = () => {
   // Create a ref for the socket to maintain compatibility with TaskSection
   const socketRef = React.useRef(socket)
 
-  const labId = searchParams.get('lab')
   const sessionId = searchParams.get('session')
 
   // Connect socket when session is ready
@@ -93,7 +95,7 @@ const EZSShellViewContent = () => {
             if (activeSession) {
               setLabSession(activeSession)
               // Update URL with session ID
-              router.replace(`/ezshell?lab=${ labId }&session=${ activeSession.id }`)
+              router.replace(`/ezshell/${ labId }/?session=${ activeSession.id }`)
             } else {
               // No active session, create new one
               const createResponse = await fetch('/api/lab-sessions', {
@@ -105,7 +107,7 @@ const EZSShellViewContent = () => {
               if (createResponse.ok) {
                 const newSession = await createResponse.json()
                 setLabSession(newSession)
-                router.replace(`/ezshell?lab=${ labId }&session=${ newSession.id }`)
+                router.replace(`/ezshell/${ labId }/?session=${ newSession.id }`)
                 toast.success('Lab session started!')
               } else {
                 toast.error('Failed to start lab session')
@@ -192,7 +194,7 @@ const EZSShellViewContent = () => {
           }}
         >
           <ScrollArea>
-            <ShellSectionComponent questionId={""} />
+            <ShellSectionComponent labId={labId} questionId={""} />
           </ScrollArea>
         </ResizablePanel>
       </ResizablePanelGroup>

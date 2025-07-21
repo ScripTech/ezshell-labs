@@ -1,21 +1,16 @@
-import React, { Suspense } from 'react'
-import { EZSShellClient } from './client'
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-
-// Loading component for Suspense fallback
-const LoadingSpinner = () => (
-  <div className="container-shell flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-      <p>Loading...</p>
+export default function Page() {
+  return (
+    <div>
+      <h1>Welcome to the EZShell Lab</h1>
+      <p>Select a lab to get started:</p>
+      <ul>
+        <li>
+          <a href="/ezshell/lab1">Lab 1</a>
+        </li>
+        <li>
+          <a href="/ezshell/lab2">Lab 2</a>
+        </li>
+      </ul>
     </div>
-  </div>
-)
-
-const EZSShellView = () => {
-  return <EZSShellClient />
+  );
 }
-
-export default EZSShellView

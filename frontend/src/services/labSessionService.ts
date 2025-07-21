@@ -65,7 +65,7 @@ export class LabSessionService {
         .limit(1)
 
       if (!enrollment.length) {
-        throw new Error("User is not enrolled in this lab")
+        throw new Error(`User is not enrolled in this lab: ${labId}`);
       }
 
       // Get lab info for duration

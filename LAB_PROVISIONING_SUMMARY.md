@@ -94,7 +94,7 @@ function LabDetailsPage() {
         labId={lab.id}
         labName={lab.name}
         onProvisioningComplete={(enrollmentId) => {
-          router.push(`/ezshell?lab=${labId}&enrollment=${enrollmentId}`)
+          router.push(`/ezshell/${labId}&enrollment=${enrollmentId}`)
         }}
       />
     </>

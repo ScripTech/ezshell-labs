@@ -5,10 +5,10 @@ const TermView = dynamic(() => import('./TermView'), {
   loading: () => <p>Loading terminal...</p>
 })
 
-export const ShellSectionComponent = ({ questionId }: { questionId: string}) => {
+export const ShellSectionComponent = ({ questionId, labId }: { questionId: string, labId: string }) => {
   return (
     <div className={`p-2 w-[calc(61vw)] overflow-auto`}>
-      <TermView questionId={questionId} />
+      <TermView questionId={questionId} labId={labId} />
     </div>
   );
 }

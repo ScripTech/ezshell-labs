@@ -51,7 +51,6 @@ export async function GET(request: Request) {
     const customToken = jwt.sign(payload, secret);
 
     console.log('Generated custom token for socket auth:', customToken.substring(0, 50) + '...');
-    console.log('FULL TOKEN FOR DEBUGGING:', customToken);
 
     return NextResponse.json({
       token: customToken,

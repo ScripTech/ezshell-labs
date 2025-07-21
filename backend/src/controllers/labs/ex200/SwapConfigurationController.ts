@@ -1,17 +1,23 @@
 import { Socket } from "socket.io";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { SwapConfigurationService } from "../../../services/ex200/SwapConfigurationService";
 
 export class SwapConfigurationController {
   private trackingService: ValidationTrackingService;
+  private swapService: SwapConfigurationService;
 
   constructor() {
     this.trackingService = new ValidationTrackingService();
+    this.swapService = new SwapConfigurationService();
   }
 
   // Socket tracking method for swap configuration validation
   handleSwapValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      // Initialize the swap service with dynamic SSH
+      await this.swapService.initialize(userId, labId);
 
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
@@ -36,7 +42,8 @@ export class SwapConfigurationController {
         status: "loading",
       });
 
-      const isSwapActive = await this.checkSwapStatus();
+      const swapStatus = await this.swapService.checkSwapStatus();
+      const isSwapActive = swapStatus.active;
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap space active",
@@ -50,22 +57,34 @@ export class SwapConfigurationController {
         status: "loading",
       });
 
-      const swapSize = await this.checkSwapSize();
-      const isSizeAdequate = swapSize > 0;
+      const isSizeAdequate = swapStatus.total > 0;
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap size adequate",
         status: isSizeAdequate ? "success" : "failed",
-        message: isSizeAdequate ? `Swap size: ${swapSize}MB is configured` : "Swap size is insufficient"
+        message: isSizeAdequate ? `Swap size: ${swapStatus.total}MB is configured` : "Swap size is insufficient"
       });
 
-      // Check if swap is persistent (in fstab)
+      // Check if swap is persistent (in fstab) - using default swap path
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap persistent on boot",
         status: "loading",
       });
 
-      const isPersistent = await this.checkSwapPersistence();
+      // For general swap validation, we'll check common swap paths
+      const commonSwapPaths = ["/swapfile", "/dev/sda2", "/dev/mapper/swap"];
+      let isPersistent = false;
+
+      for (const swapPath of commonSwapPaths) {
+        try {
+          if (await this.swapService.validateSwapFstab(swapPath)) {
+            isPersistent = true;
+            break;
+          }
+        } catch (error) {
+          // Continue checking other paths
+        }
+      }
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap persistent on boot",
@@ -79,7 +98,18 @@ export class SwapConfigurationController {
         status: "loading",
       });
 
-      const hasPriority = await this.checkSwapPriority();
+      let hasPriority = false;
+
+      for (const swapPath of commonSwapPaths) {
+        try {
+          if (await this.swapService.validateSwapPriority(swapPath)) {
+            hasPriority = true;
+            break;
+          }
+        } catch (error) {
+          // Continue checking other paths
+        }
+      }
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Swap priority configured",
@@ -100,62 +130,5 @@ export class SwapConfigurationController {
       });
       return false;
     }
-  }
-
-  // Helper methods for swap validation
-  private async checkSwapStatus(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('swapon --show | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
-  }
-
-  private async checkSwapSize(): Promise<number> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('free -m | awk \'/^Swap:/ {print $2}\'', (error: any, stdout: string) => {
-        if (error) {
-          resolve(0);
-        } else {
-          const size = parseInt(stdout.trim()) || 0;
-          resolve(size);
-        }
-      });
-    });
-  }
-
-  private async checkSwapPersistence(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('grep -c "swap" /etc/fstab', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
-  }
-
-  private async checkSwapPriority(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('swapon --show=PRIO | grep -v PRIO | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
   }
 }

@@ -1,5 +1,6 @@
 import { Socket } from "socket.io";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { dynamicSSHService } from "../../../utils/dynamic-ssh-service";
 
 export class AdditionalValidationController {
   private trackingService: ValidationTrackingService;
@@ -16,7 +17,7 @@ export class AdditionalValidationController {
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
         async (trackedSocket: Socket) => {
-          return await this.performContainerValidation(trackedSocket, validationQuestionId);
+          return await this.performContainerValidation(trackedSocket, validationQuestionId, userId, labId);
         }
       );
     } catch (error) {
@@ -28,8 +29,17 @@ export class AdditionalValidationController {
     }
   };
 
-  private async performContainerValidation(socket: Socket, questionId: string): Promise<boolean> {
+  private async performContainerValidation(socket: Socket, questionId: string, userId: string, labId: string): Promise<boolean> {
     try {
+      // Initialize SSH connection to lab instance
+      console.log(`🔧 Initializing container validation for user ${userId}, lab ${labId}`);
+      const connected = await dynamicSSHService.connectToLab(userId, labId);
+
+      if (!connected) {
+        console.error(`❌ Failed to connect to lab instance for user ${userId}, lab ${labId}`);
+        return false;
+      }
+
       // Check if podman is installed
       socket.emit(`validation-${questionId}-step`, {
         step: "Container runtime installed",
@@ -95,7 +105,7 @@ export class AdditionalValidationController {
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
         async (trackedSocket: Socket) => {
-          return await this.performSystemMonitoringValidation(trackedSocket, validationQuestionId);
+          return await this.performSystemMonitoringValidation(trackedSocket, validationQuestionId, userId, labId);
         }
       );
     } catch (error) {
@@ -107,8 +117,17 @@ export class AdditionalValidationController {
     }
   };
 
-  private async performSystemMonitoringValidation(socket: Socket, questionId: string): Promise<boolean> {
+  private async performSystemMonitoringValidation(socket: Socket, questionId: string, userId: string, labId: string): Promise<boolean> {
     try {
+      // Initialize SSH connection to lab instance
+      console.log(`🔧 Initializing system monitoring validation for user ${userId}, lab ${labId}`);
+      const connected = await dynamicSSHService.connectToLab(userId, labId);
+
+      if (!connected) {
+        console.error(`❌ Failed to connect to lab instance for user ${userId}, lab ${labId}`);
+        return false;
+      }
+
       // Check if rsyslog is configured properly
       socket.emit(`validation-${questionId}-step`, {
         step: "Logging service configured",
@@ -174,7 +193,7 @@ export class AdditionalValidationController {
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
         async (trackedSocket: Socket) => {
-          return await this.performBootProcessValidation(trackedSocket, validationQuestionId);
+          return await this.performBootProcessValidation(trackedSocket, validationQuestionId, userId, labId);
         }
       );
     } catch (error) {
@@ -186,8 +205,17 @@ export class AdditionalValidationController {
     }
   };
 
-  private async performBootProcessValidation(socket: Socket, questionId: string): Promise<boolean> {
+  private async performBootProcessValidation(socket: Socket, questionId: string, userId: string, labId: string): Promise<boolean> {
     try {
+      // Initialize SSH connection to lab instance
+      console.log(`🔧 Initializing boot process validation for user ${userId}, lab ${labId}`);
+      const connected = await dynamicSSHService.connectToLab(userId, labId);
+
+      if (!connected) {
+        console.error(`❌ Failed to connect to lab instance for user ${userId}, lab ${labId}`);
+        return false;
+      }
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Boot target configuration",
         status: "loading",
@@ -243,87 +271,71 @@ export class AdditionalValidationController {
     }
   }
 
-  // Helper methods for validation
+  // Helper methods for validation using dynamic SSH
   private async checkCommandExists(command: string): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec(`which ${command}`, (error: any) => {
-        resolve(!error);
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand(`which ${command}`);
+      return result.trim().length > 0 && !result.includes("which: no");
+    } catch (error) {
+      return false;
+    }
   }
 
   private async checkServiceStatus(serviceName: string): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec(`systemctl is-active ${serviceName}`, (error: any, stdout: string) => {
-        resolve(stdout.trim() === 'active');
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand(`systemctl is-active ${serviceName}`);
+      return result.trim() === 'active';
+    } catch (error) {
+      return false;
+    }
   }
 
   private async checkUserContainerAccess(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('podman info --format "{{.Host.Security.Rootless}}"', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          resolve(stdout.trim() === 'true');
-        }
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand('podman info --format "{{.Host.Security.Rootless}}" 2>/dev/null || echo "false"');
+      return result.trim() === 'true';
+    } catch (error) {
+      return false;
+    }
   }
 
   private async checkJournalStatus(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('systemctl is-active systemd-journald', (error: any, stdout: string) => {
-        resolve(stdout.trim() === 'active');
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand('systemctl is-active systemd-journald');
+      return result.trim() === 'active';
+    } catch (error) {
+      return false;
+    }
   }
 
   private async checkLogRotation(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('ls /etc/logrotate.d/', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          // Check if there are any logrotate configurations
-          resolve(stdout.trim().length > 0);
-        }
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand('ls /etc/logrotate.d/ 2>/dev/null | wc -l');
+      const count = parseInt(result.trim());
+      return count > 0;
+    } catch (error) {
+      return false;
+    }
   }
 
   private async checkSystemdTarget(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('systemctl get-default', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const target = stdout.trim();
-          resolve(target === 'multi-user.target' || target === 'graphical.target');
-        }
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand('systemctl get-default');
+      const target = result.trim();
+      return target === 'multi-user.target' || target === 'graphical.target';
+    } catch (error) {
+      return false;
+    }
   }
 
   private async checkSystemdServices(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('systemctl list-unit-files --type=service --state=enabled | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          // Check if there are enabled services (should be more than just header line)
-          resolve(count > 1);
-        }
-      });
-    });
+    try {
+      const result = await dynamicSSHService.executeCommand('systemctl list-unit-files --type=service --state=enabled | wc -l');
+      const count = parseInt(result.trim());
+      // Check if there are enabled services (should be more than just header line)
+      return count > 1;
+    } catch (error) {
+      return false;
+    }
   }
 }
