@@ -156,9 +156,6 @@ httpSocketServer.on("connection", async (socket: AuthenticatedSocket) => {
   // Enhanced WebSocket Service handles all the new features automatically
   // The EnhancedWebSocketService constructor sets up all event handlers
 
-
-  console.log("socket.handshake:", socket.handshake);
-
   // Extract lab parameters from handshake query
   const query = socket.handshake.query;
   const labId = query.lab as string;

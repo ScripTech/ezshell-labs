@@ -1,7 +1,7 @@
 // Labtask information section component
 //
 
-import { useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CheckCheckIcon, LoaderCircle, LucideLock } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -66,6 +66,8 @@ interface TaskSectionProps {
 
 export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
   const { data: session } = useSession()
+  const params = useParams()
+  const labId = params.labId as string
   const searchParams = useSearchParams()
 
   const [question, setQuestion] = React.useState<string>("")
@@ -161,7 +163,6 @@ export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
       const handleRouteChange = async () => {
         try {
           setIsLoading(true)
-          const labId = searchParams.get('lab') ?? 'EX200'
           let questionId = searchParams.get('question')
 
           let firstLabQuestion: LabQuestion | null = null
@@ -398,7 +399,7 @@ export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
     <>
       <div className="border-b pb-2 mb-2">
         <div className="">
-          <QuestionNavigator />
+          <QuestionNavigator labId={labId} />
         </div>
       </div>
       <Tabs defaultValue="shell-content" className="w-full">
