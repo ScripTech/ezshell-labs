@@ -28,6 +28,10 @@ export class FindUserFilesController {
   }) => {
     const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
+    // Initialize service with user and lab context
+    console.log(`🔧 Initializing FindUserFilesController for user ${userId}, lab ${labId}`);
+    await this.service.initialize(userId, labId);
+
     // Create enhanced scoring context - INTERMEDIATE preset for multi-step file operations
     const context = ScoringUtils.createScoringContext(
       { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },

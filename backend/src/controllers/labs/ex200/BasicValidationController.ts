@@ -26,7 +26,7 @@ export class BasicValidationController {
       await this.trackingService.executeValidationWithSocketTracking(
         context,
         async (trackedSocket: Socket) => {
-          return await this.performTarValidation(trackedSocket, validationQuestionId);
+          return await this.performTarValidation(trackedSocket, validationQuestionId, userId, labId);
         }
       );
     } catch (error) {
@@ -38,8 +38,17 @@ export class BasicValidationController {
     }
   };
 
-  private async performTarValidation(socket: Socket, questionId: string): Promise<boolean> {
+  private async performTarValidation(socket: Socket, questionId: string, userId: string, labId: string): Promise<boolean> {
     try {
+      // Initialize the service with user and lab context
+      console.log(`🔧 Initializing tar validation for user ${userId}, lab ${labId}`);
+      const connected = await this.service.initialize(userId, labId);
+
+      if (!connected) {
+        console.error(`❌ Failed to connect to lab instance for user ${userId}, lab ${labId}`);
+        return false;
+      }
+
       socket.emit(`validation-${questionId}-step`, {
         step: "Create a tar archive",
         status: "loading",
