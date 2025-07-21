@@ -7,8 +7,8 @@ import 'xterm/css/xterm.css'
 import { LoaderCircle } from 'lucide-react';
 import { useAuthenticatedSocket } from '@/hooks/useAuthenticatedSocket'
 
-export default function TermView({ questionId }: { questionId: string }) {
-  const { socket, isConnected, isAuthenticated, error: socketError, connect } = useAuthenticatedSocket()
+export default function TermView({ questionId, labId }: { questionId: string, labId: string }) {
+  const { socket, isConnected, isAuthenticated, error: socketError, connect } = useAuthenticatedSocket(labId)
   const [isConnecting, setIsConnecting] = React.useState(false)
   const [error, setError] = React.useState('')
   const terminalRef = React.useRef<HTMLDivElement | null>(null)

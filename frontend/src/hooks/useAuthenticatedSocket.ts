@@ -15,7 +15,7 @@ export interface UseAuthenticatedSocketResult {
 /**
  * React hook for managing authenticated Socket.IO connections
  */
-export function useAuthenticatedSocket(): UseAuthenticatedSocketResult {
+export function useAuthenticatedSocket(labId: string): UseAuthenticatedSocketResult {
   const { data: session, status } = useSession();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -29,7 +29,7 @@ export function useAuthenticatedSocket(): UseAuthenticatedSocketResult {
 
     try {
       setError(null);
-      const socketInstance = await authenticatedSocketService.connect();
+      const socketInstance = await authenticatedSocketService.connect(labId);
       setSocket(socketInstance);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect');
@@ -103,62 +103,64 @@ export function useAuthenticatedSocket(): UseAuthenticatedSocketResult {
 /**
  * Hook for task validation with authentication
  */
-export function useTaskValidation() {
-  const { socket, isConnected, isAuthenticated } = useAuthenticatedSocket();
+export function useTaskValidation(labId: string) {
+  const { socket, isConnected, isAuthenticated } = useAuthenticatedSocket(labId);
 
-  const validateTask = useCallback(async (
-    taskId: string,
-    labId: string,
-    sessionData?: any
-  ) => {
-    if (!socket || !isConnected || !isAuthenticated) {
-      throw new Error('Socket not connected or user not authenticated');
-    }
+  const validateTask = useCallback(
+    async (taskId: string, labId: string, sessionData?: any) => {
+      if (!socket || !isConnected || !isAuthenticated) {
+        throw new Error("Socket not connected or user not authenticated");
+      }
 
-    return new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Validation timeout'));
-      }, 30000); // 30 second timeout
+      return new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("Validation timeout"));
+        }, 30000); // 30 second timeout
 
-      // Listen for validation completion
-      const handleComplete = () => {
-        clearTimeout(timeout);
-        socket.off(`validation-${taskId}-complete`, handleComplete);
-        socket.off(`validation-${taskId}-error`, handleError);
-        resolve();
-      };
+        // Listen for validation completion
+        const handleComplete = () => {
+          clearTimeout(timeout);
+          socket.off(`validation-${taskId}-complete`, handleComplete);
+          socket.off(`validation-${taskId}-error`, handleError);
+          resolve();
+        };
 
-      const handleError = (error: any) => {
-        clearTimeout(timeout);
-        socket.off(`validation-${taskId}-complete`, handleComplete);
-        socket.off(`validation-${taskId}-error`, handleError);
-        reject(new Error(error.error || 'Validation failed'));
-      };
+        const handleError = (error: any) => {
+          clearTimeout(timeout);
+          socket.off(`validation-${taskId}-complete`, handleComplete);
+          socket.off(`validation-${taskId}-error`, handleError);
+          reject(new Error(error.error || "Validation failed"));
+        };
 
-      socket.on(`validation-${taskId}-complete`, handleComplete);
-      socket.on(`validation-${taskId}-error`, handleError);
+        socket.on(`validation-${taskId}-complete`, handleComplete);
+        socket.on(`validation-${taskId}-error`, handleError);
 
-      // Emit validation request
-      socket.emit('validate-task', {
-        taskId,
-        labId,
-        sessionData
+        // Emit validation request
+        socket.emit("validate-task", {
+          taskId,
+          labId,
+          sessionData,
+        });
       });
-    });
-  }, [socket, isConnected, isAuthenticated]);
+    },
+    [socket, isConnected, isAuthenticated]
+  );
 
-  const requestProgressSummary = useCallback(async (labId: string) => {
-    if (!socket || !isConnected || !isAuthenticated) {
-      throw new Error('Socket not connected or user not authenticated');
-    }
+  const requestProgressSummary = useCallback(
+    async (labId: string) => {
+      if (!socket || !isConnected || !isAuthenticated) {
+        throw new Error("Socket not connected or user not authenticated");
+      }
 
-    socket.emit('request-progress-summary', { labId });
-  }, [socket, isConnected, isAuthenticated]);
+      socket.emit("request-progress-summary", { labId });
+    },
+    [socket, isConnected, isAuthenticated]
+  );
 
   return {
     validateTask,
     requestProgressSummary,
     isReady: isConnected && isAuthenticated,
-    socket
+    socket,
   };
 }

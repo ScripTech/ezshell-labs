@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import { Client as SSHClient } from "ssh2";
 import pty, { IPty } from "node-pty";
+import fs from "fs";
 
 export type PtyType = "local" | "ssh";
 
@@ -13,7 +14,8 @@ export interface PtySessionOptions {
     host: string;
     port: number;
     username: string;
-    password: string;
+    password?: string;
+    privateKeyPath?: string;
   };
 }
 
@@ -46,6 +48,52 @@ export class PtySession {
       });
     } else if (options.type === "ssh" && options.sshConfig) {
       this.sshConn = new SSHClient();
+
+      // Prepare connection options
+      const connectOptions: any = {
+        host: options.sshConfig.host,
+        port: options.sshConfig.port,
+        username: options.sshConfig.username,
+      };
+
+      // Use private key if provided, otherwise fall back to password
+      if (options.sshConfig.privateKeyPath) {
+        console.log(`Checking private key path: "${options.sshConfig.privateKeyPath}"`);
+        console.log(`Private key file exists: ${fs.existsSync(options.sshConfig.privateKeyPath)}`);
+        
+        if (fs.existsSync(options.sshConfig.privateKeyPath)) {
+          try {
+            const privateKey = fs.readFileSync(options.sshConfig.privateKeyPath);
+            connectOptions.privateKey = privateKey;
+            console.log(`✅ Using private key authentication for ${options.sshConfig.host} (key size: ${privateKey.length} bytes)`);
+          } catch (error) {
+            console.error(`❌ Failed to read private key from ${options.sshConfig.privateKeyPath}:`, error);
+            if (options.sshConfig.password) {
+              connectOptions.password = options.sshConfig.password;
+              console.log(`🔄 Falling back to password authentication for ${options.sshConfig.host}`);
+            } else {
+              this.socket.emit("stdout", "*** SSH KEY ERROR: Cannot read private key and no password provided ***\r\n");
+              return;
+            }
+          }
+        } else {
+          console.warn(`⚠️ Private key file does not exist: ${options.sshConfig.privateKeyPath}`);
+          if (options.sshConfig.password) {
+            connectOptions.password = options.sshConfig.password;
+            console.log(`🔄 Falling back to password authentication for ${options.sshConfig.host}`);
+          } else {
+            this.socket.emit("stdout", "*** SSH KEY ERROR: Private key file not found and no password provided ***\r\n");
+            return;
+          }
+        }
+      } else if (options.sshConfig.password) {
+        connectOptions.password = options.sshConfig.password;
+        console.log(`Using password authentication for ${options.sshConfig.host}`);
+      } else {
+        this.socket.emit("stdout", "*** SSH AUTH ERROR: No private key or password provided ***\r\n");
+        return;
+      }
+
       this.sshConn
         .on("ready", () => {
           this.sshConn!.shell(
@@ -75,7 +123,11 @@ export class PtySession {
             }
           );
         })
-        .connect(options.sshConfig);
+        .on("error", (err) => {
+          console.error("SSH connection error:", err);
+          this.socket.emit("stdout", `*** SSH CONNECTION ERROR: ${err.message} ***\r\n`);
+        })
+        .connect(connectOptions);
     }
   }
 

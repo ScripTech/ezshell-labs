@@ -16,9 +16,7 @@ async function connectSSH() {
             username: process.env.LAB_SSH_USERNAME ?? "lab-user",
             password: process.env.LAB_SSH_PASSWORD ?? "password",
         });
-        console.log("SSH connection established successfully");
         // Set up OpenShift environment
-        console.log("Setting up OpenShift environment...");
         // Set KUBECONFIG environment variable
         // await executeCommand(
         //   "export KUBECONFIG=/opt/.kubeconf/kubeconfig-noingress"
@@ -35,11 +33,13 @@ async function connectSSH() {
     }
     catch (error) {
         console.error("Failed to connect and setup environment:", error);
-        console.error("Error details:", {
-            message: error.message,
-            code: error.code,
-            level: error.level
-        });
+        if (typeof error === "object" && error !== null) {
+            console.error("Error details:", {
+                message: error.message,
+                code: error.code,
+                level: error.level
+            });
+        }
         throw error;
     }
 }
@@ -69,10 +69,15 @@ async function executeCommand(command) {
         return result.stdout.trim();
     }
     catch (error) {
-        console.error("Error while executing command!", error.message);
+        if (error instanceof Error) {
+            console.error("Error while executing command!", error.message);
+        }
+        else {
+            console.error("Error while executing command!", error);
+        }
         console.error("Command was:", command);
         return "Error executing command";
-        // throw new Error(`Command execution failed: ${error.message}`);
+        // throw new Error(`Command execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
 async function validateFileExistence(username) {
