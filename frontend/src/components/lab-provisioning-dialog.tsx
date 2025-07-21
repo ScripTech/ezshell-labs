@@ -250,7 +250,7 @@ export function LabProvisioningDialog({
 
   const handleAccessLab = () => {
     if (enrollmentId) {
-      window.open(`/ezshell?lab=${labId}&enrollment=${enrollmentId}`, '_blank')
+      window.open(`/ezshell/${labId}&enrollment=${enrollmentId}`, '_blank')
     }
   }
 

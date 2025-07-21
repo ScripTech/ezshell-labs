@@ -92,7 +92,7 @@ export default function LabDetailsPage() {
     // Close dialog and redirect to lab
     setShowProvisioningDialog(false)
     toast.success('Lab environment is ready!')
-    router.push(`/ezshell?lab=${lab?.id}&enrollment=${enrollmentId}`)
+    router.push(`/ezshell/${lab?.id}&enrollment=${enrollmentId}`)
   }
 
   return (
