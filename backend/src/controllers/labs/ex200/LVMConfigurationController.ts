@@ -1,17 +1,24 @@
 import { Socket } from "socket.io";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { LVMConfigurationService } from "../../../services/ex200/LVMConfigurationService";
 
 export class LVMConfigurationController {
   private trackingService: ValidationTrackingService;
+  private service: LVMConfigurationService;
 
   constructor() {
     this.trackingService = new ValidationTrackingService();
+    this.service = new LVMConfigurationService();
   }
 
   // Socket tracking method for LVM configuration validation
   handleLVMValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      // Initialize service with user and lab context
+      console.log(`🔧 Initializing LVMConfigurationController for user ${userId}, lab ${labId}`);
+      await this.service.initialize(userId, labId);
 
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
@@ -36,7 +43,7 @@ export class LVMConfigurationController {
         status: "loading",
       });
 
-      const hasLVMTools = await this.checkLVMInstallation();
+      const hasLVMTools = await this.service.checkLVMInstallation();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "LVM tools installed",
@@ -50,7 +57,7 @@ export class LVMConfigurationController {
         status: "loading",
       });
 
-      const hasPhysicalVolumes = await this.checkPhysicalVolumes();
+      const hasPhysicalVolumes = await this.service.checkPhysicalVolumes();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Physical volumes configured",
@@ -64,7 +71,7 @@ export class LVMConfigurationController {
         status: "loading",
       });
 
-      const hasVolumeGroups = await this.checkVolumeGroups();
+      const hasVolumeGroups = await this.service.checkVolumeGroups();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Volume groups created",
@@ -78,7 +85,7 @@ export class LVMConfigurationController {
         status: "loading",
       });
 
-      const hasLogicalVolumes = await this.checkLogicalVolumes();
+      const hasLogicalVolumes = await this.service.checkLogicalVolumes();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Logical volumes configured",
@@ -99,57 +106,5 @@ export class LVMConfigurationController {
       });
       return false;
     }
-  }
-
-  // Helper methods for LVM validation
-  private async checkLVMInstallation(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('which lvm', (error: any) => {
-        resolve(!error);
-      });
-    });
-  }
-
-  private async checkPhysicalVolumes(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('pvs --noheadings | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
-  }
-
-  private async checkVolumeGroups(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('vgs --noheadings | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
-  }
-
-  private async checkLogicalVolumes(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('lvs --noheadings | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
   }
 }
