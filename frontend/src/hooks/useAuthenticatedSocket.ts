@@ -15,7 +15,7 @@ export interface UseAuthenticatedSocketResult {
 /**
  * React hook for managing authenticated Socket.IO connections
  */
-export function useAuthenticatedSocket(labId: string, sessionId?: string): UseAuthenticatedSocketResult {
+export function useAuthenticatedSocket(labId?: string, sessionId?: string): UseAuthenticatedSocketResult {
   const { data: session, status } = useSession();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -27,6 +27,11 @@ export function useAuthenticatedSocket(labId: string, sessionId?: string): UseAu
       return;
     }
 
+    if (!labId) {
+      setError('Lab ID is required');
+      return;
+    }
+
     try {
       setError(null);
       console.log(`🔗 Connecting to lab: ${labId}${sessionId ? `, session: ${sessionId}` : ''}`);
@@ -35,7 +40,7 @@ export function useAuthenticatedSocket(labId: string, sessionId?: string): UseAu
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect');
     }
-  }, [session, sessionId]);
+  }, [session, labId, sessionId]);
 
   const disconnect = useCallback(() => {
     authenticatedSocketService.disconnect();
@@ -43,9 +48,10 @@ export function useAuthenticatedSocket(labId: string, sessionId?: string): UseAu
     setIsConnected(false);
   }, []);
 
-  // Auto-connect when authenticated
+  // Auto-connect when authenticated and labId is available
   useEffect(() => {
-    if (status === 'authenticated' && session?.user && !socket) {
+    if (status === 'authenticated' && session?.user && labId && !socket) {
+      console.log(`🔗 Auto-connecting to lab ${labId}${sessionId ? ` with session ${sessionId}` : ''}`);
       connect();
     }
   }, [status, session, labId, sessionId, socket, connect]);
