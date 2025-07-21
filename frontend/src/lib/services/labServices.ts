@@ -166,7 +166,7 @@ export async function getLabQuestionsFromDB(labId: string): Promise<LabQuestion[
     .orderBy(labTasks.order);
 
   if (rows.length === 0) {
-    throw new Error(`No questions found for lab ${labId}`)
+    throw new Error(`@getLabQuestionsFromDB No questions found for lab ${labId}`);
   }
 
   return rows.map(row => ({
@@ -211,7 +211,9 @@ export async function getExerciseDataFromDB(
     .limit(1);
 
   if (result.length === 0) {
-    console.error(`No questions found for lab ${labId} with question ${questionId}`);
+    console.error(
+      `@getExerciseDataFromDB No questions found for lab ${labId} with question ${questionId}`
+    );
     return Promise.reject({ message: `Question ${questionId} not found in lab ${labId}` });
   }
 
@@ -248,6 +250,7 @@ export async function getExerciseDataFromDB(
 }
 
 export async function getFirstLabQuestionFromDB(labId: string): Promise<LabQuestion | null> {
+  console.log(`Fetching DB for first question for lab: ${labId}`);
   const result = await db
     .select({
       task: labTasks,

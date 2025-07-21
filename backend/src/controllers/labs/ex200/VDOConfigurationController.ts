@@ -1,17 +1,23 @@
 import { Socket } from "socket.io";
 import { ValidationTrackingService } from "../../../services/ValidationTrackingService";
+import { VDOConfigurationService } from "../../../services/ex200/VDOConfigurationService";
 
 export class VDOConfigurationController {
   private trackingService: ValidationTrackingService;
+  private vdoService: VDOConfigurationService;
 
   constructor() {
     this.trackingService = new ValidationTrackingService();
+    this.vdoService = new VDOConfigurationService();
   }
 
   // Socket tracking method for VDO configuration validation
   handleVDOValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      // Initialize the VDO service with dynamic SSH
+      await this.vdoService.initialize(userId, labId);
 
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
@@ -36,7 +42,7 @@ export class VDOConfigurationController {
         status: "loading",
       });
 
-      const hasVDOTools = await this.checkVDOInstallation();
+      const hasVDOTools = await this.vdoService.checkVDOInstallation();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO tools installed",
@@ -50,7 +56,7 @@ export class VDOConfigurationController {
         status: "loading",
       });
 
-      const isVDOServiceActive = await this.checkVDOServiceStatus();
+      const isVDOServiceActive = await this.vdoService.checkVDOServiceStatus();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO service active",
@@ -64,12 +70,13 @@ export class VDOConfigurationController {
         status: "loading",
       });
 
-      const hasVDOVolumes = await this.checkVDOVolumes();
+      const volumeInfo = await this.vdoService.checkVDOVolumes();
+      const hasVDOVolumes = volumeInfo.count > 0;
 
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO volumes configured",
         status: hasVDOVolumes ? "success" : "failed",
-        message: hasVDOVolumes ? "VDO volumes are properly configured" : "No VDO volumes found"
+        message: hasVDOVolumes ? `VDO volumes are properly configured (${volumeInfo.count} found)` : "No VDO volumes found"
       });
 
       // Check VDO compression status
@@ -78,12 +85,12 @@ export class VDOConfigurationController {
         status: "loading",
       });
 
-      const compressionEnabled = await this.checkVDOCompression();
+      const compressionResult = await this.vdoService.checkVDOCompression();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO compression enabled",
-        status: compressionEnabled ? "success" : "warning",
-        message: compressionEnabled ? "VDO compression is enabled" : "VDO compression is not enabled"
+        status: compressionResult.enabled ? "success" : "warning",
+        message: compressionResult.enabled ? "VDO compression is enabled" : "VDO compression is not enabled"
       });
 
       // Check VDO deduplication status
@@ -92,12 +99,12 @@ export class VDOConfigurationController {
         status: "loading",
       });
 
-      const deduplicationEnabled = await this.checkVDODeduplication();
+      const deduplicationResult = await this.vdoService.checkVDODeduplication();
 
       socket.emit(`validation-${questionId}-step`, {
         step: "VDO deduplication enabled",
-        status: deduplicationEnabled ? "success" : "warning",
-        message: deduplicationEnabled ? "VDO deduplication is enabled" : "VDO deduplication is not enabled"
+        status: deduplicationResult.enabled ? "success" : "warning",
+        message: deduplicationResult.enabled ? "VDO deduplication is enabled" : "VDO deduplication is not enabled"
       });
 
       return hasVDOTools && isVDOServiceActive && hasVDOVolumes;
@@ -113,66 +120,5 @@ export class VDOConfigurationController {
       });
       return false;
     }
-  }
-
-  // Helper methods for VDO validation
-  private async checkVDOInstallation(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('which vdo', (error: any) => {
-        resolve(!error);
-      });
-    });
-  }
-
-  private async checkVDOServiceStatus(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('systemctl is-active vdo', (error: any, stdout: string) => {
-        resolve(stdout.trim() === 'active');
-      });
-    });
-  }
-
-  private async checkVDOVolumes(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('vdo list 2>/dev/null | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
-  }
-
-  private async checkVDOCompression(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('vdo status --name=* 2>/dev/null | grep -i "compression.*enabled" | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
-  }
-
-  private async checkVDODeduplication(): Promise<boolean> {
-    const { exec } = require('child_process');
-    return new Promise((resolve) => {
-      exec('vdo status --name=* 2>/dev/null | grep -i "deduplication.*enabled" | wc -l', (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-        } else {
-          const count = parseInt(stdout.trim());
-          resolve(count > 0);
-        }
-      });
-    });
   }
 }

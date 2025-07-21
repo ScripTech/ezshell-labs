@@ -29,7 +29,7 @@ export class NetworkConfigValidationController {
       await this.trackingService.executeValidationWithSocketTracking(
         context,
         async (trackedSocket: Socket) => {
-          return await this.performNetworkConfigValidation(trackedSocket, validationQuestionId);
+          return await this.performNetworkConfigValidation(trackedSocket, validationQuestionId, userId, labId);
         }
       );
 
@@ -42,8 +42,12 @@ export class NetworkConfigValidationController {
     }
   };
 
-  private async performNetworkConfigValidation(socket: Socket, questionId: string): Promise<boolean> {
+  private async performNetworkConfigValidation(socket: Socket, questionId: string, userId: string, labId: string): Promise<boolean> {
     try {
+      // Initialize the service with user and lab context
+      console.log(`🔧 Initializing network validation for user ${userId}, lab ${labId}`);
+      const connected = await this.service.initialize(userId, labId);
+
       socket.emit(`validation-${questionId}-step`, {
         step: "IP Address",
         status: "loading",

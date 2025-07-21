@@ -178,7 +178,7 @@ function LabDetailsPage() {
 
   const handleProvisioningComplete = (enrollmentId: string) => {
     setShowDialog(false)
-    router.push(`/ezshell?lab=${labId}&enrollment=${enrollmentId}`)
+    router.push(`/ezshell/${labId}&enrollment=${enrollmentId}`)
   }
 
   return (

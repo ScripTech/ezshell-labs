@@ -251,6 +251,10 @@ export class UserGroupManagementController {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
 
+      // Initialize service with user and lab context
+      console.log(`🔧 Initializing UserGroupManagementController for user ${userId}, lab ${labId}`);
+      await this.service.initialize(userId, labId);
+
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
         async (trackedSocket: Socket) => {
@@ -308,6 +312,10 @@ export class UserGroupManagementController {
   handleUserGroupValidationWithSocketTracking = async (socket: Socket, data: { questionId: string, userId: string, labId: string, validationQuestionId: string, labEnrollmentId: string }, validationData: { group: string; users: string[] }) => {
     try {
       const { questionId, userId, labId, validationQuestionId, labEnrollmentId } = data;
+
+      // Initialize service with user and lab context
+      console.log(`🔧 Initializing UserGroupManagementController for user ${userId}, lab ${labId}`);
+      await this.service.initialize(userId, labId);
 
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },

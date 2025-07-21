@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -12,7 +12,7 @@ interface Question extends LabQuestion {
   progress?: number
 }
 
-const QuestionNavigator = () => {
+const QuestionNavigator = ({labId}: {labId: string}) => {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -23,7 +23,6 @@ const QuestionNavigator = () => {
   useEffect(() => {
     const fetchLabQuestions = async () => {
       try {
-        const labId = searchParams.get('lab') ?? 'EX200'
         const labQuestions = await getLabQuestionsFromDB(labId)
         // Questions now include metadata from markdown files
         const formattedQuestions = labQuestions.map(q => ({

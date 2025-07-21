@@ -151,7 +151,7 @@ export default function LabDetailsPage() {
           <Button
             size="lg"
             className="mt-8"
-            onClick={() => router.push(`/ezshell?lab=${ lab.id }`)}
+            onClick={() => router.push(`/ezshell/${ lab.id }`)}
           >
             Continue Lab
             <ArrowRight className="ml-2 h-4 w-4" />

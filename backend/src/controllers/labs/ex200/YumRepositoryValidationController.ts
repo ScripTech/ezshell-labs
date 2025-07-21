@@ -19,7 +19,7 @@ export class YumRepositoryValidationController {
       await this.trackingService.executeValidationWithSocketTracking(
         { socket, questionId, userId, labId, validationQuestionId, labEnrollmentId },
         async (trackedSocket: Socket) => {
-          return await this.performYumRepositoryValidation(trackedSocket, validationQuestionId);
+          return await this.performYumRepositoryValidation(trackedSocket, validationQuestionId, userId, labId);
         }
       );
 
@@ -32,12 +32,14 @@ export class YumRepositoryValidationController {
     }
   };
 
-  private async performYumRepositoryValidation(socket: Socket, questionId: string): Promise<boolean> {
+  private async performYumRepositoryValidation(socket: Socket, questionId: string, userId: string, labId: string): Promise<boolean> {
     try {
-      // Test SSH connection first (internal validation - not emitted as step)
-      const connectionTest = await this.service.testSSHConnection();
-      if (!connectionTest.success) {
-        console.error("SSH connection failed:", connectionTest.message);
+      // Initialize the service with user and lab context
+      console.log(`🔧 Initializing YUM repository validation for user ${userId}, lab ${labId}`);
+      const connected = await this.service.initialize(userId, labId);
+
+      if (!connected) {
+        console.error(`❌ Failed to connect to lab instance for user ${userId}, lab ${labId}`);
         return false;
       }
 

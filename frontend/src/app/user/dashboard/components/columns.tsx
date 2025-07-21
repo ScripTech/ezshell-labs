@@ -16,7 +16,7 @@ export const columns: ColumnDef<any>[] = [
 		cell: ({ row }: any) => {
       return (
         <span className="text-blue-600 hover:underline cursor-pointer">
-          <Link href={`/ezshell?lab=${ row.original.lab }&question=${ row.original.id }`}>{row.original.title}</Link>
+          <Link href={`/ezshell/${ row.original.lab }&question=${ row.original.id }`}>{row.original.title}</Link>
         </span>
       )
     },
