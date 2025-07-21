@@ -230,7 +230,6 @@ export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
 
   const checkExerciseAnswer = async (questionId: string) => {
     if (!hasCheckAnswer) {
-      const labId = searchParams.get('lab') ?? 'invalid-lab';
 
       try {
         // Get the task metadata to find the order for mapping
@@ -542,7 +541,6 @@ export const TaskSection = ({ questionId, socketRef}: TaskSectionProps) => {
                     onClick={() => {
                       // Small delay to ensure backend has saved the data, then refresh validation history
                       setTimeout(async () => {
-                        const labId = searchParams.get('lab') ?? 'invalid-lab';
                         await fetchValidationHistory(questionId, labId);
                       }, 500);
                       setShowHistory(true);
