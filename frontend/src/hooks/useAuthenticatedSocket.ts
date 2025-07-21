@@ -15,7 +15,7 @@ export interface UseAuthenticatedSocketResult {
 /**
  * React hook for managing authenticated Socket.IO connections
  */
-export function useAuthenticatedSocket(labId: string): UseAuthenticatedSocketResult {
+export function useAuthenticatedSocket(labId: string, sessionId?: string): UseAuthenticatedSocketResult {
   const { data: session, status } = useSession();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -29,12 +29,13 @@ export function useAuthenticatedSocket(labId: string): UseAuthenticatedSocketRes
 
     try {
       setError(null);
-      const socketInstance = await authenticatedSocketService.connect(labId);
+      console.log(`🔗 Connecting to lab: ${labId}${sessionId ? `, session: ${sessionId}` : ''}`);
+      const socketInstance = await authenticatedSocketService.connectToLab(labId, sessionId);
       setSocket(socketInstance);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect');
     }
-  }, [session]);
+  }, [session, sessionId]);
 
   const disconnect = useCallback(() => {
     authenticatedSocketService.disconnect();
@@ -47,7 +48,7 @@ export function useAuthenticatedSocket(labId: string): UseAuthenticatedSocketRes
     if (status === 'authenticated' && session?.user && !socket) {
       connect();
     }
-  }, [status, session, socket, connect]);
+  }, [status, session, labId, sessionId, socket, connect]);
 
   // Setup socket event listeners
   useEffect(() => {
