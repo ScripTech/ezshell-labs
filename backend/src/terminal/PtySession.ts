@@ -60,7 +60,7 @@ export class PtySession {
       if (options.sshConfig.privateKeyPath) {
         console.log(`Checking private key path: "${options.sshConfig.privateKeyPath}"`);
         console.log(`Private key file exists: ${fs.existsSync(options.sshConfig.privateKeyPath)}`);
-        
+
         if (fs.existsSync(options.sshConfig.privateKeyPath)) {
           try {
             const privateKey = fs.readFileSync(options.sshConfig.privateKeyPath);

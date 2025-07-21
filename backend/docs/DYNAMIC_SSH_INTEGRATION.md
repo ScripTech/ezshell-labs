@@ -103,11 +103,11 @@ const socket = io(serverUrl, {
 # Database connection (inherited from lab-provisioner)
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ezshelllabs
 
-# Fallback SSH configuration (for backward compatibility)
-LAB_SSH_HOST=your-fallback-host
-LAB_SSH_PORT=22
-LAB_SSH_USERNAME=lab-user
-LAB_SSH_PASSWORD=password
+# SSH configuration for lab connections
+LAB_SSH_USERNAME=ubuntu          # Default SSH username (ubuntu for Ubuntu instances, ec2-user for Amazon Linux)
+LAB_SSH_PASSWORD=your-password   # Fallback password for SSH authentication
+LAB_SSH_HOST=your-fallback-host  # Fallback SSH host (for backward compatibility)
+LAB_SSH_PORT=22                  # SSH port (default: 22)
 ```
 
 ### SSH Key Management

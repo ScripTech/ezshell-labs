@@ -50,6 +50,16 @@ export interface LabConnectionDetails {
   instanceState: string;
 }
 
+/**
+ * Lab Provisioning Service
+ *
+ * Manages database connections and queries for lab provisioning data.
+ *
+ * Environment Variables:
+ * - DATABASE_URL: PostgreSQL connection string (required)
+ * - LAB_SSH_USERNAME: Default SSH username for lab instances (default: "ubuntu")
+ * - LAB_SSH_PASSWORD: Fallback password for SSH connections (optional)
+ */
 export class LabProvisioningService {
   private db: ReturnType<typeof drizzle>;
 
@@ -101,7 +111,7 @@ export class LabProvisioningService {
       return {
         host: row.host,
         port: 22, // Standard SSH port
-        username: "ubuntu", // Default AWS EC2 user
+        username: process.env.LAB_SSH_USERNAME || "ubuntu", // Configurable AWS EC2 user
         privateKeyPath: row.private_key_path || "",
         keyPairName: row.key_pair_name || "",
         instanceState: row.instance_state,
@@ -143,7 +153,7 @@ export class LabProvisioningService {
       return {
         host: row.host,
         port: 22,
-        username: 'ubuntu',
+        username: process.env.LAB_SSH_USERNAME || 'ubuntu',
         privateKeyPath: row.private_key_path || '',
         keyPairName: row.key_pair_name || '',
         instanceState: row.instance_state
@@ -186,7 +196,7 @@ export class LabProvisioningService {
       return result.map((row: any) => ({
         host: row.host,
         port: 22,
-        username: "ubuntu",
+        username: process.env.LAB_SSH_USERNAME || "ubuntu",
         privateKeyPath: row.private_key_path || "",
         keyPairName: row.key_pair_name || "",
         instanceState: row.instance_state,
