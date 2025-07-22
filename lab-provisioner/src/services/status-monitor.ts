@@ -6,7 +6,7 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('status-monitor');
 
 export interface ProvisioningStep {
-  step: 'enrollment' | 'aws_instance_creation' | 'environment_setup' | 'lab_ready';
+  step: 'enrollment' | 'aws_instance_creation' | 'lab_ready';
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
   completedAt?: string;
   error?: string;
@@ -105,11 +105,6 @@ export class StatusMonitorService {
           status: this.getAWSInstanceStatus(queue, provision),
           completedAt: provision?.provisionedAt || undefined,
         },
-        // {
-        //   step: 'environment_setup',
-        //   status: this.getEnvironmentSetupStatus(provision),
-        //   completedAt: provision?.instanceState === 'running' ? provision.updatedAt || undefined : undefined,
-        // },
         {
           step: 'lab_ready',
           status: this.getLabReadyStatus(provision),
@@ -136,7 +131,6 @@ export class StatusMonitorService {
       return [
         { step: 'enrollment', status: 'completed' },
         { step: 'aws_instance_creation', status: 'failed', error: 'Failed to fetch status' },
-        { step: 'environment_setup', status: 'pending' },
         { step: 'lab_ready', status: 'pending' },
       ];
     }
@@ -308,24 +302,28 @@ export class StatusMonitorService {
   }
 
   /**
-   * Determine environment setup status
-   */
-  private getEnvironmentSetupStatus(provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
-    if (!provision?.instanceId) return 'pending';
-    if (provision.instanceState === 'pending') return 'pending';
-    if (provision.instanceState === 'running' && provision.publicIp) return 'completed';
-    if (['terminated', 'shutting-down', 'stopped'].includes(provision.instanceState)) return 'failed';
-    return 'in_progress';
-  }
-
-  /**
-   * Determine lab ready status
+   * Determine lab ready status based on database instance state
    */
   private getLabReadyStatus(provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
     if (!provision?.instanceId) return 'pending';
-    if (provision.instanceState === 'running' && provision.publicIp) return 'completed';
-    if (['terminated', 'shutting-down'].includes(provision.instanceState)) return 'failed';
-    if (provision.instanceState === 'running') return 'in_progress';
+
+    // Check the actual instance state from database
+    const state = provision.instanceState;
+    const hasPublicIp = !!provision.publicIp;
+
+    // Lab is ready when instance is running AND has a public IP
+    if (state === 'running' && hasPublicIp) return 'completed';
+
+    // Failed states
+    if (['terminated', 'shutting-down', 'stopped'].includes(state)) return 'failed';
+
+    // Instance is running but no public IP yet - still in progress
+    if (state === 'running' && !hasPublicIp) return 'in_progress';
+
+    // Instance is starting up
+    if (['pending', 'running'].includes(state)) return 'in_progress';
+
+    // Default to pending for other states
     return 'pending';
   }
 }
