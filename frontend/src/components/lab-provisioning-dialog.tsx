@@ -20,7 +20,7 @@ interface ProvisioningStepsResponse {
   overallStatus: 'queued' | 'in_progress' | 'completed' | 'failed'
   progressPercentage: number
   steps: {
-    step: 'enrollment' | 'aws_instance_creation' | 'environment_setup' | 'lab_ready'
+    step: 'enrollment' | 'aws_instance_creation' | 'lab_ready'
     status: 'pending' | 'in_progress' | 'completed' | 'failed'
     completedAt?: string
     error?: string
@@ -80,13 +80,6 @@ export function LabProvisioningDialog({
       duration: '2-3 minutes'
     },
     {
-      id: 'configuration',
-      title: 'Environment Setup',
-      description: 'Installing lab tools and configuring your environment',
-      status: 'pending',
-      duration: '1-2 minutes'
-    },
-    {
       id: 'ready',
       title: 'Lab Ready',
       description: 'Your lab environment is ready to use',
@@ -104,8 +97,7 @@ export function LabProvisioningDialog({
     const stepMapping = {
       'enrollment': 0,
       'aws_instance_creation': 1,
-      'environment_setup': 2,
-      'lab_ready': 3
+      'lab_ready': 2
     }
 
     // Update each step based on backend response

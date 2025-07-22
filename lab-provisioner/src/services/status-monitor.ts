@@ -105,11 +105,11 @@ export class StatusMonitorService {
           status: this.getAWSInstanceStatus(queue, provision),
           completedAt: provision?.provisionedAt || undefined,
         },
-        {
-          step: 'environment_setup',
-          status: this.getEnvironmentSetupStatus(provision),
-          completedAt: provision?.instanceState === 'running' ? provision.updatedAt || undefined : undefined,
-        },
+        // {
+        //   step: 'environment_setup',
+        //   status: this.getEnvironmentSetupStatus(provision),
+        //   completedAt: provision?.instanceState === 'running' ? provision.updatedAt || undefined : undefined,
+        // },
         {
           step: 'lab_ready',
           status: this.getLabReadyStatus(provision),
