@@ -6,7 +6,7 @@ This repository uses a service-specific build system that automatically builds D
 
 ### Service Branches
 - `service-frontend` - Frontend Next.js application
-- `service-backend` - Backend Node.js API server  
+- `service-backend` - Backend Node.js API server
 - `service-database` - PostgreSQL database configuration
 - `service-lab-provisioner` - Lab provisioning microservice
 
@@ -201,7 +201,7 @@ docker buildx build --platform linux/amd64,linux/arm64 .
 ### Environment Variables
 Each service has its own environment configuration:
 - `frontend/.env.docker` - Frontend production config
-- `backend/.env.docker` - Backend production config  
+- `backend/.env.docker` - Backend production config
 - `lab-provisioner/.env` - Lab provisioner config
 
 ### AWS ECR Repositories

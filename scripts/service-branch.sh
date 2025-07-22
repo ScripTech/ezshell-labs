@@ -79,9 +79,9 @@ validate_service() {
 create_branch() {
     local service=$1
     local branch_name="service-$service"
-    
+
     print_status "Creating branch: $branch_name"
-    
+
     # Check if branch already exists
     if git show-ref --verify --quiet refs/heads/$branch_name; then
         print_warning "Branch $branch_name already exists locally"
@@ -92,12 +92,12 @@ create_branch() {
         fi
         return
     fi
-    
+
     # Create branch from develop
     git checkout develop
     git pull origin develop
     git checkout -b $branch_name
-    
+
     print_success "Created and switched to branch: $branch_name"
     print_status "Push to origin with: git push -u origin $branch_name"
 }
@@ -106,9 +106,9 @@ create_branch() {
 switch_branch() {
     local service=$1
     local branch_name="service-$service"
-    
+
     print_status "Switching to branch: $branch_name"
-    
+
     if ! git show-ref --verify --quiet refs/heads/$branch_name; then
         print_error "Branch $branch_name does not exist locally"
         read -p "Create new branch? (y/n): " -n 1 -r
@@ -118,7 +118,7 @@ switch_branch() {
         fi
         return
     fi
-    
+
     git checkout $branch_name
     print_success "Switched to branch: $branch_name"
 }
@@ -127,14 +127,14 @@ switch_branch() {
 show_status() {
     local service=$1
     local branch_name="service-$service"
-    
+
     print_status "Status for service: $service"
     echo ""
-    
+
     # Check if branch exists
     if git show-ref --verify --quiet refs/heads/$branch_name; then
         echo "📋 Branch: $branch_name (exists locally)"
-        
+
         # Check if current branch
         current_branch=$(git rev-parse --abbrev-ref HEAD)
         if [ "$current_branch" = "$branch_name" ]; then
@@ -142,16 +142,16 @@ show_status() {
         else
             echo "⚪ Not currently on this branch (on: $current_branch)"
         fi
-        
+
         # Check remote tracking
         if git show-ref --verify --quiet refs/remotes/origin/$branch_name; then
             echo "🌐 Remote: exists on origin"
-            
+
             # Check if up to date
             git fetch origin $branch_name --quiet
             LOCAL=$(git rev-parse $branch_name)
             REMOTE=$(git rev-parse origin/$branch_name)
-            
+
             if [ "$LOCAL" = "$REMOTE" ]; then
                 echo "✅ Up to date with origin"
             else
@@ -160,28 +160,28 @@ show_status() {
         else
             echo "❌ Remote: not pushed to origin"
         fi
-        
+
         echo ""
         echo "📝 Recent commits on $branch_name:"
         git log --oneline -5 $branch_name
-        
+
         echo ""
         echo "📊 Branch comparison with develop:"
         AHEAD=$(git rev-list --count develop..$branch_name 2>/dev/null || echo "0")
         BEHIND=$(git rev-list --count $branch_name..develop 2>/dev/null || echo "0")
         echo "   Ahead: $AHEAD commits"
         echo "   Behind: $BEHIND commits"
-        
+
     else
         echo "❌ Branch: $branch_name (does not exist locally)"
         echo "   Use: $0 $service create"
     fi
-    
+
     echo ""
     echo "🔧 Service directory: $service/"
     if [ -d "$PROJECT_ROOT/$service" ]; then
         echo "✅ Service directory exists"
-        
+
         # Show recent changes in service directory
         echo ""
         echo "📁 Recent changes in $service/:"
@@ -196,7 +196,7 @@ push_branch() {
     local service=$1
     local branch_name="service-$service"
     local current_branch=$(git rev-parse --abbrev-ref HEAD)
-    
+
     if [ "$current_branch" != "$branch_name" ]; then
         print_error "Not currently on $branch_name branch (on: $current_branch)"
         read -p "Switch to $branch_name and push? (y/n): " -n 1 -r
@@ -207,9 +207,9 @@ push_branch() {
             return
         fi
     fi
-    
+
     print_status "Pushing $branch_name to origin..."
-    
+
     # Check if remote branch exists
     if git show-ref --verify --quiet refs/remotes/origin/$branch_name; then
         git push origin $branch_name
@@ -217,7 +217,7 @@ push_branch() {
         git push -u origin $branch_name
         print_success "Branch pushed and upstream set"
     fi
-    
+
     print_success "Pushed $branch_name to origin"
     print_status "GitHub Actions will now build the $service service"
 }
@@ -227,26 +227,26 @@ sync_branch() {
     local service=$1
     local branch_name="service-$service"
     local current_branch=$(git rev-parse --abbrev-ref HEAD)
-    
+
     if [ "$current_branch" != "$branch_name" ]; then
         print_error "Not currently on $branch_name branch"
         return 1
     fi
-    
+
     print_status "Syncing $branch_name with develop..."
-    
+
     # Fetch latest changes
     git fetch origin develop
-    
+
     # Check if there are uncommitted changes
     if ! git diff-index --quiet HEAD --; then
         print_error "You have uncommitted changes. Please commit or stash them first."
         return 1
     fi
-    
+
     # Merge develop into service branch
     git merge origin/develop
-    
+
     print_success "Synced $branch_name with develop"
 }
 
@@ -256,15 +256,15 @@ main() {
         show_usage
         exit 1
     fi
-    
+
     local service=$1
     local action=${2:-"status"}
-    
+
     validate_service $service
-    
+
     # Change to project root
     cd "$PROJECT_ROOT"
-    
+
     case $action in
         create)
             create_branch $service
