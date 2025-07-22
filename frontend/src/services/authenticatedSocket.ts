@@ -67,11 +67,10 @@ class AuthenticatedSocketService {
         return null;
       }
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_WS || 'http://localhost:3001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_WS || 'http://ezetsu-labs:8443';
 
       console.log('🔗 Connecting to backend WebSocket:', backendUrl);
-      console.log('Environment variables:', {
-        NEXT_PUBLIC_BACKEND_WS: process.env.NEXT_PUBLIC_BACKEND_WS
+      console.log('Environment variables:', { NEXT_PUBLIC_BACKEND_WS: process.env.NEXT_PUBLIC_BACKEND_WS
       });
 
       // Store current lab parameters
