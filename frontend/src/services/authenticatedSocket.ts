@@ -28,8 +28,6 @@ class AuthenticatedSocketService {
       }
 
       const data = await response.json();
-      console.log('Token response from API:', data);
-
       if (!data.token) {
         console.error('No token in response:', data);
         return null;

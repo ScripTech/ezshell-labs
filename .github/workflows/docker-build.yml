@@ -99,6 +99,11 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: linux/amd64
+        build-args: |
+          NEXT_PUBLIC_BACKEND_URL=https://emucanze.com/ws
+          NEXT_PUBLIC_BACKEND_WS=wss://emucanze.com:8443
+          NEXTAUTH_URL=https://emucanze.com
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
 
     # Uncomment the following lines if you want to build and export the frontend image as a tar file
     # Note: This is typically not needed unless you have specific requirements for local testing or deployment

@@ -139,6 +139,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          build-args: |
+            NEXT_PUBLIC_BACKEND_URL=https://emucanze.com
+            NEXT_PUBLIC_BACKEND_WS=wss://emucanze.com:8443
+            NEXTAUTH_URL=https://emucanze.com
 
   # Backend Service Build
   build-backend:
