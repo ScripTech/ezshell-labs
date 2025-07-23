@@ -8,7 +8,7 @@ import { ShellSectionComponent } from './components/shell-section'
 import { TaskSection } from './components/task-section'
 import { useLabSession } from '@/contexts/LabSessionContext'
 import { useAuthenticatedSocket } from '@/hooks/useAuthenticatedSocket'
-import { useSession, SessionProvider } from 'next-auth/react'
+import { SessionProvider } from 'next-auth/react'
 import { toast } from 'sonner'
 
 // Loading component for Suspense fallback
@@ -24,7 +24,6 @@ const LoadingSpinner = () => (
 const EZSShellViewContent = () => {
   const params = useParams()
   const labId = params.labId as string
-  const { data: session } = useSession()
   const { socket, isConnected, isAuthenticated, connect, disconnect } = useAuthenticatedSocket(labId)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -44,10 +43,11 @@ const EZSShellViewContent = () => {
   const sessionId = searchParams.get('session')
   const enrollmentId = searchParams.get('enrollment')
 
-  // Connect socket when session is ready
+  // Connect socket when component mounts
   React.useEffect(() => {
-    if (session?.user && !isConnected) {
-      // Add a small delay to ensure the token is ready
+    if (!isConnected && !socket) {
+      console.log('🔗 Initiating socket connection for authenticated user')
+      // Add a small delay to ensure everything is ready
       const timer = setTimeout(() => {
         connect().catch((error) => {
           console.error('Socket connection failed:', error)
@@ -57,7 +57,26 @@ const EZSShellViewContent = () => {
 
       return () => clearTimeout(timer)
     }
-  }, [session, isConnected, connect])
+  }, [isConnected, socket, connect])
+
+  // Handle tab visibility changes to ensure proper state updates
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isConnected && !socket) {
+        console.log('🔄 Tab became visible, checking connection state')
+        // Force a re-render by checking connection state
+        setTimeout(() => {
+          if (!isConnected && !socket) {
+            console.log('🔗 Reconnecting due to tab focus...')
+            connect().catch(console.error)
+          }
+        }, 500)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [isConnected, socket, connect])
 
   // Update socket ref when socket changes
   React.useEffect(() => {
@@ -83,6 +102,7 @@ const EZSShellViewContent = () => {
       // Skip initialization if we already have a session
       if (labSession) {
         console.log('✅ Session already exists, skipping initialization:', labSession.id)
+        setLoading(false) // Make sure to clear loading state
         return
       }
 
@@ -178,8 +198,25 @@ const EZSShellViewContent = () => {
     }
 
     initializeSession()
-  }, [labId, sessionId, router])
+  }, [labId, sessionId, router, labSession])
 
+
+  // Determine if we're still in loading state
+  const isInitializing = React.useMemo(() => {
+    const isSessionLoading = loading
+    const needsSocketConnection = !socket && !isConnected
+
+    console.log('🔄 Loading state check:', {
+      loading,
+      hasSocket: !!socket,
+      isConnected,
+      isAuthenticated,
+      isSessionLoading,
+      needsSocketConnection
+    })
+
+    return isSessionLoading || needsSocketConnection
+  }, [loading, socket, isConnected, isAuthenticated])
 
   React.useEffect(() => {
     return () => {
@@ -187,23 +224,20 @@ const EZSShellViewContent = () => {
     }
   }, [disconnect])
 
-  if (loading || !session || !isConnected || !isAuthenticated) {
+  if (isInitializing) {
     return (
       <div className="container-shell flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>
-            {!session ? 'Authenticating...' :
-              !isConnected ? 'Connecting to lab environment...' :
-                !isAuthenticated ? 'Authenticating with lab environment...' :
-                  'Initializing lab session...'}
+            {loading ? 'Initializing lab session...' :
+              (!socket || !isConnected) ? 'Connecting to lab environment...' :
+                'Loading...'}
           </p>
-          {session && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              Socket: {isConnected ? '🟢 Connected' : '🔴 Connecting...'}
-              {isAuthenticated && ' (Authenticated)'}
-            </div>
-          )}
+          <div className="mt-2 text-sm text-muted-foreground">
+            Socket: {isConnected ? '🟢 Connected' : socket ? '🟡 Connecting...' : '⚪ Not connected'}
+            {isAuthenticated && ' (Authenticated)'}
+          </div>
         </div>
       </div>
     )
