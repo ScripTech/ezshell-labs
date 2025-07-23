@@ -93,6 +93,15 @@ export class StatusMonitorService {
       const queue = queueData[0];
       const provision = provisionData[0];
 
+      logger.info('Status monitor data for steps calculation', {
+        enrollmentId,
+        queueStatus: queue?.status,
+        instanceId: provision?.instanceId,
+        instanceState: provision?.instanceState,
+        publicIp: provision?.publicIp,
+        hasProvision: !!provision
+      });
+
       // Build steps based on current state
       const steps: ProvisioningStep[] = [
         {
@@ -111,6 +120,11 @@ export class StatusMonitorService {
           completedAt: provision?.instanceState === 'running' && provision?.publicIp ? provision.updatedAt || undefined : undefined,
         },
       ];
+
+      logger.debug('Generated provisioning steps', {
+        enrollmentId,
+        steps: steps.map(s => ({ step: s.step, status: s.status, completedAt: s.completedAt }))
+      });
 
       // Add error information if exists
       if (queue?.status === 'failed' && queue?.lastError) {
@@ -305,25 +319,48 @@ export class StatusMonitorService {
    * Determine lab ready status based on database instance state
    */
   private getLabReadyStatus(provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
-    if (!provision?.instanceId) return 'pending';
+    if (!provision?.instanceId) {
+      logger.debug('Lab ready status: pending (no instanceId)', { provision: !!provision });
+      return 'pending';
+    }
 
     // Check the actual instance state from database
     const state = provision.instanceState;
     const hasPublicIp = !!provision.publicIp;
 
+    logger.debug('Lab ready status calculation', {
+      instanceId: provision.instanceId,
+      state,
+      hasPublicIp,
+      publicIp: provision.publicIp
+    });
+
     // Lab is ready when instance is running AND has a public IP
-    if (state === 'running' && hasPublicIp) return 'completed';
+    if (state === 'running' && hasPublicIp) {
+      logger.info('Lab ready status: COMPLETED', { instanceId: provision.instanceId, publicIp: provision.publicIp });
+      return 'completed';
+    }
 
     // Failed states
-    if (['terminated', 'shutting-down', 'stopped'].includes(state)) return 'failed';
+    if (['terminated', 'shutting-down', 'stopped'].includes(state)) {
+      logger.warn('Lab ready status: FAILED', { instanceId: provision.instanceId, state });
+      return 'failed';
+    }
 
     // Instance is running but no public IP yet - still in progress
-    if (state === 'running' && !hasPublicIp) return 'in_progress';
+    if (state === 'running' && !hasPublicIp) {
+      logger.debug('Lab ready status: in_progress (running but no public IP)', { instanceId: provision.instanceId });
+      return 'in_progress';
+    }
 
     // Instance is starting up
-    if (['pending', 'running'].includes(state)) return 'in_progress';
+    if (['pending', 'running'].includes(state)) {
+      logger.debug('Lab ready status: in_progress (instance starting)', { instanceId: provision.instanceId, state });
+      return 'in_progress';
+    }
 
     // Default to pending for other states
+    logger.debug('Lab ready status: pending (default)', { instanceId: provision.instanceId, state });
     return 'pending';
   }
 }

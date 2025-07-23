@@ -508,24 +508,63 @@ router.get('/steps/:enrollmentId', async (req: Request, res: Response) => {
     // Get detailed steps from status monitor
     const steps = await statusMonitorService.getProvisioningSteps(enrollmentId);
 
+    // Also get direct database state for accurate status determination
+    const [queueData, provisionData] = await Promise.all([
+      db.select().from(provisioningQueue)
+        .where(eq(provisioningQueue.enrollmentId, enrollmentId))
+        .limit(1),
+      db.select().from(labProvisions)
+        .where(eq(labProvisions.enrollmentId, enrollmentId))
+        .limit(1)
+    ]);
+
+    const queue = queueData[0];
+    const provision = provisionData[0];
+
+    logger.info('Database state for status calculation', {
+      enrollmentId,
+      queueStatus: queue?.status,
+      instanceState: provision?.instanceState,
+      hasPublicIp: !!provision?.publicIp,
+      steps: steps.map(s => ({ step: s.step, status: s.status }))
+    });
+
     // Calculate overall progress percentage
     const completedSteps = steps.filter(step => step.status === 'completed').length;
     const totalSteps = steps.length;
     const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
 
-    // Determine overall status
+    // Determine overall status based on database state AND steps
     const hasFailedSteps = steps.some(step => step.status === 'failed');
     const hasInProgressSteps = steps.some(step => step.status === 'in_progress');
     const allCompleted = steps.every(step => step.status === 'completed');
 
+    // Check if lab is actually ready based on database state
+    const isLabReady = provision?.instanceState === 'running' && !!provision?.publicIp;
+    const isQueueCompleted = queue?.status === 'completed';
+
     let overallStatus = 'in_progress';
-    if (hasFailedSteps) {
+    if (hasFailedSteps || queue?.status === 'failed') {
       overallStatus = 'failed';
+    } else if (isLabReady && isQueueCompleted) {
+      // Lab is definitely ready if instance is running with public IP AND queue is completed
+      overallStatus = 'completed';
     } else if (allCompleted) {
+      // All steps completed according to status monitor
       overallStatus = 'completed';
     } else if (!hasInProgressSteps && completedSteps === 1) {
       overallStatus = 'queued';
     }
+
+    logger.info('Overall status determined', {
+      enrollmentId,
+      overallStatus,
+      isLabReady,
+      isQueueCompleted,
+      allCompleted,
+      hasFailedSteps,
+      hasInProgressSteps
+    });
 
     // Get connection info if lab is ready
     let connectionInfo = null;
