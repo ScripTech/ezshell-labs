@@ -25,6 +25,7 @@ export type Lab = {
     total: number;
     exercises: LabExercise[];
   };
+  enrollment: LabEnrollment | null;
 };
 
 export interface LabEnrollment {

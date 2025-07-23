@@ -17,6 +17,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LabTasksOverview } from '@/components/lab-tasks-overview'
 import { LabProvisioningDialog } from '@/components/lab-provisioning-dialog'
+import EnrollmentStatus from '@/components/enrollment-status'
 
 export default function LabDetailsPage() {
   const params = useParams()
@@ -26,22 +27,22 @@ export default function LabDetailsPage() {
   const [isEnrolling, setIsEnrolling] = useState(false)
   const [showProvisioningDialog, setShowProvisioningDialog] = useState(false)
 
-  useEffect(() => {
-    const fetchLabDetails = async () => {
-      try {
-        const response = await fetch(`/api/labs/${ params.id }`)
-        if (!response.ok) throw new Error('Failed to fetch lab details')
-        const data = await response.json()
-        data.isEnrolled = data.enrollment?.status === 'enrolled'
-        setLab(data)
-      } catch (error) {
-        toast.error('Failed to load lab details')
-        console.error(error)
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchLabDetails = async () => {
+    try {
+      const response = await fetch(`/api/labs/${ params.id }`)
+      if (!response.ok) throw new Error('Failed to fetch lab details')
+      const data = await response.json()
+      data.isEnrolled = data.enrollment?.status === 'enrolled'
+      setLab(data)
+    } catch (error) {
+      toast.error('Failed to load lab details')
+      console.error(error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchLabDetails()
   }, [params.id, router])
 
@@ -92,12 +93,22 @@ export default function LabDetailsPage() {
     // Close dialog and redirect to lab
     setShowProvisioningDialog(false)
     toast.success('Lab environment is ready!')
-    router.push(`/ezshell/${lab?.id}&enrollment=${enrollmentId}`)
+    fetchLabDetails() // Refresh lab details to get updated enrollment
   }
 
   return (
     <div className="container mx-auto py-8">
       <div className="max-w-4xl mx-auto">
+
+        {/* Enrollment Status */}
+        {lab.enrollment && (
+          <EnrollmentStatus labId={lab.id} enrollment={{
+            id: lab.enrollment.id,
+            status: lab.enrollment.status,
+            progress: lab.enrollment.progress,
+            enrolledAt: lab.enrollment.enrolledAt
+          }} />
+        )}
         <h1 className="text-3xl font-bold mb-6">{lab.name}</h1>
         <div className="aspect-video relative mb-8 rounded-lg overflow-hidden">
           <Image
@@ -146,36 +157,19 @@ export default function LabDetailsPage() {
             </TabsContent>
           </Tabs>
         </div>
-
-        {lab.isEnrolled ? (
-          <Button
-            size="lg"
-            className="mt-8"
-            onClick={() => router.push(`/ezshell/${ lab.id }`)}
-          >
-            Continue Lab
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        ) : (
-          <Button
-            size="lg"
-            className="mt-8"
-            disabled={isEnrolling}
-            onClick={() => handleEnrollment(lab.id)}
-          >
-            {isEnrolling ? 'Enrolling...' : 'Enroll in Lab'}
-          </Button>
-        )}
-
         {/* Lab Provisioning Dialog */}
-        <LabProvisioningDialog
-          isOpen={showProvisioningDialog}
-          onClose={() => setShowProvisioningDialog(false)}
-          callbackIsEnrolling={setIsEnrolling}
-          labId={lab.id}
-          labName={lab.name}
-          onProvisioningComplete={handleProvisioningComplete}
-        />
+        {
+          !lab.enrollment && (
+            <LabProvisioningDialog
+              isOpen={showProvisioningDialog}
+              onClose={() => setShowProvisioningDialog(false)}
+              callbackIsEnrolling={setIsEnrolling}
+              labId={lab.id}
+              labName={lab.name}
+              onProvisioningComplete={handleProvisioningComplete}
+            />
+          )
+        }
       </div>
     </div>
   )

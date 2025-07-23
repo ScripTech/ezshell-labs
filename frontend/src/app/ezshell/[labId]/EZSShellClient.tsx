@@ -24,7 +24,6 @@ const LoadingSpinner = () => (
 const EZSShellViewContent = () => {
   const params = useParams()
   const labId = params.labId as string
-
   const { data: session } = useSession()
   const { socket, isConnected, isAuthenticated, connect, disconnect } = useAuthenticatedSocket(labId)
   const searchParams = useSearchParams()
@@ -43,6 +42,7 @@ const EZSShellViewContent = () => {
   }, [router])
 
   const sessionId = searchParams.get('session')
+  const enrollmentId = searchParams.get('enrollment')
 
   // Connect socket when session is ready
   React.useEffect(() => {
@@ -133,14 +133,14 @@ const EZSShellViewContent = () => {
             // Update URL with session ID if different
             if (sessionId !== activeSession.id) {
               console.log('🔄 Updating URL with correct session ID')
-              router.replace(`/ezshell/${labId}/?session=${activeSession.id}`)
+              router.replace(`/ezshell/${ labId }/?enrollment=${ enrollmentId }&session=${ activeSession.id }`)
             }
             return // Exit early, we found an active session
           }
         }
 
         // Only create new session if no active session exists
-        console.log('❌ No active session found, creating new one...')
+        console.log('❌ No active session found, creating new one...', labId)
         const createResponse = await fetch('/api/lab-sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -155,7 +155,7 @@ const EZSShellViewContent = () => {
             duration: newSession.duration
           })
           setLabSession(newSession)
-          router.replace(`/ezshell/${labId}/?session=${newSession.id}`)
+          router.replace(`/ezshell/${ labId }/?enrollment=${ enrollmentId }&session=${newSession.id}`)
           toast.success('Lab session started!')
         } else {
           console.error('❌ Failed to create session')
