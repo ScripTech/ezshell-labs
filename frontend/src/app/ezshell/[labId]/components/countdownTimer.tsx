@@ -30,7 +30,7 @@ const CountdownTimer = ({ time, hasTimerCompleted }: Props) => {
 
   return (
     <div className='text-sm'>
-      <span>Tempo Restante: </span>
+      <span>Remaining time: </span>
       <span>{minutes}:{seconds < 10 ? `0${ seconds }` : seconds}</span>
     </div>
   );

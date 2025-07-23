@@ -157,6 +157,18 @@ export default function LabDetailsPage() {
             </TabsContent>
           </Tabs>
         </div>
+
+        {!lab.isEnrolled &&(
+          <Button
+            size="lg"
+            className="mt-4"
+            disabled={isEnrolling}
+            onClick={() => handleEnrollment(lab.id)}
+          >
+            {isEnrolling ? 'Enrolling...' : 'Enroll in Lab'}
+          </Button>
+        )}
+
         {/* Lab Provisioning Dialog */}
         {
           !lab.enrollment && (

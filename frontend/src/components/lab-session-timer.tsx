@@ -71,7 +71,7 @@ export function LabSessionTimer({
 
       if (response.ok) {
         const data = await response.json()
-        console.log('⏱️  Server time data:', {
+        console.log('⏱️  Lab Session time data:', {
           timeRemaining: data.timeRemaining,
           timeSpent: data.timeSpent,
           totalDuration: data.totalDuration,

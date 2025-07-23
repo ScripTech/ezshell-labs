@@ -3,6 +3,7 @@ import { labProgressSessions } from "@/db/schemas/ProgressSchema"
 import { labs, labEnrollments } from "@/db/schemas/LabSchema"
 import { eq, and, desc } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import logger from '../../../lab-provisioner/dist/utils/logger';
 
 export interface LabSession {
   id: string
@@ -89,12 +90,13 @@ export class LabSessionService {
         return existingSession
       }
 
+      const hr = labInfo[0].duration / 60;
       // Calculate expiration time based on lab duration
       const now = new Date()
-      const expiresAt = new Date(now.getTime() + (labInfo[0].duration * 60 * 1000))
+      const expiresAt = new Date(now.getTime() + hr * 60 * 60 * 1000); // convert minutes to milliseconds
 
       const sessionId = nanoid()
-      const sessionName = `${labInfo[0].name}-Session-${Date.now()}`
+      const sessionName = `${labInfo[0].labId}-Session-${Date.now()}`
 
       // Create new session
       const [newSession] = await db
