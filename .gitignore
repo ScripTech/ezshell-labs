@@ -49,3 +49,4 @@ scripts/get-from-build.sh
 lab-provisioner/dist/*
 lab-provisioner/logs/*
 logs/
+docs/ENHANCED_DOCKER_BUILDS.md

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 
 interface LabSession {
   id: string
@@ -19,6 +20,7 @@ interface LabSession {
 interface LabSessionContextType {
   labSession: LabSession | null
   labInfo: any
+  userSession: any
   setLabSession: (session: LabSession | null) => void
   setLabInfo: (info: any) => void
   isInLabWorkspace: boolean
@@ -30,14 +32,21 @@ export function LabSessionProvider({ children }: { children: React.ReactNode }) 
   const [labSession, setLabSession] = useState<LabSession | null>(null)
   const [labInfo, setLabInfo] = useState<any>(null)
   const searchParams = useSearchParams()
-
+  const [userSession, setUserSession] = useState<any>(null)
+  const { data: session} = useSession()
   // Check if we're in the lab workspace (ezshell route)
   const isInLabWorkspace = typeof window !== 'undefined' &&
     window.location.pathname.includes('/ezshell')
 
+
+  useEffect(() => {
+    setUserSession(session)
+  }, [session])
+
   const value = {
     labSession,
     labInfo,
+    userSession,
     setLabSession,
     setLabInfo,
     isInLabWorkspace

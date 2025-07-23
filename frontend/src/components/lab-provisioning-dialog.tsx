@@ -20,7 +20,7 @@ interface ProvisioningStepsResponse {
   overallStatus: 'queued' | 'in_progress' | 'completed' | 'failed'
   progressPercentage: number
   steps: {
-    step: 'enrollment' | 'aws_instance_creation' | 'environment_setup' | 'lab_ready'
+    step: 'enrollment' | 'aws_instance_creation' | 'lab_ready'
     status: 'pending' | 'in_progress' | 'completed' | 'failed'
     completedAt?: string
     error?: string
@@ -80,13 +80,6 @@ export function LabProvisioningDialog({
       duration: '2-3 minutes'
     },
     {
-      id: 'configuration',
-      title: 'Environment Setup',
-      description: 'Installing lab tools and configuring your environment',
-      status: 'pending',
-      duration: '1-2 minutes'
-    },
-    {
       id: 'ready',
       title: 'Lab Ready',
       description: 'Your lab environment is ready to use',
@@ -104,8 +97,7 @@ export function LabProvisioningDialog({
     const stepMapping = {
       'enrollment': 0,
       'aws_instance_creation': 1,
-      'environment_setup': 2,
-      'lab_ready': 3
+      'lab_ready': 2
     }
 
     // Update each step based on backend response
@@ -267,11 +259,6 @@ export function LabProvisioningDialog({
     }
   }
 
-  const getProgressValue = () => {
-    const completedSteps = provisioningSteps.filter(step => step.status === 'completed').length
-    return (completedSteps / provisioningSteps.length) * 100
-  }
-
   const isCompleted = provisioningStatus?.overallStatus === 'completed' && provisioningStatus?.connection?.ready
   const isFailed = error || provisioningStatus?.overallStatus === 'failed'
 
@@ -300,14 +287,6 @@ export function LabProvisioningDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progress</span>
-              <span>{Math.round(getProgressValue())}%</span>
-            </div>
-            <Progress value={getProgressValue()} className="h-2" />
-          </div>
 
           {/* Time Remaining (if lab is ready) */}
           {isCompleted && (
@@ -355,7 +334,7 @@ export function LabProvisioningDialog({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
-            {!enrollmentId && !isEnrolling && (
+            {!enrollmentId && !isEnrolling &&(
               <Button onClick={handleEnrollment} className="flex-1">
                 Start Lab Provisioning
               </Button>

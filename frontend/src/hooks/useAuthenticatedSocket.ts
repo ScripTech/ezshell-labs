@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
 import { Socket } from 'socket.io-client';
 import { authenticatedSocketService } from '@/services/authenticatedSocket';
 
@@ -14,19 +13,14 @@ export interface UseAuthenticatedSocketResult {
 
 /**
  * React hook for managing authenticated Socket.IO connections
+ * Note: This is used in protected routes, so authentication is guaranteed
  */
 export function useAuthenticatedSocket(labId?: string, sessionId?: string): UseAuthenticatedSocketResult {
-  const { data: session, status } = useSession();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback(async () => {
-    if (!session?.user) {
-      setError('User not authenticated');
-      return;
-    }
-
     if (!labId) {
       setError('Lab ID is required');
       return;
@@ -40,7 +34,7 @@ export function useAuthenticatedSocket(labId?: string, sessionId?: string): UseA
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect');
     }
-  }, [session, labId, sessionId]);
+  }, [labId, sessionId]);
 
   const disconnect = useCallback(() => {
     authenticatedSocketService.disconnect();
@@ -48,13 +42,9 @@ export function useAuthenticatedSocket(labId?: string, sessionId?: string): UseA
     setIsConnected(false);
   }, []);
 
-  // Auto-connect when authenticated and labId is available
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user && labId && !socket) {
-      console.log(`🔗 Auto-connecting to lab ${labId}${sessionId ? ` with session ${sessionId}` : ''}`);
-      connect();
-    }
-  }, [status, session, labId, sessionId, socket, connect]);
+    // Auto-connect is handled by the parent component since this is a protected route
+
+  // Setup socket event listeners
 
   // Setup socket event listeners
   useEffect(() => {
@@ -100,7 +90,7 @@ export function useAuthenticatedSocket(labId?: string, sessionId?: string): UseA
   return {
     socket,
     isConnected,
-    isAuthenticated: status === 'authenticated',
+    isAuthenticated: true, // Always true in protected routes
     error,
     connect,
     disconnect,

@@ -28,14 +28,10 @@ class AuthenticatedSocketService {
       }
 
       const data = await response.json();
-      console.log('Token response from API:', data);
-
       if (!data.token) {
         console.error('No token in response:', data);
         return null;
       }
-
-      console.log('Using token for socket connection:', data.token);
       return data.token;
     } catch (error) {
       console.error('Error getting auth token:', error);
@@ -69,7 +65,11 @@ class AuthenticatedSocketService {
         return null;
       }
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_WS || 'http://ezetsu-labs:8443';
+
+      console.log('🔗 Connecting to backend WebSocket:', backendUrl);
+      console.log('Environment variables:', { NEXT_PUBLIC_BACKEND_WS: process.env.NEXT_PUBLIC_BACKEND_WS
+      });
 
       // Store current lab parameters
       this.currentLabId = labId;

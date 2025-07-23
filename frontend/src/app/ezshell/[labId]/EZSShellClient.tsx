@@ -8,7 +8,7 @@ import { ShellSectionComponent } from './components/shell-section'
 import { TaskSection } from './components/task-section'
 import { useLabSession } from '@/contexts/LabSessionContext'
 import { useAuthenticatedSocket } from '@/hooks/useAuthenticatedSocket'
-import { useSession, SessionProvider } from 'next-auth/react'
+import { SessionProvider } from 'next-auth/react'
 import { toast } from 'sonner'
 
 // Loading component for Suspense fallback
@@ -24,11 +24,10 @@ const LoadingSpinner = () => (
 const EZSShellViewContent = () => {
   const params = useParams()
   const labId = params.labId as string
-
-  const { data: session } = useSession()
   const { socket, isConnected, isAuthenticated, connect, disconnect } = useAuthenticatedSocket(labId)
   const searchParams = useSearchParams()
   const router = useRouter()
+  const routerRef = React.useRef(router)
   const [termPanelSize, setTermPanelSize] = React.useState<number>(63)
   const { labSession, labInfo, setLabSession, setLabInfo } = useLabSession()
   const [loading, setLoading] = React.useState(true)
@@ -36,12 +35,19 @@ const EZSShellViewContent = () => {
   // Create a ref for the socket to maintain compatibility with TaskSection
   const socketRef = React.useRef(socket)
 
-  const sessionId = searchParams.get('session')
-
-  // Connect socket when session is ready
+  // Update router ref
   React.useEffect(() => {
-    if (session?.user && !isConnected) {
-      // Add a small delay to ensure the token is ready
+    routerRef.current = router
+  }, [router])
+
+  const sessionId = searchParams.get('session')
+  const enrollmentId = searchParams.get('enrollment')
+
+  // Connect socket when component mounts
+  React.useEffect(() => {
+    if (!isConnected && !socket) {
+      console.log('🔗 Initiating socket connection for authenticated user')
+      // Add a small delay to ensure everything is ready
       const timer = setTimeout(() => {
         connect().catch((error) => {
           console.error('Socket connection failed:', error)
@@ -51,7 +57,26 @@ const EZSShellViewContent = () => {
 
       return () => clearTimeout(timer)
     }
-  }, [session, isConnected, connect])
+  }, [isConnected, socket, connect])
+
+  // Handle tab visibility changes to ensure proper state updates
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isConnected && !socket) {
+        console.log('🔄 Tab became visible, checking connection state')
+        // Force a re-render by checking connection state
+        setTimeout(() => {
+          if (!isConnected && !socket) {
+            console.log('🔗 Reconnecting due to tab focus...')
+            connect().catch(console.error)
+          }
+        }, 500)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [isConnected, socket, connect])
 
   // Update socket ref when socket changes
   React.useEffect(() => {
@@ -61,9 +86,23 @@ const EZSShellViewContent = () => {
   // Fetch or create lab session
   React.useEffect(() => {
     const initializeSession = async () => {
+      console.log('🔄 Session initialization starting...', {
+        labId,
+        sessionId,
+        hasExistingSession: !!labSession,
+        existingSessionId: labSession?.id
+      })
+
       if (!labId) {
         toast.error('No lab specified')
-        router.push('/user/labs')
+        routerRef.current.push('/user/labs')
+        return
+      }
+
+      // Skip initialization if we already have a session
+      if (labSession) {
+        console.log('✅ Session already exists, skipping initialization:', labSession.id)
+        setLoading(false) // Make sure to clear loading state
         return
       }
 
@@ -72,59 +111,86 @@ const EZSShellViewContent = () => {
 
         // If we have a session ID, try to get session info
         if (sessionId) {
-          const sessionResponse = await fetch(`/api/lab-sessions/${ sessionId }`)
+          console.log('🔍 Fetching session by ID:', sessionId)
+          const sessionResponse = await fetch(`/api/lab-sessions/${sessionId}`)
           if (sessionResponse.ok) {
             const timeInfo = await sessionResponse.json()
+            console.log('⏱️  Time info for existing session:', timeInfo)
             // Get full session details
-            const activeSessionResponse = await fetch(`/api/lab-sessions?labId=${ labId }`)
+            const activeSessionResponse = await fetch(`/api/lab-sessions?labId=${labId}`)
             if (activeSessionResponse.ok) {
               const sessionData = await activeSessionResponse.json()
               if (sessionData && sessionData.id === sessionId) {
+                console.log('✅ Found existing session with time info:', {
+                  sessionId: sessionData.id,
+                  status: sessionData.status,
+                  timeRemaining: timeInfo.timeRemaining,
+                  totalDuration: timeInfo.totalDuration,
+                  timeSpent: timeInfo.timeSpent
+                })
                 setLabSession(sessionData)
+                return // Exit early, we found the session
               }
             }
+          } else {
+            console.warn('❌ Session ID not found:', sessionId)
           }
         }
 
-        // If no session found, try to get active session or create new one
-        if (!labSession) {
-          // First check for active session
-          const activeSessionResponse = await fetch(`/api/lab-sessions?labId=${ labId }`)
-          if (activeSessionResponse.ok) {
-            const activeSession = await activeSessionResponse.json()
-            if (activeSession) {
-              setLabSession(activeSession)
-              // Update URL with session ID
-              router.replace(`/ezshell/${ labId }/?session=${ activeSession.id }`)
-            } else {
-              // No active session, create new one
-              const createResponse = await fetch('/api/lab-sessions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ labId })
-              })
-
-              if (createResponse.ok) {
-                const newSession = await createResponse.json()
-                setLabSession(newSession)
-                router.replace(`/ezshell/${ labId }/?session=${ newSession.id }`)
-                toast.success('Lab session started!')
-              } else {
-                toast.error('Failed to start lab session')
-              }
+        // Check for active session first
+        console.log('🔍 Checking for active session...')
+        const activeSessionResponse = await fetch(`/api/lab-sessions?labId=${labId}`)
+        if (activeSessionResponse.ok) {
+          const activeSession = await activeSessionResponse.json()
+          if (activeSession) {
+            console.log('✅ Found active session:', {
+              sessionId: activeSession.id,
+              status: activeSession.status,
+              startedAt: activeSession.startedAt,
+              expiresAt: activeSession.expiresAt
+            })
+            setLabSession(activeSession)
+            // Update URL with session ID if different
+            if (sessionId !== activeSession.id) {
+              console.log('🔄 Updating URL with correct session ID')
+              router.replace(`/ezshell/${ labId }/?enrollment=${ enrollmentId }&session=${ activeSession.id }`)
             }
+            return // Exit early, we found an active session
           }
+        }
+
+        // Only create new session if no active session exists
+        console.log('❌ No active session found, creating new one...', labId)
+        const createResponse = await fetch('/api/lab-sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ labId })
+        })
+
+        if (createResponse.ok) {
+          const newSession = await createResponse.json()
+          console.log('✅ Created new session:', {
+            sessionId: newSession.id,
+            status: newSession.status,
+            duration: newSession.duration
+          })
+          setLabSession(newSession)
+          router.replace(`/ezshell/${ labId }/?enrollment=${ enrollmentId }&session=${newSession.id}`)
+          toast.success('Lab session started!')
+        } else {
+          console.error('❌ Failed to create session')
+          toast.error('Failed to start lab session')
         }
 
         // Get lab information
-        const labResponse = await fetch(`/api/labs/${ labId }`)
+        const labResponse = await fetch(`/api/labs/${labId}`)
         if (labResponse.ok) {
           const lab = await labResponse.json()
           setLabInfo(lab)
         }
 
       } catch (error) {
-        console.error('Error initializing session:', error)
+        console.error('❌ Error initializing session:', error)
         toast.error('Failed to initialize lab session')
       } finally {
         setLoading(false)
@@ -132,8 +198,25 @@ const EZSShellViewContent = () => {
     }
 
     initializeSession()
-  }, [labId, sessionId, router])
+  }, [labId, sessionId, router, labSession])
 
+
+  // Determine if we're still in loading state
+  const isInitializing = React.useMemo(() => {
+    const isSessionLoading = loading
+    const needsSocketConnection = !socket && !isConnected
+
+    console.log('🔄 Loading state check:', {
+      loading,
+      hasSocket: !!socket,
+      isConnected,
+      isAuthenticated,
+      isSessionLoading,
+      needsSocketConnection
+    })
+
+    return isSessionLoading || needsSocketConnection
+  }, [loading, socket, isConnected, isAuthenticated])
 
   React.useEffect(() => {
     return () => {
@@ -141,23 +224,20 @@ const EZSShellViewContent = () => {
     }
   }, [disconnect])
 
-  if (loading || !session || !isConnected || !isAuthenticated) {
+  if (isInitializing) {
     return (
       <div className="container-shell flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>
-            {!session ? 'Authenticating...' :
-              !isConnected ? 'Connecting to lab environment...' :
-                !isAuthenticated ? 'Authenticating with lab environment...' :
-                  'Initializing lab session...'}
+            {loading ? 'Initializing lab session...' :
+              (!socket || !isConnected) ? 'Connecting to lab environment...' :
+                'Loading...'}
           </p>
-          {session && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              Socket: {isConnected ? '🟢 Connected' : '🔴 Connecting...'}
-              {isAuthenticated && ' (Authenticated)'}
-            </div>
-          )}
+          <div className="mt-2 text-sm text-muted-foreground">
+            Socket: {isConnected ? '🟢 Connected' : socket ? '🟡 Connecting...' : '⚪ Not connected'}
+            {isAuthenticated && ' (Authenticated)'}
+          </div>
         </div>
       </div>
     )
@@ -168,9 +248,6 @@ const EZSShellViewContent = () => {
       {/* Lab Info Header */}
       {labInfo && !labSession && (
         <div className="mb-4">
-          <h1 className="text-xl font-semibold">
-            {labInfo.name}
-          </h1>
           <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
             <p className="text-sm text-yellow-600">
               No active session found. Please enroll in this lab to start a timed session.
