@@ -42,6 +42,8 @@ export function LabSessionTimer({
 }: LabSessionTimerProps) {
   const [timeInfo, setTimeInfo] = useState<SessionTimeInfo | null>(null)
   const [localTimeRemaining, setLocalTimeRemaining] = useState<number>(0)
+  const [isInitialized, setIsInitialized] = useState<boolean>(false)
+  const [lastServerSync, setLastServerSync] = useState<number>(0)
   const [loading, setLoading] = useState(false)
   const [showEndDialog, setShowEndDialog] = useState(false)
   const [showPauseDialog, setShowPauseDialog] = useState(false)
@@ -59,19 +61,57 @@ export function LabSessionTimer({
   }, [])
 
   // Fetch session time info
-  const fetchTimeInfo = useCallback(async () => {
+  const fetchTimeInfo = useCallback(async (forceSync = false) => {
     if (!session?.id) return
 
-    console.log('Fetching time info for session:', session.id)
+    console.log('⏱️  Fetching time info for session:', session.id, { forceSync, isInitialized })
     try {
       const response = await fetch(`/api/lab-sessions/${session.id}`)
-      console.log('Time info response status:', response.status)
+      console.log('⏱️  Time info response status:', response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Time info data:', data)
+        console.log('⏱️  Server time data:', {
+          timeRemaining: data.timeRemaining,
+          timeSpent: data.timeSpent,
+          totalDuration: data.totalDuration,
+          isExpired: data.isExpired
+        })
+
+        const now = Date.now()
         setTimeInfo(data)
-        setLocalTimeRemaining(data.timeRemaining) // Update local countdown
+
+        // 1. INITIAL LOAD: Always set the server time
+        if (!isInitialized) {
+          console.log('🚀 Initial timer setup with server time:', data.timeRemaining)
+          setLocalTimeRemaining(data.timeRemaining)
+          setIsInitialized(true)
+          setLastServerSync(now)
+          return
+        }
+
+        // 2. PERIODIC SYNC: Only update if there's significant drift or force sync
+        const currentLocal = localTimeRemaining
+        const serverTime = data.timeRemaining
+        const drift = Math.abs(currentLocal - serverTime)
+
+        if (forceSync || drift > 5) {
+          console.log('🔄 Syncing timer due to drift:', {
+            local: currentLocal,
+            server: serverTime,
+            drift,
+            forceSync
+          })
+          setLocalTimeRemaining(serverTime)
+        } else {
+          console.log('✅ Timer in sync, keeping local countdown:', {
+            local: currentLocal,
+            server: serverTime,
+            drift
+          })
+        }
+
+        setLastServerSync(now)
 
         // Auto-end session if expired
         if (data.isExpired && session.status === 'active') {
@@ -79,16 +119,14 @@ export function LabSessionTimer({
           handleEndSession('expired')
         }
       } else {
-        console.error('Failed to fetch time info, status:', response.status)
+        console.error('❌ Failed to fetch time info, status:', response.status)
         const errorText = await response.text()
         console.error('Error response:', errorText)
       }
     } catch (error) {
-      console.error('Failed to fetch session time info:', error)
+      console.error('❌ Failed to fetch session time info:', error)
     }
-  }, [session?.id, session?.status])
-
-  // Update session activity (heartbeat)
+  }, [session?.id, session?.status, isInitialized, localTimeRemaining])  // Update session activity (heartbeat)
   const updateActivity = useCallback(async () => {
     if (!session?.id || session.status !== 'active') return
 
@@ -114,7 +152,7 @@ export function LabSessionTimer({
       })
 
       if (response.ok) {
-        await fetchTimeInfo()
+        await fetchTimeInfo(true) // Force sync after session action
 
         switch (action) {
           case 'pause':
@@ -159,33 +197,62 @@ export function LabSessionTimer({
     }
   }
 
-  // Set up intervals for fetching time info and updating activity
+  // Reset initialization state when session changes
+  useEffect(() => {
+    if (session?.id) {
+      console.log('🔄 Session changed, resetting timer initialization:', session.id)
+      setIsInitialized(false)
+      setLocalTimeRemaining(0)
+      setTimeInfo(null)
+      setLastServerSync(0)
+    }
+  }, [session?.id])
   useEffect(() => {
     if (!session?.id) return
 
-    // Initial fetch
-    fetchTimeInfo()
+    // Initial fetch with force sync to get server time
+    fetchTimeInfo(true)
 
     // Set up intervals
-    const timeUpdateInterval = setInterval(fetchTimeInfo, 10000) // Update from server every 10 seconds
-    const activityInterval = setInterval(updateActivity, 30000) // Heartbeat every 30 seconds
+    const timeUpdateInterval = setInterval(() => {
+      // Periodic sync every 60 seconds (no force sync - only sync if drift detected)
+      fetchTimeInfo(false)
+    }, 60000)
+
+    const forceSyncInterval = setInterval(() => {
+      // Force sync every 60 seconds to prevent long-term drift
+      fetchTimeInfo(true)
+    }, 60000)
+
+    const activityInterval = setInterval(updateActivity, 60000) // Heartbeat every 30 seconds
 
     return () => {
       clearInterval(timeUpdateInterval)
+      clearInterval(forceSyncInterval)
       clearInterval(activityInterval)
     }
   }, [session?.id, fetchTimeInfo, updateActivity])
 
-  // Local countdown effect - updates every second when session is active
+  // Local smooth countdown - runs independently every second
   useEffect(() => {
-    if (!session?.id || session.status !== 'active' || !timeInfo) return
+    if (!session?.id || session.status !== 'active' || !isInitialized) return
 
+    console.log('🎯 Starting local countdown timer')
     const countdownInterval = setInterval(() => {
       setLocalTimeRemaining(prev => {
         const newTime = Math.max(0, prev - 1)
 
+        // Log every 10 seconds for debugging
+        if (newTime % 10 === 0) {
+          console.log('⏱️  Local timer tick:', {
+            remaining: newTime,
+            formatted: formatTime(newTime)
+          })
+        }
+
         // If time reaches 0, trigger session end
         if (newTime === 0 && prev > 0) {
+          console.log('⏰ Timer expired, ending session')
           toast.error('Lab session has expired')
           handleEndSession('expired')
         }
@@ -194,15 +261,18 @@ export function LabSessionTimer({
       })
     }, 1000) // Update every second
 
-    return () => clearInterval(countdownInterval)
-  }, [session?.status, session?.id, timeInfo])
+    return () => {
+      console.log('🛑 Stopping local countdown timer')
+      clearInterval(countdownInterval)
+    }
+  }, [session?.status, session?.id, isInitialized])
 
   if (!session) {
     return null
   }
 
   // Show basic timer even without timeInfo for debugging
-  if (!timeInfo) {
+  if (!timeInfo || !isInitialized) {
     return (
       <div className={`flex items-center gap-4 ${compact ? 'text-sm' : 'text-base'}`}>
         <div className="flex items-center gap-2">
@@ -212,7 +282,7 @@ export function LabSessionTimer({
           </Badge>
         </div>
         <div className={`font-mono font-bold text-muted-foreground ${compact ? 'text-lg' : 'text-2xl'}`}>
-          Loading...
+          {isInitialized ? formatTime(localTimeRemaining) : 'Loading...'}
         </div>
       </div>
     )
