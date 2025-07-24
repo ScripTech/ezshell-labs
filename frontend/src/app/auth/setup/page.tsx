@@ -24,8 +24,27 @@ export default function AdminSetupPage() {
   const router = useRouter()
 
   useEffect(() => {
+    const checkSetupStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/setup')
+        const data = await response.json()
+
+        if (data.hasAdmin) {
+          // Admin already exists, redirect to login
+          router.push('/auth/login')
+          return
+        }
+
+        setNeedsSetup(true)
+      } catch (error) {
+        console.error('Error checking setup status:', error)
+        toast.error('Failed to check setup status')
+      } finally {
+        setCheckingSetup(false)
+      }
+    }
     checkSetupStatus()
-  }, [])
+  }, [router])
 
   const checkSetupStatus = async () => {
     try {

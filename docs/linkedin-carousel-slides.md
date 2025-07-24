@@ -5,18 +5,18 @@
 **Layout:** Center-aligned text with emoji accents
 
 ```
-I'm amazed by the simplicity of how 
+I'm amazed by the simplicity of how
 EzShell Labs handles lab provisioning...
 
 🖱️ One click
-⏱️ 3 minutes  
+⏱️ 3 minutes
 ☁️ Fully configured AWS lab environment
 
-But behind that seamless experience lies a 
-sophisticated 12-step orchestration that 
+But behind that seamless experience lies a
+sophisticated 12-step orchestration that
 most users never see.
 
-Here's what happens behind that 
+Here's what happens behind that
 "Enroll in Lab" button 🧵
 
 #DevOps #AWS #Microservices #EdTech
@@ -93,7 +93,7 @@ Duration: < 1 second
 ⚡ STEPS 3-4: Event-Driven Orchestration
 
 ✅ Enrollment API creates database record
-✅ Kafka message queued for processing  
+✅ Kafka message queued for processing
 ✅ Asynchronous workflow initiated
 
 Duration: 1-2 seconds
@@ -343,7 +343,7 @@ Duration: 5-10 seconds
 🏗️ Complete Architecture at Scale
 
 ✅ Event-driven microservices
-✅ Real-time user experience  
+✅ Real-time user experience
 ✅ Auto-scaling infrastructure
 ✅ Zero manual intervention
 
@@ -386,16 +386,16 @@ Duration: 5-10 seconds
 
 ✅ 30 minutes → 3 minutes (90% faster)
 ✅ Manual steps → Fully automated
-✅ 60% success → 99.9% reliability  
+✅ 60% success → 99.9% reliability
 ✅ 10 concurrent → 1000+ labs
 
-Building the future of DevOps education 
+Building the future of DevOps education
 through intelligent automation.
 
-What's the most complex workflow you've 
+What's the most complex workflow you've
 automated? Share your experience! 👇
 
-#DevOps #Microservices #AWS #Automation 
+#DevOps #Microservices #AWS #Automation
 #EdTech #CloudArchitecture #Innovation
 ```
 
@@ -406,7 +406,7 @@ automated? Share your experience! 👇
 ### **Visual Standards:**
 - **Slide Dimensions:** 1080x1080px (Instagram square format)
 - **Typography:** Clean, professional fonts (Inter, Roboto, or similar)
-- **Color Palette:** 
+- **Color Palette:**
   - Primary Blue: #2563eb
   - Success Green: #16a34a
   - Warning Orange: #ea580c

@@ -65,20 +65,20 @@ export function hasLabParameters(): boolean {
  * React hook for lab parameters (if using React hooks)
  */
 export function useLabParameters(): LabParameters {
-  if (typeof window === 'undefined') {
+  const [params, setParams] = useState<LabParameters>(() => {
+    if (typeof window !== 'undefined') {
+      return getLabParametersFromUrl();
+    }
     return {};
-  }
-
-  const [params, setParams] = useState<LabParameters>(() =>
-    getLabParametersFromUrl()
-  );
+  });
 
   useEffect(() => {
     const handleLocationChange = () => {
-      setParams(getLabParametersFromUrl());
+      if (typeof window !== 'undefined') {
+        setParams(getLabParametersFromUrl());
+      }
     };
 
-    // Listen for URL changes
     window.addEventListener('popstate', handleLocationChange);
 
     // Also check on mount in case URL changed

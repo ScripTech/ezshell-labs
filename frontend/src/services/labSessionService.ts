@@ -3,7 +3,6 @@ import { labProgressSessions } from "@/db/schemas/ProgressSchema"
 import { labs, labEnrollments } from "@/db/schemas/LabSchema"
 import { eq, and, desc } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import logger from '../../../lab-provisioner/dist/utils/logger';
 
 export interface LabSession {
   id: string
