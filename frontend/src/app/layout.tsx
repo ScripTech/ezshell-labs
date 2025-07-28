@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner"
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 // const inter = Inter({ subsets: ["latin"] });${ inter.className}
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           </AuthErrorHandler>
         </AuthProvider>
         <Toaster />
+        <GoogleAnalytics gaId="GTM-PMR5DBFK" />
       </body>
     </html>
   );
