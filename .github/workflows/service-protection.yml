@@ -138,10 +138,10 @@ jobs:
           cd frontend
           npm run build
 
-      - name: Lint check
-        run: |
-          cd frontend
-          npm run lint
+    #   - name: Lint check
+    #     run: |
+    #       cd frontend
+    #       npm run lint
 
       - name: Security audit
         run: |

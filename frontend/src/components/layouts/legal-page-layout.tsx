@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, FileText, Shield, Lock, Mail, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,23 @@ interface LegalPageLayoutProps {
 }
 
 export function LegalPageLayout({ title, content, lastUpdated, children }: LegalPageLayoutProps) {
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  // For SSR/Next.js, usePathname hook is preferred
+  let currentPath = '';
+  try {
+    currentPath = usePathname ? usePathname() : pathname;
+  } catch {
+    currentPath = pathname;
+  }
+
+  const navLinks = [
+    { href: '/privacy', label: 'Privacy Policy', icon: Shield },
+    { href: '/security', label: 'Security', icon: Lock },
+    { href: '/terms', label: 'Terms of Service', icon: FileText },
+    { href: '/about', label: 'About Us', icon: Info },
+    { href: '/contact', label: 'Contact', icon: Mail },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
       {/* Header - fixed at top */}
@@ -55,51 +73,26 @@ export function LegalPageLayout({ title, content, lastUpdated, children }: Legal
                 Legal & Information
               </h3>
               <ul className="space-y-2">
-                <li>
-                  <Link
-                    href="/privacy"
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                  >
-                    <Shield className="h-4 w-4" />
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/security"
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                  >
-                    <Lock className="h-4 w-4" />
-                    Security
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/terms"
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/about"
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                  >
-                    <Info className="h-4 w-4" />
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/contact"
-                    className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Contact
-                  </Link>
-                </li>
+                {navLinks.map(({ href, label, icon: Icon }) => {
+                  const isActive = currentPath === href;
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className={
+                          `flex items-center gap-2 text-sm transition-colors ` +
+                          (isActive
+                            ? 'text-slate-900 dark:text-white underline'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white')
+                        }
+                        aria-current={isActive ? 'page' : undefined}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
           </aside>
