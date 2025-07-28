@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 import { sendGAEvent } from '@next/third-parties/google';
-import { session } from '../../../backend/drizzle/schema';
 import { useSession } from 'next-auth/react';
 
 interface EnrollmentStatus {
