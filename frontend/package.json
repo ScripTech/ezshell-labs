@@ -84,7 +84,7 @@
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
     "@rocketseat/eslint-config": "^2.2.2",
-    "@tailwindcss/typography": "^0.5.14",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^20",
     "@types/pg": "^8.11.11",
     "@types/react": "^18",
