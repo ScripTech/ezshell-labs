@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { CheckCircle2, Clock, AlertCircle, Loader2, ExternalLink, Copy, Timer } from 'lucide-react'
 import { toast } from 'sonner'
+import { sendGAEvent } from '@next/third-parties/google'
 
 interface ProvisioningStep {
   id: string
@@ -184,6 +185,8 @@ export function LabProvisioningDialog({
   }
 
   const handleEnrollment = async () => {
+    sendGAEvent('lab_provisioning', 'start_enrollment', labId)
+
     try {
       callbackIsEnrolling(true)
       setIsEnrolling(true)
@@ -224,7 +227,7 @@ export function LabProvisioningDialog({
 
       // Start polling for provisioning status
       setIsPolling(true)
-
+      sendGAEvent('lab_provisioning', 'enrollment_success', labId)
       toast.success('Successfully enrolled in lab! Provisioning your environment...')
     } catch (error) {
       console.error('Enrollment error:', error)
@@ -234,6 +237,7 @@ export function LabProvisioningDialog({
       const failedSteps = [...provisioningSteps]
       failedSteps[0].status = 'failed'
       setProvisioningSteps(failedSteps)
+      sendGAEvent('lab_provisioning', 'enrollment_failed', labId)
     } finally {
       callbackIsEnrolling(false)
       setIsEnrolling(false)
@@ -242,6 +246,7 @@ export function LabProvisioningDialog({
 
   const handleAccessLab = () => {
     if (enrollmentId) {
+      sendGAEvent('lab_provisioning', 'access_lab', labId, "enrollmentId", enrollmentId)
       window.open(`/ezshell/${labId}&enrollment=${enrollmentId}`, '_blank')
     }
   }

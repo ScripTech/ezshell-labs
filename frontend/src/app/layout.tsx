@@ -9,8 +9,33 @@ import { GoogleAnalytics } from '@next/third-parties/google'
 // const inter = Inter({ subsets: ["latin"] });${ inter.className}
 
 export const metadata: Metadata = {
-  title: "eZetsu-Labs @ ezShell",
-  description: "Edilson Mucanze - DevOps",
+  title: "EzShell Labs",
+  description: "Hands-on cloud labs for Linux, OpenShift, and DevOps. Real infrastructure. Real learning.",
+  openGraph: {
+    title: "EzShell Labs",
+    description: "Hands-on cloud labs for Linux, OpenShift, and DevOps. Real infrastructure. Real learning.",
+    url: "https://ezshelllabs.com/",
+    siteName: "EzShell Labs",
+    images: [
+      {
+        url: "https://emucanze.com/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "EzShell Open Graph Image Labs"
+      }
+    ],
+    locale: "en_US",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EzShell Labs",
+    description: "Hands-on cloud labs for Linux, OpenShift, and DevOps. Real infrastructure. Real learning.",
+    site: "@ezshelllabs",
+    creator: "@edilsonmucanze",
+    images: ["https://emucanze.com/og-image.svg"]
+  },
+  metadataBase: new URL("https://emucanze.com/")
 };
 
 export default function RootLayout({
@@ -27,7 +52,7 @@ export default function RootLayout({
           </AuthErrorHandler>
         </AuthProvider>
         <Toaster />
-        <GoogleAnalytics gaId="GTM-PMR5DBFK" />
+        <GoogleAnalytics gaId="G-ZVZ9ZHZ3VL" />
       </body>
     </html>
   );

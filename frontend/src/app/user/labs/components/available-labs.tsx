@@ -51,13 +51,13 @@ export function AvailableLabsComponent({
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-2 line-clamp-1 hover:underline cursor-pointer">
+            <h3 className="font-semibold text-lg mb-2 line-clamp-2 hover:underline cursor-pointer">
               <Link href={`/user/labs/${lab.id}`}>{lab.name}</Link>
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-              {lab.description}{lab.description}{lab.description}{lab.description}
+              {lab.description}
             </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-1">
               <div className="flex items-center gap-1">
                 <Terminal className="h-4 w-4" />
                 <span>Shell Lab</span>
