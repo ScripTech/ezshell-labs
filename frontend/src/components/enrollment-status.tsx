@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
+import { sendGAEvent } from '@next/third-parties/google';
+import { session } from '../../../backend/drizzle/schema';
+import { useSession } from 'next-auth/react';
 
 interface EnrollmentStatus {
   id: string | undefined;
@@ -12,20 +15,11 @@ interface EnrollmentStatus {
 }
 
 const EnrollmentStatus = ({labId, enrollment}: {labId: string, enrollment: EnrollmentStatus}) => {
-  // get the current user from localStorage or context
-  const [user, setUser] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const user = await localStorage.getItem('user');
-      setUser(user);
-    };
-
-    fetchUser();
-  }, []);
+  const { data: session } = useSession()
 
   const handleAccessLab = () => {
     if (enrollment.id) {
+      sendGAEvent('lab_enrollment', 'access_lab', labId, "enrollmentId", enrollment.id);
       window.open(`/ezshell/${ labId }?enrollment=${ enrollment.id }`, '_blank')
     }
   }
@@ -34,9 +28,9 @@ const EnrollmentStatus = ({labId, enrollment}: {labId: string, enrollment: Enrol
     <div className='w-full'>
       <div className="flex flex-col mb-4">
         <div className="p-4 rounded-sm bg-blue-900/30 border border-blue-700/50">
-          <h2 className="text-lg font-semibold mb-2">Welcome 🚀 {}</h2>
+          <h2 className="text-lg font-semibold mb-2">Welcome {session?.user?.name || 'Guest'}</h2>
           <p className="mb-4">
-           Your lab is waiting for you. ID: <span className="font-semibold">{enrollment.id}</span>.
+           🚀 Your lab is waiting for you. ID: <span className="font-semibold">{enrollment.id}</span>.
           </p>
           <Button onClick={handleAccessLab} className="flex-1">
             <ExternalLink className="w-4 h-4 mr-2" />

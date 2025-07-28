@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Terminal, Play, Pause, RotateCcw } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { sendGAEvent } from '@next/third-parties/google'
 
 interface Command {
   input: string
@@ -57,7 +58,11 @@ const demoCommands: Command[] = [
   }
 ]
 
-export function InteractiveTerminal() {
+interface InteractiveTerminalProps {
+  className?: string;
+}
+
+export function InteractiveTerminal({ className }: InteractiveTerminalProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentCommandIndex, setCurrentCommandIndex] = useState(0)
   const [currentCharIndex, setCurrentCharIndex] = useState(0)
@@ -152,7 +157,7 @@ export function InteractiveTerminal() {
   const typedCommand = currentCommand ? currentCommand.input.slice(0, currentCharIndex) : ""
 
   return (
-    <div className="bg-gray-900 rounded-lg overflow-hidden">
+    <div className={`bg-gray-900 rounded-lg overflow-hidden ${className}`}>
       {/* Terminal Header */}
       <div className="flex items-center justify-between bg-gray-800 px-4 py-3 border-b border-gray-700">
         <div className="flex items-center gap-3">
@@ -241,6 +246,10 @@ export function InteractiveTerminal() {
           <Button
             size="sm"
             className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+            onClick={() => {
+              sendGAEvent("click", "interactive_terminal_try")
+              window.location.href = '/user/labs'
+            }}
           >
             Try Interactive Session
           </Button>

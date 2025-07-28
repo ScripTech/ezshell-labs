@@ -42,17 +42,19 @@ const plans = [
 
 export default function BillingPlansPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Choose Your Plan</h1>
-      <div className="flex w-full justify-between items-center mb-6">
-        <div className="text-muted-foreground">Billed monthly</div>
-        <Button variant="outline">Change Billing Cycle</Button>
+    <div className="">
+      <div className="m-auto">
+        <h1 className="text-2xl font-bold mb-6">Choose Your Plan</h1>
+        <div className="flex w-full justify-between items-center mb-6">
+          <div className="text-muted-foreground">Billed monthly</div>
+          <Button variant="outline">Change Billing Cycle</Button>
+        </div>
       </div>
 
       <div className="flex w-full">
-        <div className="m-auto grid grid-cols-3 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 m-auto">
           {plans.map(plan => (
-            <Card key={plan.name} className="flex flex-col w-72 bg-card shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card key={plan.name} className="flex flex-col min-w-72 w-full bg-card shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
                 <div className="text-3xl font-bold mt-2">{plan.price}</div>

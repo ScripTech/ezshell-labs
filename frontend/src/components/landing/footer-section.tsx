@@ -55,10 +55,10 @@ export function FooterSection() {
   ]
 
   const legalLinks = [
-    { name: "Privacy Policy", href: "#privacy" },
-    { name: "Terms of Service", href: "#terms" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
     { name: "Cookie Policy", href: "#cookies" },
-    { name: "Security", href: "#security" },
+    { name: "Security", href: "/security" },
   ]
 
   return (

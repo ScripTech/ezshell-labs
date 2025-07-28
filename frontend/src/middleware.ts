@@ -32,6 +32,10 @@ const exactPublicRoutes = [
   "/guides",
   "/blog",
   "/community",
+
+  "/privacy",
+  "/security",
+  "/terms",
 ];
 
 // Define auth-related pages

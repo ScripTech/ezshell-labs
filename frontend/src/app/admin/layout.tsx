@@ -18,7 +18,6 @@ import { NavMain } from "@/components/nav-main"
 const pathLabels: Record<string, string> = {
   labs: "Labs",
   billing: "Billing",
-  system: "System Config",
 }
 
 // Define admin and user menu items
@@ -72,12 +71,6 @@ const adminNavItems = [
   {
     title: "Billing",
     url: "/admin/billing",
-    isActive: true,
-    items: [],
-  },
-  {
-    title: "System Config",
-    url: "/admin/system",
     isActive: true,
     items: [],
   },
