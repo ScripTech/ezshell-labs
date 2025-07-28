@@ -39,7 +39,7 @@ export function CTASection() {
     {
       icon: Rocket,
       title: "Launch in Seconds",
-      description: "Real AWS instances ready in under 30 seconds"
+      description: "Real AWS instances ready in under 5 minutes"
     },
     {
       icon: Shield,

@@ -98,11 +98,11 @@ export function NavUser({
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <ComponentPlaceholderIcon className="h-4 w-4" />
-                <span className="px-2">Billing</span>
+                <Link className="px-2" href="/user/billing/overview">Billing</Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell className="h-4 w-4" />
-                <span className="px-2">Notifications</span>
+                <Link className="px-2" href="/user/notifications">Notifications</Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

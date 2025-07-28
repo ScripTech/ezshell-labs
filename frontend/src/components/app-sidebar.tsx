@@ -112,7 +112,6 @@ export function AppSidebar({ children, session, ...props }: Readonly<{
       </SidebarHeader>
       <SidebarContent>
         {children}
-        {/* <NavMain items={data.navMain} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={{

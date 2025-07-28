@@ -25,9 +25,9 @@ export function AvailableLabsComponent({
   }
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-3 lg:grid-cols-5 gap-6">
+    <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
       {data.map((lab) => (
-        <Card key={lab.id} className="group hover:shadow-lg transition-shadow">
+        <Card key={lab.id} className="group hover:shadow-lg transition-shadow md:min-w-[275px] shrink-0">
           <CardHeader className="border-b p-0">
             <div className="aspect-video relative overflow-hidden rounded-t-lg">
               <Image
@@ -55,13 +55,9 @@ export function AvailableLabsComponent({
               <Link href={`/user/labs/${lab.id}`}>{lab.name}</Link>
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-              {lab.description}
+              {lab.description}{lab.description}{lab.description}{lab.description}
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>{lab.duration} min</span>
-              </div>
               <div className="flex items-center gap-1">
                 <Terminal className="h-4 w-4" />
                 <span>Shell Lab</span>
@@ -72,24 +68,6 @@ export function AvailableLabsComponent({
               </div>
             </div>
           </CardContent>
-          {/* <CardFooter className="p-4 pt-0">
-            {lab.isEnrolled ? (
-              <Button
-                className="w-full"
-                onClick={() => handleLabDetails(lab.id)}
-              >
-                View Lab
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                className="w-full"
-                onClick={() => handleLabDetails(lab.id)}
-              >
-                Enroll to Lab
-              </Button>
-            )}
-          </CardFooter> */}
         </Card>
       ))}
     </div>
