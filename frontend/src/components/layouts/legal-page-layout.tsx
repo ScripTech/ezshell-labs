@@ -16,14 +16,7 @@ interface LegalPageLayoutProps {
 }
 
 export function LegalPageLayout({ title, content, lastUpdated, children }: LegalPageLayoutProps) {
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-  // For SSR/Next.js, usePathname hook is preferred
-  let currentPath = '';
-  try {
-    currentPath = usePathname ? usePathname() : pathname;
-  } catch {
-    currentPath = pathname;
-  }
+  const currentPath = usePathname();
 
   const navLinks = [
     { href: '/privacy', label: 'Privacy Policy', icon: Shield },
