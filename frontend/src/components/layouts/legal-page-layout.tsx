@@ -17,8 +17,8 @@ interface LegalPageLayoutProps {
 export function LegalPageLayout({ title, content, lastUpdated, children }: LegalPageLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+      {/* Header - fixed at top */}
+      <div className="fixed top-0 left-0 w-full z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -42,11 +42,15 @@ export function LegalPageLayout({ title, content, lastUpdated, children }: Legal
         </div>
       </div>
 
-      {/* Navigation sidebar */}
+      {/* Spacer for fixed header */}
+      <div className="h-[88px] sm:h-[88px] lg:h-[88px]" />
+
+      {/* Navigation sidebar and main content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
+          {/* Sticky sidebar */}
           <aside className="w-64 flex-shrink-0">
-            <nav className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <nav className="sticky top-[104px] bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
                 Legal & Information
               </h3>
