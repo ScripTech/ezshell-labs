@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { LabForm } from "../../components/create-form"
 import { Card, CardContent } from "@/components/ui/card"
+import { LabTaskEditor } from "@/components/lab-task-editor"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function EditLabPage() {
   const router = useRouter()
@@ -37,23 +39,40 @@ export default function EditLabPage() {
 
   return (
     <div className="flex flex-col px-4">
-      <div className="max-w-4xl p-6">
-        <div className="mb-4 text-xl font-bold">Edit Lab</div>
-        <Card className="border-none space-y-3">
-          <CardContent>
-            <LabForm
-              initialValues={{
-                name: lab.name,
-                labId: lab.labId,
-                description: lab.description,
-                duration: lab.duration,
-                imageUrl: lab.imageUrl,
-              }}
+      <div className="max-w-6xl p-6">
+        <div className="mb-6 text-xl font-bold">Edit Lab: {lab.name}</div>
+
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Lab Details</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks & Questions</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details">
+            <Card className="border-none space-y-3">
+              <CardContent>
+                <LabForm
+                  initialValues={{
+                    name: lab.name,
+                    labId: lab.labId,
+                    description: lab.description,
+                    duration: lab.duration,
+                    imageUrl: lab.imageUrl,
+                  }}
+                  labId={labId}
+                  mode="edit"
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tasks">
+            <LabTaskEditor
               labId={labId}
-              mode="edit"
+              labName={lab.name}
             />
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
