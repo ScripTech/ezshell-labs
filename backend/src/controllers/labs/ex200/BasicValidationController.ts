@@ -408,7 +408,9 @@ export class BasicValidationController {
         async (trackedSocket: Socket) => {
           return await this.performStringSearchValidation(
             trackedSocket,
-            validationQuestionId
+            validationQuestionId,
+            userId,
+            labId
           );
         }
       );
@@ -424,25 +426,51 @@ export class BasicValidationController {
 
   private async performStringSearchValidation(
     socket: Socket,
-    questionId: string
+    questionId: string,
+    userId: string,
+    labId: string
   ): Promise<boolean> {
     try {
+      // Initialize the service with user and lab context
+      console.log(
+        `🔧 Initializing String Search Validation for user ${userId}, lab ${labId}`
+      );
+      const connected = await this.service.initialize(userId, labId);
+
+      if (!connected) {
+        console.error(
+          `❌ Failed to connect to lab instance for user ${userId}, lab ${labId}`
+        );
+        return false;
+      }
+
       socket.emit(`validation-${questionId}-step`, {
-        step: "String search",
+        step: "Check if /root/lines file exists",
         status: "loading",
       });
-
-      const isValid = await this.service.stringSearchValidation();
+      const fileExist = await this.service.fileExists("/root/lines");
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Check if /root/lines file exists",
+        status: fileExist ? "success" : "failed",
+        message: fileExist
+          ? "File: '/root/lines' Exist"
+          : "Check if /root/lines file failed",
+      });
 
       socket.emit(`validation-${questionId}-step`, {
-        step: "String search",
+        step: "/root/lines containing 'devops' string",
+        status: "loading",
+      });
+      const isValid = await this.service.stringSearchValidation();
+      socket.emit(`validation-${questionId}-step`, {
+        step: "/root/lines containing 'devops' string",
         status: isValid ? "success" : "failed",
         message: isValid
           ? "String search completed successfully"
           : "String search failed",
       });
 
-      return isValid;
+      return fileExist && isValid;
     } catch (error) {
       console.error("Error in string search validation:", error);
       socket.emit(`validation-${questionId}-step`, {

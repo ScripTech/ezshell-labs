@@ -19,6 +19,33 @@ export class BasicValidationService {
     return await dynamicSSHService.connectToLab(userId, labId);
   }
 
+  async fileExists(path: string): Promise<boolean> {
+    if (!this.userId || !this.labId) {
+      throw new Error("Service not initialized. Call initialize() first.");
+    }
+
+    if (!dynamicSSHService.isSSHConnected()) {
+      const connected = await dynamicSSHService.connectToLab(
+        this.userId,
+        this.labId
+      );
+      if (!connected) {
+        throw new Error("Failed to connect to lab instance");
+      }
+    }
+
+    try {
+      const result = await dynamicSSHService.executeCommand(
+        `test -f ${path} && echo "exists" || echo "not found"`
+      );
+      console.log(`File existence check result: ${result}`);
+      return result.includes("exists");
+    } catch (error) {
+      console.error("Command exec error:", error);
+      return false;
+    }
+  }
+
   async tarValidation(): Promise<boolean> {
     if (!this.userId || !this.labId) {
       throw new Error("Service not initialized. Call initialize() first.");
@@ -126,7 +153,6 @@ export class BasicValidationService {
       return false;
     }
   }
-
   async filePermissionsValidation_UserCannotRead(
     user: string
   ): Promise<boolean> {
@@ -142,7 +168,6 @@ export class BasicValidationService {
       return false;
     }
   }
-
   async timeSynchronizationValidation(): Promise<boolean> {
     if (!ssh.isConnected()) {
       await connectSSH();
