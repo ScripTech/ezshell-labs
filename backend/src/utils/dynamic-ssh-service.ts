@@ -21,6 +21,12 @@ export class DynamicSSHService {
    */
   async connectToLab(userId: string, labId: string): Promise<boolean> {
     try {
+      // Check if dynamic labs are disabled - use local lab configuration
+      if (process.env.DISABLE_DYNAMIC_LABS === 'true') {
+        console.log(`🔧 Dynamic labs disabled - using local lab configuration for validation`);
+        return await this.connectToLocalLab();
+      }
+
       // If already connected to this lab for this user, reuse connection
       if (this.isConnected && this.currentLabId === labId && this.currentUserId === userId) {
         console.log(`🔄 Reusing existing SSH connection for user ${userId}, lab ${labId}`);
@@ -180,6 +186,49 @@ export class DynamicSSHService {
         success: false,
         message: `SSH connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
+    }
+  }
+
+  /**
+   * Connect to local lab using environment variables (for development/testing)
+   */
+  private async connectToLocalLab(): Promise<boolean> {
+    try {
+      // Disconnect any existing connection
+      if (this.isConnected) {
+        this.ssh.dispose();
+        this.isConnected = false;
+      }
+
+      console.log(`🏠 Connecting to local lab environment`);
+
+      const connectOptions = {
+        host: process.env.LAB_SSH_HOST || 'localhost',
+        port: parseInt(process.env.LAB_SSH_PORT || '22'),
+        username: process.env.LAB_SSH_USERNAME || 'lab-user',
+        password: process.env.LAB_SSH_PASSWORD || 'password',
+        tryKeyboard: false,
+        readyTimeout: 30000, // 30 second timeout
+      };
+
+      console.log(`🔑 Connecting to local lab: ${connectOptions.username}@${connectOptions.host}:${connectOptions.port}`);
+
+      // Connect to SSH
+      await this.ssh.connect(connectOptions);
+
+      this.isConnected = true;
+      this.currentLabId = 'local-lab';
+      this.currentUserId = 'local-user';
+
+      console.log(`✅ Local lab SSH connection established`);
+      return true;
+
+    } catch (error) {
+      console.error(`❌ Failed to connect to local lab:`, error);
+      this.isConnected = false;
+      this.currentLabId = undefined;
+      this.currentUserId = undefined;
+      return false;
     }
   }
 }

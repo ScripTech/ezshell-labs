@@ -54,6 +54,8 @@ export class PtySession {
         host: options.sshConfig.host,
         port: options.sshConfig.port,
         username: options.sshConfig.username,
+        tryKeyboard: false,
+        readyTimeout: 30000, // 30 second timeout
       };
 
       // Use private key if provided, otherwise fall back to password
