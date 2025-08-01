@@ -45,6 +45,21 @@ export class YumRepositoryValidationController {
 
       // BaseOS Repository validation
       socket.emit(`validation-${questionId}-step`, {
+        step: "Repository file exist",
+        status: "loading",
+      });
+
+      const repoExist = await this.service.validateRepoExist();
+      socket.emit(`validation-${questionId}-step`, {
+        step: "Repository file exist",
+        status: repoExist ? "success" : "failed",
+        message: repoExist
+          ? "BaseOS repository configuration is correct"
+          : "BaseOS repository configuration is incorrect",
+      });
+
+      // BaseOS Repository validation
+      socket.emit(`validation-${questionId}-step`, {
         step: "BaseOS Repository",
         status: "loading",
       });

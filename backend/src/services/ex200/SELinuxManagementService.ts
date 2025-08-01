@@ -43,7 +43,9 @@ export class SELinuxManagementService {
       }
     }
 
-    const result = await dynamicSSHService.executeCommand("semanage port -l | grep http");
+    const result = await dynamicSSHService.executeCommand(
+      "semanage port -l | grep http_port_t"
+    );
     return result.includes(`${port}`);
   }
 
@@ -60,7 +62,8 @@ export class SELinuxManagementService {
     }
 
     const result = await dynamicSSHService.executeCommand(`curl http://localhost:${port}`);
-    if (result.includes("Connection refused")) return false;
+    if (result.includes("Failed to connect") || result.includes("Could not connect to server"))
+      return false;
     return true;
   }
 }
