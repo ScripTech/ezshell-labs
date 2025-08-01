@@ -142,7 +142,7 @@ export function LabTaskEditor({ labId, labName }: LabTaskEditorProps) {
         <CardContent className="p-6">
           <div className="text-center text-muted-foreground">
             <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-            <p>You don't have permission to edit lab tasks.</p>
+            <p>You don&apos;t have permission to edit lab tasks.</p>
           </div>
         </CardContent>
       </Card>
@@ -284,7 +284,7 @@ export function LabTaskEditor({ labId, labName }: LabTaskEditorProps) {
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{taskToDelete?.title}"?
+              Are you sure you want to delete &quot;{taskToDelete?.title}&quot;?
               This action cannot be undone and will also delete all related progress data.
             </DialogDescription>
           </DialogHeader>
