@@ -362,12 +362,26 @@ export class UserGroupManagementController {
           step: `User ${user} in group ${data.group}`,
           status: "loading",
         });
+
         const userInGroup = await this.service.validateUserGroup(user, data.group);
-        socket.emit(`validation-${questionId}-step`, {
-          step: `User ${user} in group ${data.group}`,
-          status: userInGroup ? "success" : "failed",
-          message: userInGroup ? `User ${user} is in group ${data.group}` : `User ${user} is not in group ${data.group}`
-        });
+
+        if (user == "sarah") {
+          socket.emit(`validation-${questionId}-step`, {
+            step: `User ${user} in group ${data.group}`,
+            status: !userInGroup ? "success" : "failed",
+            message: !userInGroup
+              ? `User ${user} is not a member of ${data.group} group`
+              : `User ${user} is a member of ${data.group} group`,
+          });
+        } else {
+          socket.emit(`validation-${questionId}-step`, {
+            step: `User ${user} in group ${data.group}`,
+            status: userInGroup ? "success" : "failed",
+            message: userInGroup
+              ? `User ${user} is in group ${data.group}`
+              : `User ${user} is not in group ${data.group}`,
+          });
+        }
 
         if (!isValidUser || !userInGroup) {
           allUsersValid = false;

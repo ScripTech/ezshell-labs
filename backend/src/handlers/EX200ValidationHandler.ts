@@ -303,16 +303,20 @@ export class EX200ValidationHandler implements ILabValidationHandler {
         const authSocket = socket as AuthenticatedSocket;
         const userContext = await SocketUserService.getUserContextWithLab(authSocket, labId);
         if (userContext?.labEnrollmentId) {
-          await this.userGroupMnt.handleUserGroupValidationWithSocketTracking(socket, {
-            questionId,
-            userId: userContext.userId,
-            labId,
-            validationQuestionId,
-            labEnrollmentId: userContext.labEnrollmentId,
-          }, {
-            group: "sysadm",
-            users: ["natasha"],
-          });
+          await this.userGroupMnt.handleUserGroupValidationWithSocketTracking(
+            socket,
+            {
+              questionId,
+              userId: userContext.userId,
+              labId,
+              validationQuestionId,
+              labEnrollmentId: userContext.labEnrollmentId,
+            },
+            {
+              group: "sysadm",
+              users: ["natasha", "harry", "sarah"],
+            }
+          );
         }
         break;
       case "question-5-collaborative-directory":
