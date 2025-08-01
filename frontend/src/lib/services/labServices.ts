@@ -153,7 +153,7 @@ export async function getFirstLabQuestion(labId: string): Promise<string> {
 
 export async function getLabQuestionsFromDB(labId: string): Promise<LabQuestion[]> {
 
-  console.log(`Fetching questions for lab: ${labId}`);
+  console.log(`Fetching active questions for lab: ${labId}`);
 
   const rows = await db
     .select({
@@ -162,14 +162,18 @@ export async function getLabQuestionsFromDB(labId: string): Promise<LabQuestion[
     })
     .from(labTasks)
     .leftJoin(labs, eq(labTasks.labId, labs.id))
-    .where(eq(labTasks.labId, labId))
+    .where(and(
+      eq(labTasks.labId, labId),
+      eq(labTasks.isEnabled, true),
+      eq(labTasks.status, 'active')
+    ))
     .orderBy(labTasks.order);
 
   if (rows.length === 0) {
-    throw new Error(`@getLabQuestionsFromDB No questions found for lab ${labId}`);
+    throw new Error(`@getLabQuestionsFromDB No active questions found for lab ${labId}`);
   }
 
-  return rows.map(row => ({
+  const activeQuestions = rows.map(row => ({
     id: row.task.id,
     labId: row.task.labId,
     title: row.task.title,
@@ -192,7 +196,10 @@ export async function getLabQuestionsFromDB(labId: string): Promise<LabQuestion[
       validationSteps: row.task.validationSteps,
       markdown: row.task.markdown,
     }
-  }))
+  }));
+
+  console.log(`Found ${activeQuestions.length} active questions for lab: ${labId}`);
+  return activeQuestions;
 }
 
 export async function getExerciseDataFromDB(
@@ -250,7 +257,7 @@ export async function getExerciseDataFromDB(
 }
 
 export async function getFirstLabQuestionFromDB(labId: string): Promise<LabQuestion | null> {
-  console.log(`Fetching DB for first question for lab: ${labId}`);
+  console.log(`Fetching DB for first active question for lab: ${labId}`);
   const result = await db
     .select({
       task: labTasks,
@@ -258,11 +265,18 @@ export async function getFirstLabQuestionFromDB(labId: string): Promise<LabQuest
     })
     .from(labTasks)
     .leftJoin(labs, eq(labTasks.labId, labs.id))
-    .where(eq(labTasks.labId, labId))
+    .where(and(
+      eq(labTasks.labId, labId),
+      eq(labTasks.isEnabled, true),
+      eq(labTasks.status, 'active')
+    ))
     .orderBy(labTasks.order)
     .limit(1);
 
-  if (result.length === 0) return null;
+  if (result.length === 0) {
+    console.log(`No active questions found for lab: ${labId}`);
+    return null;
+  }
 
   const row = result[0];
   const labQuestion: LabQuestion = {
@@ -289,5 +303,134 @@ export async function getFirstLabQuestionFromDB(labId: string): Promise<LabQuest
       markdown: row.task.markdown,
     },
   };
+
+  console.log(`Found first active question: ${labQuestion.id} (order: ${labQuestion.order}) for lab: ${labQuestion.labId}`);
+  return labQuestion;
+}
+
+export async function getNextActiveLabQuestionFromDB(
+  labId: string,
+  currentOrder: number
+): Promise<LabQuestion | null> {
+  console.log(`Fetching next active question after order ${currentOrder} for lab: ${labId}`);
+
+  const result = await db
+    .select({
+      task: labTasks,
+      lab: labs,
+    })
+    .from(labTasks)
+    .leftJoin(labs, eq(labTasks.labId, labs.id))
+    .where(and(
+      eq(labTasks.labId, labId),
+      eq(labTasks.isEnabled, true),
+      eq(labTasks.status, 'active')
+    ))
+    .orderBy(labTasks.order);
+
+  if (result.length === 0) {
+    console.log(`No active questions found for lab: ${labId}`);
+    return null;
+  }
+
+  // Find the next question with order > currentOrder
+  const nextQuestion = result.find(row => row.task.order > currentOrder);
+
+  if (!nextQuestion) {
+    console.log(`No next active question found after order ${currentOrder} for lab: ${labId}`);
+    return null;
+  }
+
+  const row = nextQuestion;
+  const labQuestion: LabQuestion = {
+    id: row.task.id,
+    labId: row.task.labId,
+    title: row.task.title,
+    order: row.task.order,
+    lab: row.lab ? {
+      id: row.lab.id,
+      name: row.lab.name,
+      labId: row.lab.labId,
+      description: row.lab.description,
+      duration: row.lab.duration,
+      imageUrl: row.lab.imageUrl,
+    } : undefined,
+    metadata: {
+      title: row.task.title,
+      order: row.task.order,
+      description: row.task.description,
+      difficulty: row.task.difficulty,
+      points: row.task.points,
+      hint: row.task.hint,
+      validationSteps: row.task.validationSteps,
+      markdown: row.task.markdown,
+    },
+  };
+
+  console.log(`Found next active question: ${labQuestion.id} (order: ${labQuestion.order}) for lab: ${labQuestion.labId}`);
+  return labQuestion;
+}
+
+export async function getPreviousActiveLabQuestionFromDB(
+  labId: string,
+  currentOrder: number
+): Promise<LabQuestion | null> {
+  console.log(`Fetching previous active question before order ${currentOrder} for lab: ${labId}`);
+
+  const result = await db
+    .select({
+      task: labTasks,
+      lab: labs,
+    })
+    .from(labTasks)
+    .leftJoin(labs, eq(labTasks.labId, labs.id))
+    .where(and(
+      eq(labTasks.labId, labId),
+      eq(labTasks.isEnabled, true),
+      eq(labTasks.status, 'active')
+    ))
+    .orderBy(labTasks.order);
+
+  if (result.length === 0) {
+    console.log(`No active questions found for lab: ${labId}`);
+    return null;
+  }
+
+  // Find the previous question with order < currentOrder (get the highest order that's still less than current)
+  const previousQuestions = result.filter(row => row.task.order < currentOrder);
+  const previousQuestion = previousQuestions[previousQuestions.length - 1]; // Last in the filtered array = highest order < current
+
+  if (!previousQuestion) {
+    console.log(`No previous active question found before order ${currentOrder} for lab: ${labId}`);
+    return null;
+  }
+
+  const row = previousQuestion;
+  const labQuestion: LabQuestion = {
+    id: row.task.id,
+    labId: row.task.labId,
+    title: row.task.title,
+    order: row.task.order,
+    lab: row.lab ? {
+      id: row.lab.id,
+      name: row.lab.name,
+      labId: row.lab.labId,
+      description: row.lab.description,
+      duration: row.lab.duration,
+      imageUrl: row.lab.imageUrl,
+    } : undefined,
+    metadata: {
+      title: row.task.title,
+      order: row.task.order,
+      description: row.task.description,
+      difficulty: row.task.difficulty,
+      points: row.task.points,
+      hint: row.task.hint,
+      validationSteps: row.task.validationSteps,
+      markdown: row.task.markdown,
+    },
+  };
+
+  console.log(`Found previous active question: ${labQuestion.id} (order: ${labQuestion.order}) for lab: ${labQuestion.labId}`);
   return labQuestion;
 }

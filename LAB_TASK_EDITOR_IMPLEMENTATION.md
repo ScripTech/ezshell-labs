@@ -3,6 +3,20 @@
 ## Overview
 Successfully implemented a comprehensive lab task editor feature that allows administrators to create, edit, disable, and manage lab questions/tasks with full status control.
 
+## Recent Updates ✅
+
+### Active Question Navigation (Latest)
+- **Updated**: `getFirstLabQuestionFromDB()` to only return active questions (`isEnabled = true` AND `status = 'active'`)
+- **Updated**: `getLabQuestionsFromDB()` to filter for active questions only
+- **Added**: `getNextActiveLabQuestionFromDB()` for navigation to next active question
+- **Added**: `getPreviousActiveLabQuestionFromDB()` for navigation to previous active question
+- **Result**: Navigation now automatically skips disabled/maintenance questions
+
+### Navigation Behavior Example
+If questions 1, 3, 5 are disabled in a 20-question lab:
+- **Before**: Navigation: 1 → 2 → 3 → 4 → 5 → 6...
+- **After**: Navigation: 2 → 4 → 6 → 7 → 8... (skips disabled questions)
+
 ## Implementation Completed ✅
 
 ### 1. Database Schema Updates
