@@ -16,7 +16,7 @@ export class CollaborativeDirectoryControllerV1 {
       step: "Directory exist",
       status: "loading",
     });
-    const dirExist = await this.service.validateDir("/shared/sysadm");
+    const dirExist = await this.service.validateDir("/shared_projects");
     socket.emit(`validation-${questionId}-step`, {
       step: "Directory exist",
       status: dirExist ? "success" : "failed",
@@ -27,7 +27,7 @@ export class CollaborativeDirectoryControllerV1 {
       step: "Group ownership is sysadm",
       status: "loading",
     });
-    const gOwnership = await this.service.validateGroupOwnership("/shared/sysadm", "sysadm");
+    const gOwnership = await this.service.validateGroupOwnership("/shared_projects", "sysadm");
     socket.emit(`validation-${questionId}-step`, {
       step: "Group ownership is sysadm",
       status: gOwnership ? "success" : "failed",
@@ -38,7 +38,7 @@ export class CollaborativeDirectoryControllerV1 {
       status: "loading",
     });
     const gMemberPermission = await this.service.validateDirPermission(
-      "/shared/sysadm",
+      "/shared_projects",
       "sysadm"
     );
     socket.emit(`validation-${questionId}-step`, {
@@ -51,7 +51,7 @@ export class CollaborativeDirectoryControllerV1 {
       status: "loading",
     });
     const gDirPermission = await this.service.validateDirPermission(
-      "/shared/sysadm",
+      "/shared_projects",
       "sysadm"
     );
     socket.emit(`validation-${questionId}-step`, {
@@ -90,18 +90,18 @@ export class CollaborativeDirectoryControllerV1 {
         step: "Directory exist",
         status: "loading",
       });
-      const dirExist = await this.service.validateDir("/shared/sysadm");
+      const dirExist = await this.service.validateDir("/shared_projects");
       socket.emit(`validation-${questionId}-step`, {
         step: "Directory exist",
         status: dirExist ? "success" : "failed",
-        message: dirExist ? "Directory /shared/sysadm exists" : "Directory /shared/sysadm does not exist"
+        message: dirExist ? "Directory /shared_projects exists" : "Directory /shared_projects does not exist"
       });
 
       socket.emit(`validation-${questionId}-step`, {
         step: "Group ownership is sysadm",
         status: "loading",
       });
-      const gOwnership = await this.service.validateGroupOwnership("/shared/sysadm", "sysadm");
+      const gOwnership = await this.service.validateGroupOwnership("/shared_projects", "sysadm");
       socket.emit(`validation-${questionId}-step`, {
         step: "Group ownership is sysadm",
         status: gOwnership ? "success" : "failed",
@@ -112,7 +112,7 @@ export class CollaborativeDirectoryControllerV1 {
         step: "Members of sysadm only",
         status: "loading",
       });
-      const gMemberPermission = await this.service.validateDirPermission("/shared/sysadm", "sysadm");
+      const gMemberPermission = await this.service.validateDirPermission("/shared_projects", "sysadm");
       socket.emit(`validation-${questionId}-step`, {
         step: "Members of sysadm only",
         status: gMemberPermission ? "success" : "failed",
@@ -123,7 +123,7 @@ export class CollaborativeDirectoryControllerV1 {
         step: "Automatically have group ownership",
         status: "loading",
       });
-      const gDirPermission = await this.service.validateDirPermission("/shared/sysadm", "sysadm");
+      const gDirPermission = await this.service.validateDirPermission("/shared_projects", "sysadm");
       socket.emit(`validation-${questionId}-step`, {
         step: "Automatically have group ownership",
         status: gDirPermission ? "success" : "failed",
