@@ -69,6 +69,9 @@ export const labTasks = pgTable("lab_tasks", {
   hint: text("hint"),
   validationSteps: jsonb("validation_steps"), // array of strings
   markdown: text("markdown"), // full markdown content
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  status: text("status").default("active").notNull(), // 'active', 'maintenance', 'deprecated', 'review'
+  maintenanceMessage: text("maintenance_message"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -24,6 +24,13 @@ export class DynamicPtySessionFactory {
       return null;
     }
 
+    // Check if dynamic labs are disabled for testing/development
+    if (process.env.DISABLE_DYNAMIC_LABS === 'true') {
+      console.log("🔧 Dynamic labs disabled - falling back to local lab configuration");
+      socket.emit("stdout", "*** DEVELOPMENT MODE: Using local lab configuration ***\r\n");
+      return null;
+    }
+
     try {
       // Get lab connection details from the provisioning service
       let connectionDetails;

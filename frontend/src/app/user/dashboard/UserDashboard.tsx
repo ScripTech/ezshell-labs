@@ -74,7 +74,7 @@ export function UserDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="bg-green-500/70 text-primary rounded px-4 py-2 text-center font-bold text-xl mb-2">
+            <div className="text-blue-600 dark:text-blue-400 dark:bg-slate-800 dark:border-blue-600/50 text-primary rounded px-4 py-2 text-center font-bold text-xl mb-2">
               TOTAL POINTS
               <div className="text-3xl mt-2">
                 {tasks.reduce((acc, t) => {
@@ -84,7 +84,7 @@ export function UserDashboardPage() {
               </div>
             </div>
             <div className="text-muted-foreground text-center py-2 border-t">
-              COMPLETED
+              CHALLENGES COMPLETED
               <div className="text-xl mt-1">{tasks.filter(t => t.completed).length}</div>
             </div>
           </CardContent>

@@ -23,6 +23,16 @@ const pathLabels: Record<string, string> = {
 // Define admin and user menu items
 const adminNavItems = [
   {
+    title: "Dashboard",
+    url: "/admin",
+    isActive: true,
+    items: [
+      { title: "Overview", url: "/admin" },
+      { title: "Enrollments", url: "/admin#enrollments" },
+      { title: "Analytics", url: "/admin#analytics" },
+    ],
+  },
+  {
     title: "Labs",
     url: "/admin/labs",
     isActive: true,
