@@ -84,9 +84,9 @@ class AuthenticatedSocketService {
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
-        withCredentials: true,
-        transports: ['websocket', 'polling'],
-        upgrade: true,
+        // withCredentials: true,
+        // transports: ['websocket', 'polling'],
+        // upgrade: true,
       };
 
       // Add lab parameters to query if provided

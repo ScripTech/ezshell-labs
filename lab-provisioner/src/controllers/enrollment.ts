@@ -74,6 +74,16 @@ async function processDirectProvisioning(
       updatedAt: new Date().toISOString(),
     });
 
+    // Update queue status to processing (not completed yet - let the background monitor handle completion)
+    await db
+      .update(provisioningQueue)
+      .set({
+        status: 'processing',
+        processedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+
     // Store SSH key information
     const privateKeyHash = sshKeyManager.generatePrivateKeyHash(
       await sshKeyManager.readPrivateKey(provisionResult.privateKeyPath)
@@ -95,7 +105,7 @@ async function processDirectProvisioning(
       provisionId,
     });
 
-    // Status monitor will handle the rest of the updates
+    // Background status monitor will handle the rest of the updates when instance reaches 'running' state
 
   } catch (error) {
     logger.error('Direct provisioning failed', {
