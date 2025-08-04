@@ -170,6 +170,7 @@ export class StatusMonitorService {
           eq(provisioningQueue.status, 'processing')
         );
 
+      logger.info("StatusMonitorService --- Checking status for active provisions");
       logger.debug('Checking status for active provisions', {
         count: activeProvisions.length,
       });

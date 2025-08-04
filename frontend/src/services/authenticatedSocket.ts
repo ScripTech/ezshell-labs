@@ -65,7 +65,7 @@ class AuthenticatedSocketService {
         return null;
       }
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_WS || 'http://ezetsu-labs:8443';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_WS || 'http://emucanze.com:8443';
 
       console.log('🔗 Connecting to backend WebSocket:', backendUrl);
       console.log('Environment variables:', { NEXT_PUBLIC_BACKEND_WS: process.env.NEXT_PUBLIC_BACKEND_WS
@@ -84,6 +84,9 @@ class AuthenticatedSocketService {
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
+        // withCredentials: true,
+        // transports: ['websocket', 'polling'],
+        // upgrade: true,
       };
 
       // Add lab parameters to query if provided
