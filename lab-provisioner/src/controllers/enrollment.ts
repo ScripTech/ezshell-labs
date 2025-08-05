@@ -75,6 +75,13 @@ async function processDirectProvisioning(
     });
 
     // Update queue status to processing (not completed yet - let the background monitor handle completion)
+    logger.info('🔄 Updating queue status to PROCESSING', {
+      enrollmentId,
+      instanceId: provisionResult.instanceId,
+      instanceState: provisionResult.state,
+      transition: 'queued -> processing'
+    });
+
     await db
       .update(provisioningQueue)
       .set({
@@ -83,6 +90,11 @@ async function processDirectProvisioning(
         updatedAt: new Date().toISOString(),
       })
       .where(eq(provisioningQueue.enrollmentId, enrollmentId));
+
+    logger.info('✅ Queue status updated to PROCESSING', {
+      enrollmentId,
+      instanceId: provisionResult.instanceId
+    });
 
     // Store SSH key information
     const privateKeyHash = sshKeyManager.generatePrivateKeyHash(
@@ -99,10 +111,12 @@ async function processDirectProvisioning(
       expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
     });
 
-    logger.info('Direct provisioning completed successfully', {
+    logger.info('🎉 Direct provisioning completed successfully', {
       enrollmentId,
       instanceId: provisionResult.instanceId,
       provisionId,
+      queueStatus: 'processing',
+      nextStep: 'background monitor will handle completion'
     });
 
     // Background status monitor will handle the rest of the updates when instance reaches 'running' state
