@@ -93,7 +93,7 @@ export class StatusMonitorService {
       const queue = queueData[0];
       const provision = provisionData[0];
 
-      logger.info('Status monitor data for steps calculation', {
+      logger.info('🔍 Status monitor data for steps calculation', {
         enrollmentId,
         queueStatus: queue?.status,
         instanceId: provision?.instanceId,
@@ -103,6 +103,18 @@ export class StatusMonitorService {
       });
 
       // Build steps based on current state
+      const awsInstanceStatus = this.getAWSInstanceStatus(queue, provision);
+      const labReadyStatus = this.getLabReadyStatus(provision);
+
+      logger.info('🚦 Step status calculation', {
+        enrollmentId,
+        awsInstanceStatus,
+        labReadyStatus,
+        queueStatus: queue?.status,
+        instanceState: provision?.instanceState,
+        hasPublicIp: !!provision?.publicIp
+      });
+
       const steps: ProvisioningStep[] = [
         {
           step: 'enrollment',
@@ -111,17 +123,17 @@ export class StatusMonitorService {
         },
         {
           step: 'aws_instance_creation',
-          status: this.getAWSInstanceStatus(queue, provision),
+          status: awsInstanceStatus,
           completedAt: provision?.provisionedAt || undefined,
         },
         {
           step: 'lab_ready',
-          status: this.getLabReadyStatus(provision),
+          status: labReadyStatus,
           completedAt: provision?.instanceState === 'running' && provision?.publicIp ? provision.updatedAt || undefined : undefined,
         },
       ];
 
-      logger.debug('Generated provisioning steps', {
+      logger.info('✅ Generated provisioning steps', {
         enrollmentId,
         steps: steps.map(s => ({ step: s.step, status: s.status, completedAt: s.completedAt }))
       });
@@ -170,9 +182,14 @@ export class StatusMonitorService {
           eq(provisioningQueue.status, 'processing')
         );
 
-      logger.info("StatusMonitorService --- Checking status for active provisions");
-      logger.debug('Checking status for active provisions', {
+      logger.info("🔄 StatusMonitorService --- Checking status for active provisions", {
         count: activeProvisions.length,
+        provisions: activeProvisions.map(p => ({
+          enrollmentId: p.enrollmentId,
+          queueStatus: p.queueStatus,
+          instanceId: p.instanceId,
+          instanceState: p.instanceState
+        }))
       });
 
       for (const provision of activeProvisions) {
@@ -193,9 +210,16 @@ export class StatusMonitorService {
 
     if (!instanceId) {
       // No instance created yet, check if it should be created
-      logger.debug('No instance found for enrollment', { enrollmentId });
+      logger.info('⚠️  No instance found for enrollment', { enrollmentId });
       return;
     }
+
+    logger.info('🔍 Starting status update for provision', {
+      enrollmentId,
+      instanceId,
+      currentInstanceState: instanceState,
+      provisionId
+    });
 
     try {
       // Get real-time instance details from AWS
@@ -209,17 +233,26 @@ export class StatusMonitorService {
       const currentState = instanceDetails.state;
       const hasStateChanged = currentState !== instanceState;
 
-      logger.debug('Instance status check', {
+      logger.info('🌐 Instance status check from AWS', {
         enrollmentId,
         instanceId,
         currentState,
         previousState: instanceState,
         hasStateChanged,
         publicIp: instanceDetails.publicIp,
+        privateIp: instanceDetails.privateIp
       });
 
       // Update database if state changed
-      if (hasStateChanged || (currentState === 'running' && !instanceDetails.publicIp)) {
+      if (hasStateChanged || (currentState === 'running' && !provision.publicIp)) {
+        logger.info('📝 Updating provision status in database', {
+          enrollmentId,
+          instanceId,
+          reason: hasStateChanged ? 'state changed' : 'missing public IP',
+          newState: currentState,
+          newPublicIp: instanceDetails.publicIp
+        });
+
         await db
           .update(labProvisions)
           .set({
@@ -229,16 +262,30 @@ export class StatusMonitorService {
           })
           .where(eq(labProvisions.id, provisionId));
 
-        logger.info('Updated provision status', {
+        logger.info('✅ Updated provision status', {
           enrollmentId,
           instanceId,
           newState: currentState,
           publicIp: instanceDetails.publicIp,
         });
+      } else {
+        logger.info('⏭️  No database update needed', {
+          enrollmentId,
+          instanceId,
+          currentState,
+          hasPublicIp: !!instanceDetails.publicIp
+        });
       }
 
       // Mark as completed if instance is running and has public IP
       if (currentState === 'running' && instanceDetails.publicIp) {
+        logger.info('🎉 Marking lab provisioning as COMPLETED', {
+          enrollmentId,
+          instanceId,
+          publicIp: instanceDetails.publicIp,
+          transition: 'processing -> completed'
+        });
+
         await db
           .update(provisioningQueue)
           .set({
@@ -247,15 +294,30 @@ export class StatusMonitorService {
           })
           .where(eq(provisioningQueue.enrollmentId, enrollmentId));
 
-        logger.info('Lab provisioning completed', {
+        logger.info('✅ Lab provisioning completed', {
           enrollmentId,
           instanceId,
           publicIp: instanceDetails.publicIp,
+        });
+      } else {
+        logger.info('⏳ Lab not ready yet', {
+          enrollmentId,
+          instanceId,
+          currentState,
+          hasPublicIp: !!instanceDetails.publicIp,
+          reason: currentState !== 'running' ? 'instance not running' : 'no public IP'
         });
       }
 
       // Handle failed states
       if (['terminated', 'stopping', 'stopped'].includes(currentState)) {
+        logger.error('❌ Lab provisioning FAILED due to instance state', {
+          enrollmentId,
+          instanceId,
+          state: currentState,
+          transition: 'processing -> failed'
+        });
+
         await db
           .update(provisioningQueue)
           .set({
@@ -306,14 +368,25 @@ export class StatusMonitorService {
    * Determine AWS instance creation status
    */
   private getAWSInstanceStatus(queue: any, provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
-    if (queue?.status === 'failed') return 'failed';
-    if (!provision?.instanceId) {
-      return queue?.status === 'processing' ? 'in_progress' : 'pending';
-    }
-    if (provision.instanceState === 'pending') return 'in_progress';
-    if (['running', 'stopped'].includes(provision.instanceState)) return 'completed';
-    if (['terminated', 'shutting-down'].includes(provision.instanceState)) return 'failed';
-    return 'in_progress';
+    const result = (() => {
+      if (queue?.status === 'failed') return 'failed';
+      if (!provision?.instanceId) {
+        return queue?.status === 'processing' ? 'in_progress' : 'pending';
+      }
+      if (provision.instanceState === 'pending') return 'in_progress';
+      if (['running', 'stopped'].includes(provision.instanceState)) return 'completed';
+      if (['terminated', 'shutting-down'].includes(provision.instanceState)) return 'failed';
+      return 'in_progress';
+    })();
+
+    logger.info('🔧 AWS Instance Status Calculation', {
+      queueStatus: queue?.status,
+      instanceId: provision?.instanceId,
+      instanceState: provision?.instanceState,
+      result
+    });
+
+    return result;
   }
 
   /**
@@ -321,7 +394,7 @@ export class StatusMonitorService {
    */
   private getLabReadyStatus(provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
     if (!provision?.instanceId) {
-      logger.debug('Lab ready status: pending (no instanceId)', { provision: !!provision });
+      logger.info('🏷️  Lab ready status: pending (no instanceId)', { provision: !!provision });
       return 'pending';
     }
 
@@ -329,7 +402,7 @@ export class StatusMonitorService {
     const state = provision.instanceState;
     const hasPublicIp = !!provision.publicIp;
 
-    logger.debug('Lab ready status calculation', {
+    logger.info('🧪 Lab ready status calculation', {
       instanceId: provision.instanceId,
       state,
       hasPublicIp,
@@ -338,30 +411,30 @@ export class StatusMonitorService {
 
     // Lab is ready when instance is running AND has a public IP
     if (state === 'running' && hasPublicIp) {
-      logger.info('Lab ready status: COMPLETED', { instanceId: provision.instanceId, publicIp: provision.publicIp });
+      logger.info('🎯 Lab ready status: COMPLETED', { instanceId: provision.instanceId, publicIp: provision.publicIp });
       return 'completed';
     }
 
     // Failed states
     if (['terminated', 'shutting-down', 'stopped'].includes(state)) {
-      logger.warn('Lab ready status: FAILED', { instanceId: provision.instanceId, state });
+      logger.warn('❌ Lab ready status: FAILED', { instanceId: provision.instanceId, state });
       return 'failed';
     }
 
     // Instance is running but no public IP yet - still in progress
     if (state === 'running' && !hasPublicIp) {
-      logger.debug('Lab ready status: in_progress (running but no public IP)', { instanceId: provision.instanceId });
+      logger.info('⏳ Lab ready status: in_progress (running but no public IP)', { instanceId: provision.instanceId });
       return 'in_progress';
     }
 
     // Instance is starting up
     if (['pending', 'running'].includes(state)) {
-      logger.debug('Lab ready status: in_progress (instance starting)', { instanceId: provision.instanceId, state });
+      logger.info('🚀 Lab ready status: in_progress (instance starting)', { instanceId: provision.instanceId, state });
       return 'in_progress';
     }
 
     // Default to pending for other states
-    logger.debug('Lab ready status: pending (default)', { instanceId: provision.instanceId, state });
+    logger.info('⏸️  Lab ready status: pending (default)', { instanceId: provision.instanceId, state });
     return 'pending';
   }
 }
