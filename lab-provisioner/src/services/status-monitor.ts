@@ -104,7 +104,7 @@ export class StatusMonitorService {
 
       // Build steps based on current state
       const awsInstanceStatus = this.getAWSInstanceStatus(queue, provision);
-      const labReadyStatus = this.getLabReadyStatus(provision);
+      const labReadyStatus = await this.getLabReadyStatus(provision);
 
       logger.info('🚦 Step status calculation', {
         enrollmentId,
@@ -366,22 +366,59 @@ export class StatusMonitorService {
 
   /**
    * Determine AWS instance creation status
+   * This step is about whether the instance was successfully CREATED, not whether it's running
    */
   private getAWSInstanceStatus(queue: any, provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
+    logger.info('🔧 AWS Instance Status Calculation - CREATION FOCUSED', {
+      queue: queue ? {
+        status: queue.status,
+        enrollmentId: queue.enrollmentId,
+        updatedAt: queue.updatedAt
+      } : null,
+      provision: provision ? {
+        instanceId: provision.instanceId,
+        instanceState: provision.instanceState,
+        publicIp: provision.publicIp,
+        updatedAt: provision.updatedAt
+      } : null
+    });
+
     const result = (() => {
-      if (queue?.status === 'failed') return 'failed';
-      if (!provision?.instanceId) {
-        return queue?.status === 'processing' ? 'in_progress' : 'pending';
+      // Failed provision
+      if (queue?.status === 'failed') {
+        logger.info('🔧 AWS Instance Creation: FAILED - queue status failed');
+        return 'failed';
       }
-      if (provision.instanceState === 'pending') return 'in_progress';
-      if (['running', 'stopped'].includes(provision.instanceState)) return 'completed';
-      if (['terminated', 'shutting-down'].includes(provision.instanceState)) return 'failed';
-      return 'in_progress';
+
+      // Instance successfully created - AWS Instance Creation is COMPLETED
+      if (provision?.instanceId) {
+        // Check if instance was terminated after creation
+        if (['terminated', 'shutting-down'].includes(provision.instanceState)) {
+          logger.info('🔧 AWS Instance Creation: FAILED - instance terminated after creation');
+          return 'failed';
+        }
+
+        logger.info('🔧 AWS Instance Creation: COMPLETED - instanceId exists', {
+          instanceId: provision.instanceId,
+          instanceState: provision.instanceState
+        });
+        return 'completed';
+      }
+
+      // No instance yet - check if creation is in progress
+      if (queue?.status === 'processing') {
+        logger.info('🔧 AWS Instance Creation: IN_PROGRESS - provisioning started');
+        return 'in_progress';
+      }
+
+      // Still queued
+      logger.info('🔧 AWS Instance Creation: PENDING - not started yet');
+      return 'pending';
     })();
 
-    logger.info('🔧 AWS Instance Status Calculation', {
+    logger.info('🔧 AWS Instance Creation Status - FINAL', {
       queueStatus: queue?.status,
-      instanceId: provision?.instanceId,
+      hasInstanceId: !!provision?.instanceId,
       instanceState: provision?.instanceState,
       result
     });
@@ -390,51 +427,153 @@ export class StatusMonitorService {
   }
 
   /**
-   * Determine lab ready status based on database instance state
+   * Determine lab ready status based on real-time AWS instance state
+   * Combines database state with live AWS details for accurate status
    */
-  private getLabReadyStatus(provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
+  private async getLabReadyStatus(provision: any): Promise<'pending' | 'in_progress' | 'completed' | 'failed'> {
     if (!provision?.instanceId) {
       logger.info('🏷️  Lab ready status: pending (no instanceId)', { provision: !!provision });
       return 'pending';
     }
 
-    // Check the actual instance state from database
+    logger.info('🧪 Lab ready status calculation - fetching AWS details', {
+      instanceId: provision.instanceId,
+      dbState: provision.instanceState,
+      dbPublicIp: provision.publicIp
+    });
+
+    try {
+      // Get real-time AWS instance details
+      const awsDetails = await awsProvisionerService.getInstanceDetails(provision.instanceId);
+
+      if (!awsDetails) {
+        logger.warn('⚠️  Could not fetch AWS details for lab ready check', {
+          instanceId: provision.instanceId
+        });
+        // Fallback to database state
+        return this.getLabReadyStatusFromDB(provision);
+      }
+
+      logger.info('🌐 AWS Real-time instance details for lab ready check', {
+        instanceId: provision.instanceId,
+        awsState: awsDetails.state,
+        awsPublicIp: awsDetails.publicIp,
+        dbState: provision.instanceState,
+        dbPublicIp: provision.publicIp
+      });
+
+      // Use real-time AWS state for decision making
+      const state = awsDetails.state;
+      const hasPublicIp = !!awsDetails.publicIp;
+
+      // Failed states
+      if (['terminated', 'shutting-down', 'stopped'].includes(state)) {
+        logger.warn('❌ Lab ready status: FAILED (AWS real-time)', {
+          instanceId: provision.instanceId,
+          state
+        });
+        return 'failed';
+      }
+
+      // Lab is ready when instance is running AND has a public IP
+      // AWS's "3/3 checks passed" indicates the instance is fully accessible
+      if (state === 'running' && hasPublicIp) {
+        logger.info('🎯 Lab ready status: COMPLETED (AWS real-time - running with public IP)', {
+          instanceId: provision.instanceId,
+          publicIp: awsDetails.publicIp,
+          state: awsDetails.state
+        });
+        return 'completed';
+      }
+
+      // Instance is running but no public IP yet - still in progress
+      if (state === 'running' && !hasPublicIp) {
+        logger.info('⏳ Lab ready status: in_progress (AWS real-time - running but no public IP)', {
+          instanceId: provision.instanceId,
+          state
+        });
+        return 'in_progress';
+      }
+
+      // Instance is starting up
+      if (['pending', 'running'].includes(state)) {
+        logger.info('🚀 Lab ready status: in_progress (AWS real-time - instance starting)', {
+          instanceId: provision.instanceId,
+          state
+        });
+        return 'in_progress';
+      }
+
+      // Default to pending for other states
+      logger.info('⏸️  Lab ready status: pending (AWS real-time - default)', {
+        instanceId: provision.instanceId,
+        state
+      });
+      return 'pending';
+
+    } catch (error) {
+      logger.error('❌ Failed to fetch AWS details for lab ready check', {
+        instanceId: provision.instanceId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      // Fallback to database state if AWS call fails
+      logger.info('🔄 Falling back to database state for lab ready check');
+      return this.getLabReadyStatusFromDB(provision);
+    }
+  }
+
+  /**
+   * Fallback method for lab ready status using database state only
+   */
+  private getLabReadyStatusFromDB(provision: any): 'pending' | 'in_progress' | 'completed' | 'failed' {
     const state = provision.instanceState;
     const hasPublicIp = !!provision.publicIp;
 
-    logger.info('🧪 Lab ready status calculation', {
+    logger.info('🗄️  Lab ready status calculation - database fallback', {
       instanceId: provision.instanceId,
       state,
       hasPublicIp,
       publicIp: provision.publicIp
     });
 
-    // Lab is ready when instance is running AND has a public IP
-    if (state === 'running' && hasPublicIp) {
-      logger.info('🎯 Lab ready status: COMPLETED', { instanceId: provision.instanceId, publicIp: provision.publicIp });
-      return 'completed';
-    }
-
     // Failed states
     if (['terminated', 'shutting-down', 'stopped'].includes(state)) {
-      logger.warn('❌ Lab ready status: FAILED', { instanceId: provision.instanceId, state });
+      logger.warn('❌ Lab ready status: FAILED (DB fallback)', { instanceId: provision.instanceId, state });
       return 'failed';
+    }
+
+    // Lab is ready when instance is running AND has a public IP
+    if (state === 'running' && hasPublicIp) {
+      logger.info('🎯 Lab ready status: COMPLETED (DB fallback - running with public IP)', {
+        instanceId: provision.instanceId,
+        publicIp: provision.publicIp
+      });
+      return 'completed';
     }
 
     // Instance is running but no public IP yet - still in progress
     if (state === 'running' && !hasPublicIp) {
-      logger.info('⏳ Lab ready status: in_progress (running but no public IP)', { instanceId: provision.instanceId });
+      logger.info('⏳ Lab ready status: in_progress (DB fallback - running but no public IP)', {
+        instanceId: provision.instanceId
+      });
       return 'in_progress';
     }
 
     // Instance is starting up
     if (['pending', 'running'].includes(state)) {
-      logger.info('🚀 Lab ready status: in_progress (instance starting)', { instanceId: provision.instanceId, state });
+      logger.info('🚀 Lab ready status: in_progress (DB fallback - instance starting)', {
+        instanceId: provision.instanceId,
+        state
+      });
       return 'in_progress';
     }
 
     // Default to pending for other states
-    logger.info('⏸️  Lab ready status: pending (default)', { instanceId: provision.instanceId, state });
+    logger.info('⏸️  Lab ready status: pending (DB fallback - default)', {
+      instanceId: provision.instanceId,
+      state
+    });
     return 'pending';
   }
 }
