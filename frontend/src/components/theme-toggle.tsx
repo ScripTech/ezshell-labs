@@ -91,13 +91,10 @@ export function SimpleThemeToggle() {
   const toggleTheme = () => {
     // Simple toggle between light and dark only
     const currentTheme = resolvedTheme || theme
-    console.log('Current theme:', theme, 'Resolved theme:', resolvedTheme)
 
     if (currentTheme === 'light') {
-      console.log('Switching to dark')
       setTheme('dark')
     } else {
-      console.log('Switching to light')
       setTheme('light')
     }
   }
