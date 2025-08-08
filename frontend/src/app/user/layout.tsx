@@ -2,6 +2,7 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { NavMain } from "@/components/nav-main"
+import { SimpleThemeToggle } from "@/components/theme-toggle"
 import { BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -94,10 +95,10 @@ export default function UserLayout({
       </AppSidebar>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+          <div className="flex items-center gap-2 px-4 flex-1">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <nav aria-label="Breadcrumb">
+            <nav aria-label="Breadcrumb" className="flex-1">
               <ol className="flex items-center space-x-2">
                 {breadcrumbs.map(({ href, label, isLast }, index) => (
                   <li key={href} className="flex items-center">
@@ -120,6 +121,9 @@ export default function UserLayout({
                 ))}
               </ol>
             </nav>
+            <div className="ml-auto">
+              <SimpleThemeToggle />
+            </div>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

@@ -1,11 +1,13 @@
 "use client"
 
+import * as React from "react"
 import {
   BadgeCheck,
   Bell,
   CircleUser,
   LogOut,
   Sparkles,
+  Palette,
 } from "lucide-react"
 
 import {
@@ -21,6 +23,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
@@ -31,6 +37,8 @@ import {
 import { CaretSortIcon, ComponentPlaceholderIcon } from "@radix-ui/react-icons"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
+import { useTheme } from "@/contexts/theme-provider"
+import { Moon, Sun, Monitor } from "lucide-react"
 
 export function NavUser({
   user,
@@ -42,6 +50,13 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { setTheme, theme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+
+  // Ensure component is mounted before rendering theme-dependent content
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <SidebarMenu>
@@ -104,6 +119,31 @@ export function NavUser({
                 <Bell className="h-4 w-4" />
                 <Link className="px-2" href="/user/notifications">Notifications</Link>
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Palette className="h-4 w-4" />
+                  <span className="px-2">Theme</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => setTheme('light')} className="cursor-pointer">
+                      <Sun className="h-4 w-4" />
+                      <span className="px-2">Light</span>
+                      {mounted && theme === 'light' && <span className="ml-auto text-xs">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme('dark')} className="cursor-pointer">
+                      <Moon className="h-4 w-4" />
+                      <span className="px-2">Dark</span>
+                      {mounted && theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTheme('system')} className="cursor-pointer">
+                      <Monitor className="h-4 w-4" />
+                      <span className="px-2">System</span>
+                      {mounted && theme === 'system' && <span className="ml-auto text-xs">✓</span>}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer " onClick={() => signOut()}>

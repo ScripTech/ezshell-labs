@@ -47,7 +47,7 @@ function UserLabsContent() {
         <Separator className="mb-6" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="shadow-none rounded-md">
               <CardHeader>
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />

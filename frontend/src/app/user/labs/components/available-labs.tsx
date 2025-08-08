@@ -16,18 +16,13 @@ interface AvailableLabsProps {
 
 export function AvailableLabsComponent({
   data,
-  onContinue,
 }: Readonly<AvailableLabsProps>) {
   const router = useRouter()
-
-  const handleLabDetails = (labId: string) => {
-    router.push(`/user/labs/${labId}`)
-  }
 
   return (
     <div className="grid gap-6 md:grid-cols-4 lg:grid-cols-4">
       {data.map((lab) => (
-        <Card key={lab.id} className="group hover:shadow-lg transition-shadow md:min-w-[275px] shrink-0">
+        <Card key={lab.id} className="group hover:shadow-lg transition-shadow md:min-w-[275px] shadow-none rounded-md shrink-0">
           <CardHeader className="border-b p-0">
             <div className="aspect-video relative overflow-hidden rounded-t-lg">
               <Image
@@ -60,12 +55,21 @@ export function AvailableLabsComponent({
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-1">
               <div className="flex items-center gap-1">
                 <Terminal className="h-4 w-4" />
-                <span>Shell Lab</span>
+                <span>Shell</span>
               </div>
               <div className="flex items-center gap-1">
+                <span>Linux</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>Bash Script</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>Sys Admin</span>
+              </div>
+              {/* <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
                 <span>{lab.enrolledCount} Users</span>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>
