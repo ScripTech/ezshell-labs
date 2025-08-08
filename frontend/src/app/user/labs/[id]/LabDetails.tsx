@@ -391,11 +391,11 @@ export function LabDetails() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
-              <Card>
+              <Card className='rounded-md shadow-none'>
                 <CardHeader>
                   <CardTitle>Course Overview</CardTitle>
                   <CardDescription>
-                    Master Red Hat Enterprise Linux administration with hands-on practice
+                    Master {lab.name} with hands-on practice
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
