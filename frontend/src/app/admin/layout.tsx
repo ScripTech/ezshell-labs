@@ -39,6 +39,7 @@ const adminNavItems = [
     items: [
       { title: "All Labs", url: "/admin/labs" },
       { title: "Create Lab", url: "/admin/labs/create" },
+      { title: "Lab Assignments", url: "/admin/lab-assignments" },
     ],
   },
   {
@@ -48,6 +49,15 @@ const adminNavItems = [
     items: [
       { title: "All Users", url: "/admin/users" },
       { title: "Invite User", url: "/admin/users/invite" },
+    ],
+  },
+  {
+    title: "Instructors",
+    url: "/admin/instructors",
+    isActive: true,
+    items: [
+      { title: "All Instructors", url: "/admin/instructors" },
+      { title: "Add Instructor", url: "/admin/instructors/create" },
     ],
   },
   {

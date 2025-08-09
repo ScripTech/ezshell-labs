@@ -40,14 +40,42 @@ export const session = pgTable("session", {
 	}
 });
 
+export const instructors = pgTable("instructors", {
+	id: text().primaryKey().notNull(),
+	name: text().notNull(),
+	title: text().notNull(),
+	bio: text(),
+	avatar: text(),
+	email: text(),
+	experience: text(),
+	specializations: jsonb("specializations"),
+	socialLinks: jsonb("social_links"),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+}, (table) => {
+	return {
+		instructorsEmailUnique: unique("instructors_email_unique").on(table.email),
+	}
+});
+
 export const labs = pgTable("labs", {
 	id: text().primaryKey().notNull(),
 	name: text().notNull(),
 	description: text(),
 	duration: integer().default(30).notNull(),
+	instructorId: text("instructor_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 	imageUrl: text().default(''),
+}, (table) => {
+	return {
+		labsInstructorIdInstructorsIdFk: foreignKey({
+			columns: [table.instructorId],
+			foreignColumns: [instructors.id],
+			name: "labs_instructor_id_instructors_id_fk"
+		}),
+	}
 });
 
 export const user = pgTable("user", {

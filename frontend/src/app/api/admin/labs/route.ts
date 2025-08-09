@@ -16,13 +16,25 @@ const labSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
+  console.log("Session:", session);
+  console.log("User role:", session?.user?.role);
+  console.log("Is admin:", isAdmin(session));
+
   if (!isAdmin(session))
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
-  // const labs = await prisma.lab.findMany({ include: { shellConfig: true } });
-  const labs: any = [];
-  return NextResponse.json(labs);
+  try {
+    const allLabs = await db.query.labs.findMany({
+      with: {
+        instructor: true,
+      },
+    });
+    return NextResponse.json(allLabs);
+  } catch (error) {
+    console.error('Error fetching labs:', error);
+    return NextResponse.json({ error: "Failed to fetch labs" }, { status: 500 });
+  }
 }
 
 // Add POST, PUT, DELETE as needed, all with isAdmin check

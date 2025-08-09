@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { labs, labEnrollments } from "@/db/schemas/LabSchema";
+import { instructors } from "@/db/schemas/InstructorSchema";
 import { authOptions } from "@/lib/auth";
 
 export async function GET(
@@ -16,12 +17,14 @@ export async function GET(
   }
 
   try {
+    // First try with relations
     const lab = await db.query.labs.findFirst({
       where: eq(labs.id, params.id),
       with: {
         enrollments: {
           where: (enrollments, { eq }) => eq(enrollments.userId, userId),
         },
+        instructor: true,
       },
     });
 
@@ -30,7 +33,7 @@ export async function GET(
     }
 
     // Transform the response to include enrollment status
-    const enrollment = lab.enrollments[0];
+    const enrollment = lab.enrollments?.[0];
     return NextResponse.json({
       ...lab,
       enrollments: undefined, // Remove raw enrollments data

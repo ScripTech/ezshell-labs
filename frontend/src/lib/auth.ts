@@ -90,10 +90,9 @@ export const authOptions: AuthOptions = {
       return `${baseUrl}/user/dashboard`
     },
     session: async ({ session, token }: { session: any; token: any }) => {
-      if (session?.user && token.sub) {
+      if (session?.user && token) {
         session.user.id = token.sub;
         session.user.role = token.role || "user";
-        session.user.roles = token.roles || [];
       }
       return session;
     },
@@ -101,10 +100,11 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.sub = user.id;
         token.role = user.role;
+        return token;
       }
 
       // For existing tokens, verify user still exists and get updated role
-      if (token.sub && !user) {
+      if (token.sub) {
         try {
           const existingUser = await db.query.users.findFirst({
             where: (users, { eq }) => eq(users.id, token.sub),
@@ -119,7 +119,6 @@ export const authOptions: AuthOptions = {
           token.role = existingUser.role;
         } catch (error) {
           console.error('Error verifying user in JWT callback:', error);
-          return {};
         }
       }
 

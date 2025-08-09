@@ -36,6 +36,7 @@ import {
   Code,
   FileText
 } from 'lucide-react'
+import { sendGAEvent } from '@next/third-parties/google'
 
 export function LabDetails() {
   const params = useParams()
@@ -59,6 +60,13 @@ export function LabDetails() {
       setIsLoading(false)
     }
   }
+
+    const handleAccessLab = (lab: Lab) => {
+      if (lab.enrollment?.id) {
+        sendGAEvent('lab_enrollment', 'access_lab', lab.id, "enrollmentId", lab.enrollment.id);
+        window.open(`/ezshell/${ lab.id }?enrollment=${ lab.enrollment.id }`, '_blank')
+      }
+    }
 
   useEffect(() => {
     fetchLabDetails()
@@ -122,7 +130,8 @@ export function LabDetails() {
     completionRate: 87
   }
 
-  const instructor = {
+  // Use instructor from API or fallback to default
+  const instructor = lab?.instructor || {
     name: "Edilson D. Mucanze",
     title: "Senior DevOps Engineer & Cloud Solutions Architect",
     avatar: "https://media.licdn.com/dms/image/v2/D4D03AQFGJ30dWLkozA/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1729767497020?e=1757548800&v=beta&t=4CZ2Ihxgnrtl1wsRfDtdafhqiQzL8e-YeSYmykxzSrA",
@@ -156,18 +165,11 @@ export function LabDetails() {
               {/* Lab Title & Tags */}
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
-                    DevOps
-                  </Badge>
-                  <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
-                    Linux
-                  </Badge>
-                  <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
-                    Red Hat
-                  </Badge>
-                  <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
-                    Certification
-                  </Badge>
+                  {lab.instructor?.specializations?.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="bg-white/10 text-white border-white/20">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
 
                 <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
@@ -273,7 +275,12 @@ export function LabDetails() {
                         {isEnrolling ? 'Enrolling...' : 'Start Lab Now'}
                       </Button>
                     ) : (
-                      <Button size="lg" className="w-full" variant="default">
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        variant="default"
+                        onClick={() => handleAccessLab(lab)}
+                        >
                         <PlayCircle className="w-4 h-4 mr-2" />
                         Continue Lab
                       </Button>
@@ -451,23 +458,24 @@ export function LabDetails() {
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-shrink-0">
                       <Avatar className="w-32 h-32">
-                        <AvatarImage src={instructor.avatar} alt={instructor.name} />
-                        <AvatarFallback className="text-2xl">{instructor.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={lab.instructor?.avatar} alt={lab.instructor?.name} />
+                        <AvatarFallback className="text-2xl">{lab.instructor?.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-2xl font-bold">{instructor.name}</h3>
-                        <p className="text-lg text-muted-foreground">{instructor.title}</p>
+                        <h3 className="text-2xl font-bold">{lab.instructor?.name}</h3>
+                        <p className="text-lg text-muted-foreground">{lab.instructor?.title}</p>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <div className="font-semibold">Experience</div>
-                          <div className="text-muted-foreground">{instructor.experience}</div>
+                          <div className="text-muted-foreground">{lab.instructor?.experience}</div>
                         </div>
                         <div>
                           <div className="font-semibold">Students</div>
-                          <div className="text-muted-foreground">{lab.enrolledCount || 7}+</div>
+                          <div className="text-muted-foreground">{7}+</div>
+                          {/* <div className="text-muted-foreground">{lab.instructor?.students || 7}+</div> */}
                         </div>
                         <div>
                           <div className="font-semibold">Courses</div>

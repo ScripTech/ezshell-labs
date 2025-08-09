@@ -8,6 +8,7 @@ import {
   decimal,
 } from "drizzle-orm/pg-core";
 import { users } from "./UserSchema";
+import { instructors } from "./InstructorSchema";
 import { relations } from "drizzle-orm";
 
 export const labSessions = pgTable("lab_session", {
@@ -26,6 +27,7 @@ export const labs = pgTable("labs", {
   imageUrl: text("imageUrl").default(""),
   description: text("description"),
   duration: integer("duration").notNull().default(30), // duration in minutes
+  instructorId: text("instructor_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -96,11 +98,15 @@ export const labTaskProgress = pgTable("lab_task_progress", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const labRelations = relations(labs, ({ many }) => ({
+export const labRelations = relations(labs, ({ many, one }) => ({
   sessions: many(labSessions),
   enrollments: many(labEnrollments),
   exercises: many(labExercises),
   tasks: many(labTasks),
+  instructor: one(instructors, {
+    fields: [labs.instructorId],
+    references: [instructors.id],
+  }),
 }));
 
 export const labSessionRelations = relations(labSessions, ({ one }) => ({
