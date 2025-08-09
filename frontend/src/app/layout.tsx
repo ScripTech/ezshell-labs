@@ -1,5 +1,6 @@
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { AuthErrorHandler } from '@/components/providers/AuthErrorHandler'
+import { ThemeProvider } from '@/contexts/theme-provider'
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -44,14 +45,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`light:bg-muted/40 antialiased`}>
-        <AuthProvider>
-          <AuthErrorHandler>
-            {children}
-          </AuthErrorHandler>
-        </AuthProvider>
-        <Toaster />
+    <html lang="en" suppressHydrationWarning>
+      <body className={`antialiased`}>
+        <ThemeProvider
+          defaultTheme="system"
+          enableSystem={true}
+          disableTransitionOnChange={false}
+          storageKey="ezshell-ui-theme"
+        >
+          <AuthProvider>
+            <AuthErrorHandler>
+              {children}
+            </AuthErrorHandler>
+          </AuthProvider>
+          <Toaster />
+        </ThemeProvider>
         <GoogleAnalytics gaId="G-ZVZ9ZHZ3VL" />
       </body>
     </html>

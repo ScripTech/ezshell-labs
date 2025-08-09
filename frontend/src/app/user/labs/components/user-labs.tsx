@@ -20,7 +20,7 @@ export function UserLabsComponent({ labs }: UserLabsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {labs.map((lab) => (
-        <Card key={lab.id}>
+        <Card key={lab.id} className='shadow-none rounded-md'>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Lab Session</CardTitle>

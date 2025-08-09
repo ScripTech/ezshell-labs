@@ -47,7 +47,7 @@ export default function HistoryPage() {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
+            <Card key={i} className='shadow-none rounded-md'>
               <CardHeader>
                 <Skeleton className="h-4 w-3/4" />
               </CardHeader>

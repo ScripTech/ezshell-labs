@@ -66,7 +66,7 @@ export function UserDashboardPage() {
   return (
     <div className="flex flex-col gap-4 py-8 w-full px-8 mx-auto">
       <div className="flex flex-row md:flex-row gap-4 mb-6">
-        <Card className="border-none space-y-3 min-w-[260px]">
+        <Card className="shadow-none border-none space-y-3 min-w-[260px]">
           <CardHeader className="p-4">
             <CardTitle>
               <div className="text-lg">{session?.user?.name ?? "Anonymous"}</div>
@@ -90,10 +90,10 @@ export function UserDashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="p-4 rounded-lg shadow flex-1">
+        <div className="p-4 rounded-lg flex-1">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {user.skills.map((skill, i) => (
-                <Card key={i}>
+                <Card key={i} className="shadow-none rounded-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       {skill.name} {skill.icon}
@@ -147,7 +147,7 @@ export function UserDashboardPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="rounded shadow">
+        <div className="rounded">
           <DataTable columns={columns} data={paginatedTasks} isLoading={loading} />
         </div>
       </div>

@@ -54,7 +54,7 @@ export default function BillingPlansPage() {
       <div className="flex w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 m-auto">
           {plans.map(plan => (
-            <Card key={plan.name} className="flex flex-col min-w-72 w-full bg-card shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card key={plan.name} className="flex flex-col min-w-72 w-full bg-card shadow-lg hover:shadow-xl transition-shadow duration-300 shadown-none rounded-md">
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
                 <div className="text-3xl font-bold mt-2">{plan.price}</div>
