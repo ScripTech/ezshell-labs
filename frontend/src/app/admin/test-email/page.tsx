@@ -35,7 +35,7 @@ export default function EmailServiceTestPage() {
       const sampleUser = {
         id: '1',
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'edilsonhmberto@gmail.com',
         role: 'user' as const
       };
 
@@ -151,7 +151,7 @@ export default function EmailServiceTestPage() {
       const emailPayload = {
         templateType: 'account-validation',
         recipients: [{
-          email: 'test@example.com',
+          email: 'edilsonhmberto@gmail.com',
           name: 'Test User'
         }],
         templateData: {
@@ -210,7 +210,7 @@ export default function EmailServiceTestPage() {
       const emailPayload = {
         templateType: 'lab-ready',
         recipients: [{
-          email: 'test@example.com',
+          email: 'edilsonhmberto@gmail.com',
           name: 'Test Student'
         }],
         templateData: {
@@ -270,9 +270,9 @@ export default function EmailServiceTestPage() {
       // Test sending user enrollment notification
       const emailPayload = {
         templateType: 'user-enrollment',
-        recipients: [{ 
-          email: 'test@example.com', 
-          name: 'Test Student' 
+        recipients: [{
+          email: 'edilsonhmberto@gmail.com',
+          name: 'Test Student'
         }],
         templateData: {
           userName: 'Test Student',

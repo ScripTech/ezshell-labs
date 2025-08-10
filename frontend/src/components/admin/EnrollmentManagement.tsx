@@ -88,7 +88,7 @@ export function EnrollmentManagement() {
   const handleCreateEnrollment = async (userId: string, labId: string) => {
     try {
       await EnrollmentManagementService.createEnrollment({ userId, labId })
-      toast.success("User enrolled successfully")
+      toast.success("User enrolled successfully! Enrollment notification email has been sent.")
       loadEnrollments()
       setCreateDialogOpen(false)
     } catch (error: any) {

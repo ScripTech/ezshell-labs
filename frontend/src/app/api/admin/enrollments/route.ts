@@ -1,3 +1,4 @@
+import { Enrollment } from './../../../../types/enrollment-management';
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -6,6 +7,7 @@ import { labEnrollments, labs, labSessions } from '@/db/schemas/LabSchema'
 import { users } from '@/db/schemas/UserSchema'
 import { eq, and, count, desc } from 'drizzle-orm'
 import { labProvisions } from '@/db/schemas'
+import { emailNotificationService } from '@/services/email/EmailNotificationService'
 
 // GET /api/admin/enrollments - Get all enrollments with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -171,6 +173,58 @@ export async function POST(request: NextRequest) {
 
       const enrollmentData = await provisioningResponse.json()
       console.log('Lab provisioner enrollment successful:', enrollmentData)
+
+      // Send enrollment notification email
+      try {
+        // Get user and lab details for email
+        const [userDetails] = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            role: users.role,
+          })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1)
+
+        const [labDetails] = await db
+          .select({
+            id: labs.id,
+            name: labs.name,
+            duration: labs.duration,
+            description: labs.description,
+          })
+          .from(labs)
+          .where(eq(labs.id, labId))
+          .limit(1)
+
+        if (userDetails && labDetails && userDetails.email) {
+          await emailNotificationService.sendUserEnrollment(
+            {
+              id: userDetails.id,
+              name: userDetails.name || "Student",
+              email: userDetails.email,
+              role: userDetails.role,
+            },
+            {
+              labName: labDetails.name,
+              labDescription:
+                "An exciting hands-on lab experience to Master Linux and Cloud essential skills.",
+              enrolledBy: "EzShell Enrollment Team",
+              enrollmentDate: new Date(),
+              accessUrl: `${process.env.NEXTAUTH_URL}/user/labs/${labDetails.id}`,
+              duration: `${labDetails.duration} minutes`,
+              dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            }
+          );
+
+          console.log('Enrollment notification email sent successfully')
+        }
+      } catch (emailError) {
+        console.error('Failed to send enrollment notification email:', emailError)
+        // Don't fail the enrollment if email fails
+      }
 
       return NextResponse.json({
         message: 'User enrolled successfully and AWS provisioning initiated',
