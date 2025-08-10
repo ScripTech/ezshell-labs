@@ -1,0 +1,57 @@
+{{subject}}
+
+Hi {{#if userName}}{{userName}}{{else}}there{{/if}},
+
+{{#if priority}}
+{{#if (eq priority "high")}}🚨 HIGH PRIORITY{{/if}}
+{{#if (eq priority "medium")}}⚠️ MEDIUM PRIORITY{{/if}}
+{{#if (eq priority "low")}}ℹ️ LOW PRIORITY{{/if}}
+{{#if (eq priority "info")}}📢 INFORMATION{{/if}}
+
+{{/if}}
+{{#if previewText}}
+IMPORTANT: {{previewText}}
+
+{{/if}}
+{{message}}
+
+{{#if actionButton}}
+🔗 {{actionButton.text}}: {{actionButton.url}}
+{{/if}}
+
+{{#if highlights}}
+KEY HIGHLIGHTS:
+{{#each highlights}}
+• {{title}}: {{description}}{{#if url}} - {{url}}{{/if}}
+{{/each}}
+{{/if}}
+
+{{#if listItems}}
+DETAILS:
+{{#each listItems}}
+• {{this}}
+{{/each}}
+{{/if}}
+
+{{#if attachments}}
+📎 ATTACHMENTS:
+{{#each attachments}}
+• {{name}}{{#if size}} ({{size}}){{/if}}: {{url}}
+{{/each}}
+{{/if}}
+
+{{#if customFooterMessage}}
+---
+{{customFooterMessage}}
+{{/if}}
+
+---
+This is an automated notification from {{companyName}}.
+
+{{#if unsubscribeUrl}}
+Unsubscribe: {{unsubscribeUrl}}
+{{/if}}
+
+Need assistance? Contact us at {{supportEmail}}
+
+© {{currentYear}} {{companyName}}. All rights reserved.

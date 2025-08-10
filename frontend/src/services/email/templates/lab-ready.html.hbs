@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Environment Ready!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .success-banner {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .lab-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .ready-indicator {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .access-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 18px 36px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            margin: 25px 0;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+        .access-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .info-card {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+        }
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .info-card p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .warning-box {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚀 {{companyName}}</div>
+            <h1 class="title">🎉 Your Lab is Ready!</h1>
+        </div>
+
+        <div class="content">
+            <p>Hi {{userName}},</p>
+
+            <p>Excellent news! Your lab environment has been successfully set up and is ready for your hands-on learning experience.</p>
+
+            <div class="success-banner">
+                <div class="lab-name">{{labName}}</div>
+                {{#if labDescription}}
+                <p style="margin: 10px 0; opacity: 0.9; font-size: 16px;">{{labDescription}}</p>
+                {{/if}}
+                <div class="ready-indicator">✅ Environment Ready</div>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{accessUrl}}" class="access-button">🚀 Launch Lab Environment</a>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>⏱️ Lab Duration</h3>
+                    <p>{{duration}}</p>
+                </div>
+                {{#if expiresAt}}
+                <div class="info-card">
+                    <h3>📅 Session Expires</h3>
+                    <p>{{formatDate expiresAt}} at {{formatTime expiresAt}}</p>
+                </div>
+                {{/if}}
+            </div>
+
+            {{#if expiresAt}}
+            <div class="warning-box">
+                <strong>⚠️ Important:</strong> Your lab environment will automatically terminate on {{formatDate expiresAt}} to manage resources efficiently. Make sure to save your progress before then!
+            </div>
+            {{/if}}
+
+            <p><strong>🎯 Ready to get started? Here's what to expect:</strong></p>
+            <ul>
+                <li>🖥️ Access to a dedicated AWS environment</li>
+                <li>🛠️ Pre-configured tools and software</li>
+                <li>📋 Step-by-step lab instructions</li>
+                <li>🎯 Hands-on challenges and exercises</li>
+                <li>📊 Progress tracking throughout the lab</li>
+            </ul>
+
+            <p>Click the "Launch Lab Environment" button above to access your lab and begin your learning journey!</p>
+        </div>
+
+        <div class="footer">
+            <p>Need help or experiencing issues? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

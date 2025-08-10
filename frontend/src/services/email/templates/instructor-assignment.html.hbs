@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Student Assignment</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .assignment-banner {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .assignment-type {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .assignment-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .student-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .info-card {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #7c3aed;
+        }
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .info-card p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .student-list {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .student-list h3 {
+            margin-top: 0;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .student-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .student-item:last-child {
+            border-bottom: none;
+        }
+        .student-info {
+            display: flex;
+            align-items: center;
+        }
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .student-details {
+            flex-grow: 1;
+        }
+        .student-name {
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+        .student-email {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .student-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-enrolled {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .primary-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 18px 36px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 10px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .secondary-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .important-note {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .student-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px 0;
+            }
+            .student-status {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚀 {{companyName}}</div>
+            <h1 class="title">👨‍🏫 New Assignment</h1>
+        </div>
+
+        <div class="content">
+            <p>Hi {{instructorName}},</p>
+
+            <p>You have been assigned to mentor new students in their learning journey. Below are the details of your assignment.</p>
+
+            <div class="assignment-banner">
+                <div class="assignment-type">{{assignmentType}}</div>
+                <div class="assignment-title">{{#if cohortName}}{{cohortName}}{{else}}{{labName}}{{/if}}</div>
+                <div class="student-count">{{studentCount}} Student{{#if (gt studentCount 1)}}s{{/if}} Assigned</div>
+            </div>
+
+            <div class="info-grid">
+                {{#if startDate}}
+                <div class="info-card">
+                    <h3>📅 Start Date</h3>
+                    <p>{{formatDate startDate}}</p>
+                </div>
+                {{/if}}
+                {{#if endDate}}
+                <div class="info-card">
+                    <h3>⏰ End Date</h3>
+                    <p>{{formatDate endDate}}</p>
+                </div>
+                {{/if}}
+                {{#if duration}}
+                <div class="info-card">
+                    <h3>⏱️ Duration</h3>
+                    <p>{{duration}}</p>
+                </div>
+                {{/if}}
+                {{#if labType}}
+                <div class="info-card">
+                    <h3>🎯 Lab Type</h3>
+                    <p>{{labType}}</p>
+                </div>
+                {{/if}}
+            </div>
+
+            {{#if students}}
+            <div class="student-list">
+                <h3>👥 Assigned Students</h3>
+                {{#each students}}
+                <div class="student-item">
+                    <div class="student-info">
+                        <div class="student-avatar">{{substring name 0 1}}</div>
+                        <div class="student-details">
+                            <div class="student-name">{{name}}</div>
+                            <div class="student-email">{{email}}</div>
+                        </div>
+                    </div>
+                    <div class="student-status {{#if (eq status "enrolled")}}status-enrolled{{else}}status-pending{{/if}}">
+                        {{status}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            <div class="action-buttons">
+                <a href="{{dashboardUrl}}" class="primary-button">📊 View Instructor Dashboard</a>
+                {{#if labAccessUrl}}
+                <a href="{{labAccessUrl}}" class="secondary-button">🚀 Access Lab Environment</a>
+                {{/if}}
+            </div>
+
+            {{#if responsibilities}}
+            <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin-top: 0; color: #0c4a6e;">📋 Your Responsibilities</h3>
+                <ul style="margin: 0; color: #0c4a6e;">
+                    {{#each responsibilities}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            {{#if resources}}
+            <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin-top: 0; color: #065f46;">📚 Available Resources</h3>
+                <ul style="margin: 0; color: #065f46;">
+                    {{#each resources}}
+                    <li><a href="{{url}}" style="color: #059669; text-decoration: none;">{{name}}</a></li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            <div class="important-note">
+                <strong>📌 Important:</strong> Please review the assigned students and lab materials before the start date. If you have any questions or concerns about this assignment, contact our support team immediately.
+            </div>
+
+            <p>Thank you for your dedication to educating and mentoring the next generation of cloud professionals!</p>
+        </div>
+
+        <div class="footer">
+            <p>Questions about this assignment? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

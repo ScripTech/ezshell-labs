@@ -1,0 +1,47 @@
+⏰ Lab Session Expiring Soon - URGENT
+
+Hi {{userName}},
+
+This is an important reminder that your lab session is scheduled to expire soon. Please take immediate action to save your progress.
+
+🚨 URGENT: {{labName}}
+{{#if expiresAt}}
+Expires: {{formatDate expiresAt}} at {{formatTime expiresAt}}
+{{/if}}
+
+{{#if timeRemaining}}
+⏰ TIME REMAINING: {{timeRemaining}}
+{{/if}}
+
+🚀 IMMEDIATE ACTIONS NEEDED:
+{{#if canExtend}}
+• Extend Session: {{extendUrl}}
+{{/if}}
+• Continue Lab: {{accessUrl}}
+
+⚠️ WHAT HAPPENS WHEN YOUR SESSION EXPIRES?
+• Your lab environment will be automatically terminated
+• All unsaved work and progress will be lost
+• You'll need to restart the lab from the beginning
+• Any files or configurations not saved will be deleted
+
+📋 BEFORE YOUR SESSION EXPIRES:
+✅ Save all your work and important files
+✅ Download any results or outputs you need
+✅ Complete any remaining lab tasks
+✅ Submit your lab if required
+{{#if canExtend}}
+✅ Consider extending your session if you need more time
+{{/if}}
+
+{{#if canExtend}}
+💡 NEED MORE TIME?
+You can extend your lab session {{#if maxExtensions}}up to {{maxExtensions}} times{{/if}} to give yourself more time to complete the exercises and save your work.
+{{/if}}
+
+Don't let your hard work go to waste! Take action now to preserve your progress.
+
+---
+Need help extending your session? Contact us at {{supportEmail}}
+
+© {{currentYear}} {{companyName}}. All rights reserved.
