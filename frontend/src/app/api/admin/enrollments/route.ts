@@ -5,7 +5,6 @@ import { db } from '@/db'
 import { labEnrollments, labs, labSessions } from '@/db/schemas/LabSchema'
 import { users } from '@/db/schemas/UserSchema'
 import { eq, and, count, desc } from 'drizzle-orm'
-import { nanoid } from 'nanoid'
 
 // GET /api/admin/enrollments - Get all enrollments with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -132,25 +131,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lab not found' }, { status: 404 })
     }
 
-    // Create enrollment
-    const enrollmentId = nanoid()
-    const newEnrollment = await db
-      .insert(labEnrollments)
-      .values({
-        id: enrollmentId,
-        userId,
-        labId,
-        status: 'enrolled',
-        progress: 0
+    // Let the lab provisioner handle enrollment creation and AWS provisioning
+    try {
+      const labProvisionerUrl = process.env.LAB_PROVISIONER_URL || 'http://localhost:3002'
+
+      console.log(`Attempting to enroll user ${userId} in lab ${labId} via lab provisioner at ${labProvisionerUrl}`)
+
+      const provisioningResponse = await fetch(`${labProvisionerUrl}/api/enrollment/enroll`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          labId
+        }),
       })
-      .returning()
 
-    return NextResponse.json({
-      message: 'User enrolled successfully',
-      enrollment: newEnrollment[0]
-    }, { status: 201 })
+      if (!provisioningResponse.ok) {
+        const errorData = await provisioningResponse.json()
+        console.error('Lab provisioner enrollment failed:', errorData)
 
-  } catch (error) {
+        return NextResponse.json({
+          error: errorData.error || 'Failed to enroll user',
+          details: errorData.message || 'Lab provisioner service error'
+        }, { status: provisioningResponse.status })
+      }
+
+      const enrollmentData = await provisioningResponse.json()
+      console.log('Lab provisioner enrollment successful:', enrollmentData)
+
+      return NextResponse.json({
+        message: 'User enrolled successfully and AWS provisioning initiated',
+        enrollment: enrollmentData
+      }, { status: 201 })
+
+    } catch (provisioningError) {
+      console.error('Error connecting to lab provisioner service:', provisioningError)
+
+      return NextResponse.json({
+        error: 'Lab provisioner service unavailable',
+        details: provisioningError instanceof Error ? provisioningError.message : 'Service unavailable'
+      }, { status: 503 })
+    }  } catch (error) {
     console.error('Error creating enrollment:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

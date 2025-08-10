@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -47,6 +47,7 @@ interface LabProvisioningDialogProps {
   callbackIsEnrolling: (isEnrolling: boolean) => void
   labId: string
   labName: string
+  enrollId: string | null
   onProvisioningComplete: (enrollmentId: string) => void
 }
 
@@ -56,15 +57,17 @@ export function LabProvisioningDialog({
   callbackIsEnrolling,
   labId,
   labName,
+  enrollId,
   onProvisioningComplete
 }: LabProvisioningDialogProps) {
-  const [enrollmentId, setEnrollmentId] = useState<string | null>(null)
+  const [enrollmentId, setEnrollmentId] = useState<string | null>(enrollId)
   const [currentStep, setCurrentStep] = useState(0)
   const [isEnrolling, setIsEnrolling] = useState(false)
   const [provisioningStatus, setProvisioningStatus] = useState<ProvisioningStepsResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number>(120) // 2 hours in minutes
   const [isPolling, setIsPolling] = useState(false)
+  const pollingRef = useRef(false)
 
   const steps: ProvisioningStep[] = [
     {
@@ -131,6 +134,13 @@ export function LabProvisioningDialog({
 
   // Poll for status updates
   const pollProvisioningStatus = useCallback(async (enrollmentId: string) => {
+    // Don't poll if we're no longer polling, already polling, dialog is closed, or if already completed
+    if (!isPolling || pollingRef.current || !isOpen) {
+      return
+    }
+
+    pollingRef.current = true
+
     try {
       const response = await fetch(`/api/lab-provisioner/enrollment/steps/${enrollmentId}`)
       if (!response.ok) {
@@ -145,29 +155,46 @@ export function LabProvisioningDialog({
       if (status.overallStatus === 'completed' && status.connection?.ready) {
         setIsPolling(false)
         onProvisioningComplete(enrollmentId)
+        return
       } else if (status.overallStatus === 'failed') {
         setIsPolling(false)
         const failedStep = status.steps.find(step => step.status === 'failed')
         setError(failedStep?.error || 'Lab provisioning failed')
+        return
       }
     } catch (error) {
       console.error('Failed to poll status:', error)
-      // Continue polling on network errors
+      // Continue polling on network errors, but check if we should still be polling
+      if (!isPolling || !isOpen) {
+        return
+      }
+    } finally {
+      pollingRef.current = false
     }
-  }, [updateStepsFromStatus, onProvisioningComplete])
+  }, [updateStepsFromStatus, onProvisioningComplete, isPolling, isOpen])
 
   // Start polling when we have an enrollment ID
   useEffect(() => {
-    if (enrollmentId && isPolling) {
+    if (enrollmentId && !isPolling && isOpen) {
+      setIsPolling(true)
+    }
+
+    if (enrollmentId && isPolling && isOpen) {
+      // Initial poll
+      pollProvisioningStatus(enrollmentId)
+
       const interval = setInterval(() => {
-        pollProvisioningStatus(enrollmentId)
+        // Only poll if dialog is still open and we should still be polling
+        if (isPolling && isOpen && !pollingRef.current) {
+          pollProvisioningStatus(enrollmentId)
+        }
       }, 5000) // Poll every 5 seconds
 
-      return () => clearInterval(interval)
+      return () => {
+        clearInterval(interval)
+      }
     }
-  }, [enrollmentId, isPolling, pollProvisioningStatus])
-
-  // Countdown timer for lab expiration
+  }, [enrollmentId, isPolling, isOpen, pollProvisioningStatus])  // Countdown timer for lab expiration
   useEffect(() => {
     if (provisioningStatus?.overallStatus === 'completed') {
       const interval = setInterval(() => {
@@ -177,6 +204,30 @@ export function LabProvisioningDialog({
       return () => clearInterval(interval)
     }
   }, [provisioningStatus?.overallStatus])
+
+  // Stop polling when dialog is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsPolling(false)
+      pollingRef.current = false
+    }
+  }, [isOpen])
+
+  // Stop polling when provisioning is completed or failed
+  useEffect(() => {
+    if (provisioningStatus?.overallStatus === 'completed' || provisioningStatus?.overallStatus === 'failed') {
+      setIsPolling(false)
+      pollingRef.current = false
+    }
+  }, [provisioningStatus?.overallStatus])
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      setIsPolling(false)
+      pollingRef.current = false
+    }
+  }, [])
 
   const formatTimeRemaining = (minutes: number): string => {
     const hours = Math.floor(minutes / 60)
