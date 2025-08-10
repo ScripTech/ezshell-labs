@@ -8,6 +8,7 @@ export type EmailTemplate =
   | 'general-notification'
   | 'campaign'
   | 'instructor-assignment'
+  | 'user-enrollment'
 
 export interface EmailRecipient {
   email: string

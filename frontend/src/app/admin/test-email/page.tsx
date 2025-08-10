@@ -83,7 +83,8 @@ export default function EmailServiceTestPage() {
         'lab-expiration',
         'general-notification',
         'campaign',
-        'instructor-assignment'
+        'instructor-assignment',
+        'user-enrollment'
       ];
 
       addResult({
@@ -261,6 +262,69 @@ export default function EmailServiceTestPage() {
     }
   };
 
+  const testSendEnrollmentNotification = async () => {
+    setIsLoading(true);
+    addResult({ success: true, message: 'Testing enrollment notification email...' });
+
+    try {
+      // Test sending user enrollment notification
+      const emailPayload = {
+        templateType: 'user-enrollment',
+        recipients: [{ 
+          email: 'test@example.com', 
+          name: 'Test Student' 
+        }],
+        templateData: {
+          userName: 'Test Student',
+          companyName: 'EZShell Labs',
+          supportEmail: 'support@ezshell-labs.com',
+          currentYear: new Date().getFullYear().toString(),
+          labName: 'RHCSA Lab - System Administration Fundamentals',
+          labDescription: 'Master the essential skills for Red Hat Certified System Administrator (RHCSA) certification',
+          enrolledBy: 'Eng. Edilson Mucanze',
+          enrollmentDate: new Date().toLocaleDateString(),
+          accessUrl: 'https://app.ezshell-labs.com/labs/rhcsa-fundamentals',
+          duration: '2 hours',
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+        },
+        subject: '🎉 You\'ve been enrolled in RHCSA Lab - System Administration Fundamentals',
+        priority: 'high'
+      };
+
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailPayload)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        addResult({
+          success: true,
+          message: '✅ Enrollment notification sent successfully! Check your Mailtrap inbox.',
+          details: result
+        });
+      } else {
+        const error = await response.json();
+        addResult({
+          success: false,
+          message: 'Enrollment notification sending failed',
+          details: error
+        });
+      }
+    } catch (error) {
+      addResult({
+        success: false,
+        message: 'Enrollment notification test failed',
+        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="bg-white rounded-lg shadow-lg p-6">
@@ -304,6 +368,14 @@ export default function EmailServiceTestPage() {
               className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
             >
               {isLoading ? 'Sending...' : '🚀 Send Lab Notification'}
+            </button>
+
+            <button
+              onClick={testSendEnrollmentNotification}
+              disabled={isLoading}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+            >
+              {isLoading ? 'Sending...' : '🎓 Send Enrollment Email'}
             </button>
 
             <button
@@ -353,7 +425,7 @@ export default function EmailServiceTestPage() {
         <div className="mt-8 p-4 bg-blue-50 rounded-lg">
           <h3 className="font-bold text-blue-800 mb-2">📋 Email Service Status</h3>
           <div className="space-y-1 text-sm text-blue-700">
-            <p>✅ 16 Email templates (8 HTML + 8 text versions)</p>
+            <p>✅ 18 Email templates (9 HTML + 9 text versions)</p>
             <p>✅ 6 Service files (EmailService, TemplateService, etc.)</p>
             <p>✅ 6 Environment variables configured</p>
             <p>✅ Mailtrap SMTP integration ready</p>
@@ -367,6 +439,7 @@ export default function EmailServiceTestPage() {
               <p><strong>API Endpoints:</strong> Tests health check and API connectivity</p>
               <p><strong>Send Test Email:</strong> Actually sends account validation email to Mailtrap</p>
               <p><strong>Send Lab Notification:</strong> Sends lab ready notification to Mailtrap</p>
+              <p><strong>Send Enrollment Email:</strong> Sends user enrollment notification to Mailtrap</p>
             </div>
           </div>
         </div>

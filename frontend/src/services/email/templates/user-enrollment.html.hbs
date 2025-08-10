@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Enrollment Notification</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+       body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .enrollment-info {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .lab-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .lab-description {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 15px;
+        }
+
+        .enrollment-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #374151;
+            margin: 20px 0;
+        }
+
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .footer {
+            background-color: #f9fafb;
+            padding: 30px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .footer-content {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .company-logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 25px 0;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .header, .content, .footer {
+                padding: 25px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .enrollment-details {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .detail-item {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎉 Lab Enrollment Confirmed</h1>
+            <p>You've been enrolled in a new lab</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="greeting">
+                Hello {{userName}},
+            </div>
+
+            <div class="message">
+                Great news! You have been enrolled in a new lab by <span class="highlight">{{enrolledBy}}</span>.
+                This lab has been carefully selected to enhance your learning experience and advance your skills.
+            </div>
+
+            <!-- Lab Information -->
+            <div class="enrollment-info">
+                <div class="lab-title">{{labName}}</div>
+                <div class="lab-description">{{labDescription}}</div>
+
+                <div class="enrollment-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Enrolled By</div>
+                        <div class="detail-value">{{enrolledBy}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Enrollment Date</div>
+                        <div class="detail-value">{{enrollmentDate}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">{{duration}}</div>
+                    </div>
+                    {{#if dueDate}}
+                    <div class="detail-item">
+                        <div class="detail-label">Due Date</div>
+                        <div class="detail-value">{{dueDate}}</div>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="cta-section">
+                <a href="{{accessUrl}}" class="cta-button">
+                    🚀 Access Lab Now
+                </a>
+            </div>
+
+            <div class="message">
+                <strong>What's Next?</strong><br>
+                Click the button above to access your lab environment. The lab is ready for you to start immediately.
+                Make sure to complete it by the due date to get the most out of this learning opportunity.
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="message">
+                If you have any questions about this lab or need technical support, don't hesitate to reach out to our support team.
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <div class="company-logo">🚀 {{companyName}}</div>
+                <p>Empowering your learning journey through hands-on labs and practical experience.</p>
+                <p style="margin-top: 15px;">
+                    Need help? Contact us at <a href="mailto:{{supportEmail}}" style="color: #667eea;">{{supportEmail}}</a>
+                </p>
+                <p style="margin-top: 10px; font-size: 12px;">
+                    © {{currentYear}} {{companyName}}. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

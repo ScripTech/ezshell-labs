@@ -17,8 +17,8 @@
         .container {
             background-color: white;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
         }
         .header {
             text-align: center;
@@ -40,7 +40,7 @@
             background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
             color: white;
             padding: 30px;
-            border-radius: 12px;
+            border-radius: 8px;
             margin: 25px 0;
             text-align: center;
         }
@@ -76,7 +76,7 @@
             background-color: #f8fafc;
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #7c3aed;
+            border-bottom: 1px solid #7c3aed;
         }
         .info-card h3 {
             margin: 0 0 10px 0;
@@ -141,7 +141,7 @@
         }
         .student-status {
             padding: 4px 12px;
-            border-radius: 12px;
+            border-radius: 8px;
             font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
@@ -164,7 +164,7 @@
             color: white;
             padding: 18px 36px;
             text-decoration: none;
-            border-radius: 12px;
+            border-radius: 8px;
             font-weight: bold;
             font-size: 18px;
             margin: 10px;
@@ -182,8 +182,6 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
         .important-note {
-            background-color: #fef3c7;
-            border: 1px solid #f59e0b;
             color: #92400e;
             padding: 20px;
             border-radius: 8px;
@@ -226,23 +224,10 @@
 
             <div class="assignment-banner">
                 <div class="assignment-type">{{assignmentType}}</div>
-                <div class="assignment-title">{{#if cohortName}}{{cohortName}}{{else}}{{labName}}{{/if}}</div>
-                <div class="student-count">{{studentCount}} Student{{#if (gt studentCount 1)}}s{{/if}} Assigned</div>
+                <div class="assignment-title">{{labName}}</div>
             </div>
 
             <div class="info-grid">
-                {{#if startDate}}
-                <div class="info-card">
-                    <h3>📅 Start Date</h3>
-                    <p>{{formatDate startDate}}</p>
-                </div>
-                {{/if}}
-                {{#if endDate}}
-                <div class="info-card">
-                    <h3>⏰ End Date</h3>
-                    <p>{{formatDate endDate}}</p>
-                </div>
-                {{/if}}
                 {{#if duration}}
                 <div class="info-card">
                     <h3>⏱️ Duration</h3>
@@ -256,26 +241,6 @@
                 </div>
                 {{/if}}
             </div>
-
-            {{#if students}}
-            <div class="student-list">
-                <h3>👥 Assigned Students</h3>
-                {{#each students}}
-                <div class="student-item">
-                    <div class="student-info">
-                        <div class="student-avatar">{{substring name 0 1}}</div>
-                        <div class="student-details">
-                            <div class="student-name">{{name}}</div>
-                            <div class="student-email">{{email}}</div>
-                        </div>
-                    </div>
-                    <div class="student-status {{#if (eq status "enrolled")}}status-enrolled{{else}}status-pending{{/if}}">
-                        {{status}}
-                    </div>
-                </div>
-                {{/each}}
-            </div>
-            {{/if}}
 
             <div class="action-buttons">
                 <a href="{{dashboardUrl}}" class="primary-button">📊 View Instructor Dashboard</a>

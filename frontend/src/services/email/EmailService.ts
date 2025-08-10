@@ -162,16 +162,18 @@ export class EmailService implements EmailServiceInterface {
 
   private generateSubject(template: EmailTemplate, data: any): string {
     const subjectMap: Record<EmailTemplate, string> = {
-      'account-validation': `Welcome to EZShell Labs - Please verify your account`,
-      'password-reset': `Reset your EZShell Labs password`,
-      'lab-provisioning': `Your lab "${data.labName}" is being prepared`,
-      'lab-ready': `Your lab "${data.labName}" is ready!`,
-      'lab-completion': `Congratulations! You completed "${data.labName}"`,
-      'lab-expiration': `Your lab "${data.labName}" will expire soon`,
-      'general-notification': data.subject || 'Important notification from EZShell Labs',
-      'campaign': data.campaignTitle || 'Special announcement from EZShell Labs',
-      'instructor-assignment': `New lab assignment: "${data.labName}"`
-    }
+      "account-validation": `Welcome to EZShell Labs - Please verify your account`,
+      "password-reset": `Reset your EZShell Labs password`,
+      "lab-provisioning": `Your lab "${data.labName}" is being prepared`,
+      "lab-ready": `Your lab "${data.labName}" is ready!`,
+      "lab-completion": `Congratulations! You completed "${data.labName}"`,
+      "lab-expiration": `Your lab "${data.labName}" will expire soon`,
+      "general-notification":
+        data.subject || "Important notification from EZShell Labs",
+      campaign: data.campaignTitle || "Special announcement from EZShell Labs",
+      "instructor-assignment": `New lab assignment: "${data.labName}"`,
+      "user-enrollment": `EZShell Labs - You've been enrolled in a new lab`,
+    };
 
     return subjectMap[template] || 'Notification from EZShell Labs'
   }

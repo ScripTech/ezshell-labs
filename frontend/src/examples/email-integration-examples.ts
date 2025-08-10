@@ -205,6 +205,112 @@ export async function sendSystemUpdateNotification() {
   }
 }
 
+/**
+ * Example: User Enrollment by Admin/Instructor
+ * This shows how to send enrollment notifications when an admin or instructor enrolls a user in a lab
+ */
+export async function enrollUserInLab(
+  adminUserId: string,
+  targetUserId: string,
+  labId: string
+) {
+  try {
+    // Get admin/instructor and target user information
+    const adminUser = await getUserById(adminUserId);
+    const targetUser = await getUserById(targetUserId);
+    const labInfo = await getLabById(labId);
+
+    // Create enrollment record in database
+    const enrollment = {
+      id: 'enrollment_' + Date.now(),
+      userId: targetUserId,
+      labId: labId,
+      enrolledBy: adminUserId,
+      enrollmentDate: new Date(),
+      status: 'active',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+    };
+
+    // Save enrollment to database (your existing logic)
+    await saveEnrollment(enrollment);
+
+    // Send enrollment notification to the user
+    await emailNotificationService.sendUserEnrollment(targetUser, {
+      labName: labInfo.name,
+      labDescription: labInfo.description,
+      enrolledBy: adminUser.name || 'Administrator',
+      enrollmentDate: enrollment.enrollmentDate,
+      accessUrl: `${process.env.NEXTAUTH_URL}/labs/${labId}`,
+      duration: labInfo.estimatedDuration || '2 hours',
+      dueDate: enrollment.dueDate
+    });
+
+    console.log(`Enrollment notification sent to ${targetUser.email} for lab: ${labInfo.name}`);
+
+    return {
+      success: true,
+      enrollmentId: enrollment.id,
+      message: 'User enrolled successfully and notification sent'
+    };
+
+  } catch (error) {
+    console.error('User enrollment error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Example: Bulk Enrollment
+ * Enroll multiple users in a lab and send notifications
+ */
+export async function bulkEnrollUsersInLab(
+  adminUserId: string,
+  userIds: string[],
+  labId: string
+) {
+  try {
+    const adminUser = await getUserById(adminUserId);
+    const labInfo = await getLabById(labId);
+    const results = [];
+
+    for (const userId of userIds) {
+      try {
+        const result = await enrollUserInLab(adminUserId, userId, labId);
+        results.push({
+          userId,
+          success: true,
+          enrollmentId: result.enrollmentId
+        });
+      } catch (error) {
+        results.push({
+          userId,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+
+    console.log(`Bulk enrollment completed: ${successCount} successful, ${failureCount} failed`);
+
+    return {
+      success: true,
+      results,
+      summary: {
+        total: userIds.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    };
+
+  } catch (error) {
+    console.error('Bulk enrollment error:', error);
+    throw error;
+  }
+}
+
 // Mock functions - replace with your actual database functions
 async function getUserById(userId: string) {
   // Your database logic here
@@ -232,4 +338,22 @@ async function getAllActiveUsers() {
       role: 'user' as const
     }
   ];
+}
+
+async function getLabById(labId: string) {
+  // Your database logic here
+  return {
+    id: labId,
+    name: 'RHCSA Lab - System Administration Fundamentals',
+    description: 'Master the essential skills for Red Hat Certified System Administrator (RHCSA) certification',
+    estimatedDuration: '2 hours',
+    type: 'hands-on',
+    difficulty: 'intermediate'
+  };
+}
+
+async function saveEnrollment(enrollment: any) {
+  // Your database logic here
+  console.log('Saving enrollment:', enrollment);
+  return enrollment;
 }

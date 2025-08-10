@@ -1,5 +1,5 @@
 import { EmailService } from './EmailService';
-import { EmailTemplate, EmailRecipient } from './types/EmailTypes';
+import { EmailTemplate, EmailRecipient, EmailResult } from './types/EmailTypes';
 import { User } from '@/types/enrollment-management';
 
 /**
@@ -387,6 +387,43 @@ export class EmailNotificationService {
       recipients,
       templateData
     );
+  }
+
+  /**
+   * Send enrollment notification to user when enrolled by admin/instructor
+   */
+  async sendUserEnrollment(user: User, enrollment: {
+    labName: string;
+    labDescription: string;
+    enrolledBy: string;
+    enrollmentDate?: Date;
+    accessUrl: string;
+    duration?: string;
+    dueDate?: Date;
+  }): Promise<EmailResult> {
+    const recipient = this.userToRecipient(user);
+
+    const templateData = {
+      userName: user.name || user.email,
+      companyName: 'EZShell Labs',
+      supportEmail: 'support@ezshell-labs.com',
+      currentYear: new Date().getFullYear().toString(),
+      labName: enrollment.labName,
+      labDescription: enrollment.labDescription,
+      enrolledBy: enrollment.enrolledBy,
+      enrollmentDate: enrollment.enrollmentDate?.toLocaleDateString() || new Date().toLocaleDateString(),
+      accessUrl: enrollment.accessUrl,
+      duration: enrollment.duration || '2 hours',
+      dueDate: enrollment.dueDate?.toLocaleDateString()
+    };
+
+    return this.emailService.send({
+      template: 'user-enrollment',
+      recipient,
+      data: templateData,
+      subject: `🎉 You've been enrolled in ${enrollment.labName}`,
+      priority: 'high'
+    });
   }
 }
 

@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
       'lab-expiration',
       'general-notification',
       'campaign',
-      'instructor-assignment'
+      'instructor-assignment',
+      "user-enrollment"
     ];
 
     if (!validTemplates.includes(templateType)) {
