@@ -5,6 +5,7 @@ import { db } from '@/db'
 import { labEnrollments, labs, labSessions } from '@/db/schemas/LabSchema'
 import { users } from '@/db/schemas/UserSchema'
 import { eq, and, count, desc } from 'drizzle-orm'
+import { labProvisions } from '@/db/schemas'
 
 // GET /api/admin/enrollments - Get all enrollments with pagination and filtering
 export async function GET(request: NextRequest) {
@@ -47,15 +48,25 @@ export async function GET(request: NextRequest) {
           labId: labs.labId,
           description: labs.description,
           duration: labs.duration,
-        }
+        },
+        provision: {
+          id: labProvisions.id,
+          publicIp: labProvisions.publicIp,
+          instanceState: labProvisions.instanceState,
+          provisionedAt: labProvisions.provisionedAt,
+        },
       })
       .from(labEnrollments)
       .leftJoin(users, eq(labEnrollments.userId, users.id))
       .leftJoin(labs, eq(labEnrollments.labId, labs.id))
+      .leftJoin(
+        labProvisions,
+        eq(labEnrollments.id, labProvisions.enrollmentId)
+      )
       .where(whereClause)
       .orderBy(desc(labEnrollments.enrolledAt))
       .limit(limit)
-      .offset(offset)
+      .offset(offset);
 
     // Get total count for pagination
     const totalResult = await db
