@@ -56,15 +56,23 @@ interface User {
 }
 
 interface Enrollment {
-  id: string
-  userId: string
-  labId: string
-  status: 'enrolled' | 'provisioning' | 'provisioning_failed' | 'in_progress' | 'completed'
-  progress: number
-  enrolledAt: string
-  completedAt?: string
   user: User
-  lab: Lab
+  lab: Lab,
+  enrollment: {
+    id: string
+    userId: string
+    labId: string
+    status: 'enrolled' | 'provisioning' | 'provisioning_failed' | 'in_progress' | 'completed'
+    progress: number
+    enrolledAt: string
+    completedAt?: string
+  },
+  provision: {
+    id: string,
+    publicIp: string,
+    instanceState: string,
+    provisionedAt: string,
+  } | null
 }
 
 export default function AdminEnrollmentsPage() {
@@ -95,13 +103,18 @@ export default function AdminEnrollmentsPage() {
         usersResponse.json(),
         enrollmentsResponse.json()
       ])
-
-      setLabs(labsData)
-      setUsers(usersData)
-      setEnrollments(enrollmentsData)
+      // Ensure we have arrays
+      setLabs(Array.isArray(labsData) ? labsData : [])
+      setUsers(Array.isArray(usersData) ? usersData : [])
+      setEnrollments(Array.isArray(enrollmentsData.enrollments) ? enrollmentsData.enrollments : [])
+      console.log('Fetched enrollments:', enrollments)
     } catch (error) {
       toast.error('Failed to load data')
       console.error(error)
+      // Set empty arrays on error
+      setLabs([])
+      setUsers([])
+      setEnrollments([])
     } finally {
       setLoading(false)
     }
@@ -117,7 +130,7 @@ export default function AdminEnrollmentsPage() {
       enrollment.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       enrollment.lab.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesLab = !selectedLab || enrollment.labId === selectedLab
+    const matchesLab = !selectedLab || selectedLab === 'all' || enrollment.enrollment.labId === selectedLab
 
     return matchesSearch && matchesLab
   })
@@ -150,7 +163,7 @@ export default function AdminEnrollmentsPage() {
       setShowEnrollDialog(false)
       setSelectedUser('')
       setSelectedLab('')
-      toast.success('User enrolled successfully and lab environment is being provisioned')
+      toast.success('User enrolled successfully! Lab environment is being provisioned and notification email has been sent.')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to enroll user')
       console.error(error)
@@ -191,6 +204,7 @@ export default function AdminEnrollmentsPage() {
   }
 
   const getStatusIcon = (status: string) => {
+    console.log("getStatusIcon called with status:", status);
     switch (status) {
       case 'enrolled': return <Clock className="w-4 h-4" />
       case 'provisioning': return <Settings className="w-4 h-4 animate-spin" />
@@ -290,45 +304,45 @@ export default function AdminEnrollmentsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{enrollments.length}</div>
+            <div className="text-2xl font-bold">{(enrollments || []).length}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active</CardTitle>
             <Play className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {enrollments.filter(e => e.status === 'in_progress').length}
+              {(enrollments || []).filter(e => e.enrollment.status === 'in_progress').length}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {enrollments.filter(e => e.status === 'completed').length}
+              {(enrollments || []).filter(e => e.enrollment.status === 'completed').length}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Enrolled</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {enrollments.filter(e => e.status === 'enrolled').length}
+              {(enrollments || []).filter(e => e.enrollment.status === 'enrolled').length}
             </div>
           </CardContent>
         </Card>
@@ -337,12 +351,12 @@ export default function AdminEnrollmentsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex items-center space-x-2">
-          <Search className="w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search enrollments..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
+            // iconLeft={<Search className="w-4 h-4 text-muted-foreground" />}
           />
         </div>
         <Select value={selectedLab} onValueChange={setSelectedLab}>
@@ -350,7 +364,7 @@ export default function AdminEnrollmentsPage() {
             <SelectValue placeholder="Filter by lab" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All labs</SelectItem>
+            <SelectItem value="all">All labs</SelectItem>
             {labs.map((lab) => (
               <SelectItem key={lab.id} value={lab.id}>
                 {lab.name}
@@ -361,7 +375,7 @@ export default function AdminEnrollmentsPage() {
       </div>
 
       {/* Enrollments Table */}
-      <Card>
+      <Card className='shadow-none rounded-md'>
         <CardHeader>
           <CardTitle>Enrollments</CardTitle>
           <CardDescription>
@@ -381,33 +395,33 @@ export default function AdminEnrollmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEnrollments.map((enrollment) => (
-                <TableRow key={enrollment.id}>
+              {filteredEnrollments.map((enrollmentItem) => (
+                <TableRow key={enrollmentItem.enrollment.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage src={enrollment.user.image} alt={enrollment.user.name} />
+                        <AvatarImage src={enrollmentItem.user.image} alt={enrollmentItem.user.name} />
                         <AvatarFallback>
-                          {enrollment.user.name.split(' ').map(n => n[0]).join('')}
+                          {enrollmentItem.user.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-sm">{enrollment.user.name}</div>
-                        <div className="text-xs text-muted-foreground">{enrollment.user.email}</div>
+                        <div className="font-medium text-sm">{enrollmentItem.user.name}</div>
+                        <div className="text-xs text-muted-foreground">{enrollmentItem.user.email}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium text-sm">{enrollment.lab.name}</div>
-                      <div className="text-xs text-muted-foreground">{enrollment.lab.duration} minutes</div>
+                      <div className="font-medium text-sm">{enrollmentItem.lab.name}</div>
+                      <div className="text-xs text-muted-foreground">{enrollmentItem.lab.duration} minutes</div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(enrollment.status)}>
+                    <Badge className={getStatusColor(enrollmentItem.enrollment.status)}>
                       <div className="flex items-center space-x-1">
-                        {getStatusIcon(enrollment.status)}
-                        <span className="capitalize">{enrollment.status.replace('_', ' ')}</span>
+                        {getStatusIcon(enrollmentItem.enrollment.status)}
+                        <span className="capitalize">{enrollmentItem.enrollment.status.replace('_', ' ')}</span>
                       </div>
                     </Badge>
                   </TableCell>
@@ -416,24 +430,24 @@ export default function AdminEnrollmentsPage() {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${enrollment.progress}%` }}
+                          style={{ width: `${enrollmentItem.enrollment.progress}%` }}
                         ></div>
                       </div>
-                      <span className="text-xs text-muted-foreground">{enrollment.progress}%</span>
+                      <span className="text-xs text-muted-foreground">{enrollmentItem.enrollment.progress}%</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                      {new Date(enrollmentItem.enrollment.enrolledAt).toLocaleDateString()}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      {(enrollment.status === 'enrolled' || enrollment.status === 'provisioning_failed') && (
+                      {(!enrollmentItem.provision) && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleProvisionLab(enrollment.id)}
+                          onClick={() => handleProvisionLab(enrollmentItem.enrollment.id)}
                         >
                           <Play className="w-4 h-4 mr-1" />
                           Provision

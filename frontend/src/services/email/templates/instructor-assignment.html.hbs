@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Student Assignment</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px 40px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">
+                                👨‍🏫 New Student Assignment
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Assignment Banner -->
+                    <tr>
+                        <td style="padding: 0 40px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #7c3aed; border-radius: 8px;">
+                                <tr>
+                                    <td style="padding: 30px; text-align: center;">
+                                        <div style="font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: white; opacity: 0.9; margin-bottom: 10px;">
+                                            {{assignmentType}}
+                                        </div>
+                                        <div style="font-size: 24px; font-weight: bold; color: white; margin-bottom: 15px;">
+                                            {{labName}}
+                                        </div>
+                                        <div style="background-color: rgba(255, 255, 255, 0.2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; display: inline-block;">
+                                            {{studentCount}} Students Assigned
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 18px; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{instructorName}},
+                            </div>
+
+                            <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 25px 0;">
+                                You have been assigned new students for the lab <strong>{{labName}}</strong>.
+                                Please review the assignment details below and prepare to guide your students through their learning journey.
+                            </p>
+
+                            <!-- Assignment Details Grid -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 25px 0;">
+                                <tr>
+                                    <td style="width: 48%; vertical-align: top; padding: 0 10px 20px 0;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8fafc; border-radius: 8px; border-bottom: 3px solid #7c3aed;">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">Assignment Date</h3>
+                                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">{{assignmentDate}}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td style="width: 48%; vertical-align: top; padding: 0 0 20px 10px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8fafc; border-radius: 8px; border-bottom: 3px solid #7c3aed;">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">Lab Duration</h3>
+                                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">{{labDuration}}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 48%; vertical-align: top; padding: 0 10px 0 0;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8fafc; border-radius: 8px; border-bottom: 3px solid #7c3aed;">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">Due Date</h3>
+                                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">{{dueDate}}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td style="width: 48%; vertical-align: top; padding: 0 0 0 10px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8fafc; border-radius: 8px; border-bottom: 3px solid #7c3aed;">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px;">Difficulty Level</h3>
+                                                    <p style="margin: 0; color: #6b7280; font-size: 14px;">{{difficultyLevel}}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Student List -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1f2937; font-size: 18px;">
+                                            👥 Assigned Students ({{studentCount}})
+                                        </h3>
+                                        {{#each students}}
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 0 0 10px 0;">
+                                            <tr>
+                                                <td style="width: 60%; padding: 8px 0; font-weight: 500; color: #1f2937;">
+                                                    {{name}}
+                                                </td>
+                                                <td style="width: 40%; padding: 8px 0; color: #6b7280; font-size: 14px;">
+                                                    {{email}}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {{/each}}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Action Items -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 18px;">
+                                            📋 Next Steps
+                                        </h3>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+                                            <tr>
+                                                <td style="padding: 5px 0; color: #374151; font-size: 14px;">
+                                                    • Review lab materials and objectives
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 5px 0; color: #374151; font-size: 14px;">
+                                                    • Prepare any additional resources or guidance
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 5px 0; color: #374151; font-size: 14px;">
+                                                    • Set up monitoring for student progress
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 5px 0; color: #374151; font-size: 14px;">
+                                                    • Be available for student questions and support
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; text-align: center; margin: 30px 0;">
+                                <tr>
+                                    <td>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="background-color: #7c3aed; border-radius: 8px; padding: 15px 30px;">
+                                                    <a href="{{dashboardUrl}}" style="display: inline-block; color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+                                                        🎯 View Instructor Dashboard
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 25px 0 0 0;">
+                                If you have any questions about this assignment or need additional resources,
+                                please don't hesitate to contact the academic team.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">
+                                Questions about your assignment? Contact us at
+                                <a href="mailto:{{supportEmail}}" style="color: #7c3aed; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+            margin-top: 0;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .student-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .student-item:last-child {
+            border-bottom: none;
+        }
+        .student-info {
+            display: flex;
+            align-items: center;
+        }
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .student-details {
+            flex-grow: 1;
+        }
+        .student-name {
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+        .student-email {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .student-status {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-enrolled {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .primary-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 18px 36px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 10px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .secondary-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .important-note {
+            color: #92400e;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .student-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px 0;
+            }
+            .student-status {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚀 {{companyName}}</div>
+            <h1 class="title">👨‍🏫 New Assignment</h1>
+        </div>
+
+        <div class="content">
+            <p>Hi {{instructorName}},</p>
+
+            <p>You have been assigned to mentor new students in their learning journey. Below are the details of your assignment.</p>
+
+            <div class="assignment-banner">
+                <div class="assignment-type">{{assignmentType}}</div>
+                <div class="assignment-title">{{labName}}</div>
+            </div>
+
+            <div class="info-grid">
+                {{#if duration}}
+                <div class="info-card">
+                    <h3>⏱️ Duration</h3>
+                    <p>{{duration}}</p>
+                </div>
+                {{/if}}
+                {{#if labType}}
+                <div class="info-card">
+                    <h3>🎯 Lab Type</h3>
+                    <p>{{labType}}</p>
+                </div>
+                {{/if}}
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{dashboardUrl}}" class="primary-button">📊 View Instructor Dashboard</a>
+                {{#if labAccessUrl}}
+                <a href="{{labAccessUrl}}" class="secondary-button">🚀 Access Lab Environment</a>
+                {{/if}}
+            </div>
+
+            {{#if responsibilities}}
+            <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin-top: 0; color: #0c4a6e;">📋 Your Responsibilities</h3>
+                <ul style="margin: 0; color: #0c4a6e;">
+                    {{#each responsibilities}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            {{#if resources}}
+            <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <h3 style="margin-top: 0; color: #065f46;">📚 Available Resources</h3>
+                <ul style="margin: 0; color: #065f46;">
+                    {{#each resources}}
+                    <li><a href="{{url}}" style="color: #059669; text-decoration: none;">{{name}}</a></li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            <div class="important-note">
+                <strong>📌 Important:</strong> Please review the assigned students and lab materials before the start date. If you have any questions or concerns about this assignment, contact our support team immediately.
+            </div>
+
+            <p>Thank you for your dedication to educating and mentoring the next generation of cloud professionals!</p>
+        </div>
+
+        <div class="footer">
+            <p>Questions about this assignment? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

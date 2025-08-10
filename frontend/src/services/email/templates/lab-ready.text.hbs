@@ -1,0 +1,37 @@
+Your Lab is Ready!
+
+Hi {{userName}},
+
+Excellent news! Your lab environment has been successfully set up and is ready for your hands-on learning experience.
+
+✅ LAB READY: {{labName}}
+{{#if labDescription}}
+Description: {{labDescription}}
+{{/if}}
+
+🚀 ACCESS YOUR LAB
+Click here to launch your lab environment: {{accessUrl}}
+
+📋 LAB INFORMATION
+• Duration: {{duration}}
+{{#if expiresAt}}
+• Session Expires: {{formatDate expiresAt}} at {{formatTime expiresAt}}
+{{/if}}
+
+{{#if expiresAt}}
+⚠️ IMPORTANT: Your lab environment will automatically terminate on {{formatDate expiresAt}} to manage resources efficiently. Make sure to save your progress before then!
+{{/if}}
+
+🎯 What to Expect:
+✓ Access to a dedicated AWS environment
+✓ Pre-configured tools and software
+✓ Step-by-step lab instructions
+✓ Hands-on challenges and exercises
+✓ Progress tracking throughout the lab
+
+Click the access link above to launch your lab and begin your learning journey!
+
+Need help or experiencing issues? Contact us at {{supportEmail}}
+
+---
+© {{currentYear}} {{companyName}}. All rights reserved.

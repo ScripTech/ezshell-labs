@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{campaignName}}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #2563eb; padding: 40px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: white; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <h1 style="font-size: 32px; font-weight: bold; color: white; margin: 0 0 10px 0;">
+                                {{campaignName}}
+                            </h1>
+                            {{#if campaignTagline}}
+                            <p style="font-size: 18px; color: white; opacity: 0.9; margin: 0;">
+                                {{campaignTagline}}
+                            </p>
+                            {{/if}}
+                        </td>
+                    </tr>
+
+                    <!-- Hero Section -->
+                    {{#if heroMessage}}
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 20px; font-weight: 600; color: #1f2937; text-align: center; margin-bottom: 20px;">
+                                {{heroMessage}}
+                            </div>
+                        </td>
+                    </tr>
+                    {{/if}}
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+                            {{#if userName}}
+                            <div style="font-size: 18px; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{userName}},
+                            </div>
+                            {{/if}}
+
+                            <div style="font-size: 16px; color: #4b5563; line-height: 1.7;">
+                                {{{campaignContent}}}
+                            </div>
+
+                            {{#if features}}
+                            <!-- Features Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 30px 0;">
+                                <tr>
+                                    <td>
+                                        <h2 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 20px 0; text-align: center;">
+                                            ✨ What's Included
+                                        </h2>
+                                        {{#each features}}
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 0 0 15px 0;">
+                                            <tr>
+                                                <td style="width: 30px; vertical-align: top; padding: 5px 15px 5px 0;">
+                                                    <div style="width: 20px; height: 20px; background-color: #10b981; border-radius: 50%; display: inline-block;"></div>
+                                                </td>
+                                                <td style="vertical-align: top; padding: 5px 0;">
+                                                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 5px;">{{title}}</div>
+                                                    <div style="font-size: 14px; color: #6b7280;">{{description}}</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {{/each}}
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            {{#if callToAction}}
+                            <!-- CTA Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; text-align: center; margin: 40px 0;">
+                                <tr>
+                                    <td>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="background-color: #2563eb; border-radius: 8px; padding: 18px 36px;">
+                                                    <a href="{{callToAction.url}}" style="display: inline-block; color: white; text-decoration: none; font-weight: 700; font-size: 18px;">
+                                                        {{callToAction.text}}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            {{#if testimonial}}
+                            <!-- Testimonial Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; margin: 30px 0;">
+                                <tr>
+                                    <td style="padding: 25px;">
+                                        <div style="font-style: italic; color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                                            "{{testimonial.quote}}"
+                                        </div>
+                                        <div style="font-weight: 600; color: #1f2937;">
+                                            - {{testimonial.author}}
+                                        </div>
+                                        {{#if testimonial.title}}
+                                        <div style="font-size: 14px; color: #6b7280;">
+                                            {{testimonial.title}}
+                                        </div>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            {{#if urgency}}
+                            <!-- Urgency Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; margin: 30px 0;">
+                                <tr>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <div style="font-weight: 700; color: #92400e; margin-bottom: 8px;">
+                                            ⏰ {{urgency.title}}
+                                        </div>
+                                        <div style="color: #78350f;">
+                                            {{urgency.message}}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 30px 0 0 0;">
+                                Thank you for being part of our community. We're excited to continue supporting your learning journey!
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 15px 0;">
+                                Questions about this campaign? Contact us at
+                                <a href="mailto:{{supportEmail}}" style="color: #2563eb; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            {{#if unsubscribeUrl}}
+                            <p style="font-size: 12px; color: #9ca3af; margin: 0 0 10px 0;">
+                                <a href="{{unsubscribeUrl}}" style="color: #9ca3af; text-decoration: none;">Unsubscribe</a> |
+                                <a href="{{preferencesUrl}}" style="color: #9ca3af; text-decoration: none;">Update Preferences</a>
+                            </p>
+                            {{/if}}
+                            <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .campaign-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .campaign-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin: 0;
+        }
+        .content {
+            padding: 40px;
+        }
+        .hero-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .hero-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .cta-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .cta-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 18px 36px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        .feature-card {
+            background-color: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+        .feature-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .feature-description {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .testimonial-section {
+            background-color: #f0f9ff;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .testimonial-text {
+            font-style: italic;
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+        .testimonial-author {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .stats-section {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .urgency-banner {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+        .urgency-banner::before {
+            content: '⚡';
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 20px;
+            animation: flash 2s infinite;
+        }
+        .social-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+        }
+        .social-links {
+            margin-top: 15px;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            text-decoration: none;
+            color: #6b7280;
+            font-size: 24px;
+        }
+        .footer {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 30px 40px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .footer a {
+            color: #93c5fd;
+            text-decoration: none;
+        }
+        @keyframes flash {
+            0%, 50%, 100% {
+                opacity: 1;
+            }
+            25%, 75% {
+                opacity: 0.5;
+            }
+        }
+        @media (max-width: 600px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚀 {{companyName}}</div>
+            <h1 class="campaign-title">{{campaignName}}</h1>
+            {{#if subtitle}}
+            <p class="campaign-subtitle">{{subtitle}}</p>
+            {{/if}}
+        </div>
+
+        <div class="content">
+            <div class="hero-section">
+                <p>Hi {{#if userName}}{{userName}}{{else}}there{{/if}},</p>
+
+                {{#if heroImage}}
+                <img src="{{heroImage}}" alt="{{campaignName}}" class="hero-image">
+                {{/if}}
+
+                <div style="font-size: 18px; color: #4b5563; margin: 20px 0;">
+                    {{{content}}}
+                </div>
+            </div>
+
+            {{#if urgencyMessage}}
+            <div class="urgency-banner">
+                <strong>{{urgencyMessage}}</strong>
+            </div>
+            {{/if}}
+
+            {{#if primaryCTA}}
+            <div class="cta-section">
+                <h2 class="cta-title">{{primaryCTA.title}}</h2>
+                {{#if primaryCTA.description}}
+                <p style="color: #6b7280; margin-bottom: 20px;">{{primaryCTA.description}}</p>
+                {{/if}}
+                <a href="{{primaryCTA.url}}" class="cta-button">{{primaryCTA.buttonText}}</a>
+                {{#if primaryCTA.note}}
+                <p style="font-size: 14px; color: #6b7280; margin-top: 15px;">{{primaryCTA.note}}</p>
+                {{/if}}
+            </div>
+            {{/if}}
+
+            {{#if features}}
+            <div class="features-grid">
+                {{#each features}}
+                <div class="feature-card">
+                    <div class="feature-icon">{{icon}}</div>
+                    <h3 class="feature-title">{{title}}</h3>
+                    <p class="feature-description">{{description}}</p>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            {{#if statistics}}
+            <div class="stats-section">
+                <h2 style="text-align: center; margin-bottom: 25px;">📊 {{companyName}} by the Numbers</h2>
+                <div class="stats-grid">
+                    {{#each statistics}}
+                    <div>
+                        <div class="stat-number">{{value}}</div>
+                        <div class="stat-label">{{label}}</div>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+
+            {{#if testimonial}}
+            <div class="testimonial-section">
+                <p class="testimonial-text">"{{testimonial.text}}"</p>
+                <p class="testimonial-author">— {{testimonial.author}}{{#if testimonial.title}}, {{testimonial.title}}{{/if}}</p>
+            </div>
+            {{/if}}
+
+            {{#if secondaryCTA}}
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{secondaryCTA.url}}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">{{secondaryCTA.text}}</a>
+            </div>
+            {{/if}}
+
+            {{#if socialLinks}}
+            <div class="social-section">
+                <h3 style="margin-bottom: 15px; color: #1f2937;">Stay Connected</h3>
+                <p style="color: #6b7280; margin-bottom: 15px;">Follow us for updates, tips, and learning resources</p>
+                <div class="social-links">
+                    {{#each socialLinks}}
+                    <a href="{{url}}" target="_blank" title="{{platform}}">{{icon}}</a>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="footer">
+            <p>Thank you for being part of the {{companyName}} community!</p>
+            {{#if unsubscribeUrl}}
+            <p><a href="{{unsubscribeUrl}}">Unsubscribe</a> | <a href="{{preferencesUrl}}">Update Preferences</a></p>
+            {{/if}}
+            <p>Questions? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

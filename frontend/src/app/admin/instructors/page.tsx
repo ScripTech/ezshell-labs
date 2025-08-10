@@ -274,7 +274,7 @@ export default function InstructorsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Instructors</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -283,7 +283,7 @@ export default function InstructorsPage() {
             <div className="text-2xl font-bold">{instructors.length}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Instructors</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
@@ -294,7 +294,7 @@ export default function InstructorsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">With Social Links</CardTitle>
             <ExternalLink className="h-4 w-4 text-muted-foreground" />
@@ -305,7 +305,7 @@ export default function InstructorsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='shadow-none rounded-md'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">With Email</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
@@ -320,7 +320,6 @@ export default function InstructorsPage() {
 
       {/* Search */}
       <div className="flex items-center space-x-2">
-        <Search className="w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search instructors..."
           value={searchTerm}
@@ -330,7 +329,7 @@ export default function InstructorsPage() {
       </div>
 
       {/* Instructors Table */}
-      <Card>
+      <Card className='shadow-none rounded-md'>
         <CardHeader>
           <CardTitle>Instructors</CardTitle>
           <CardDescription>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Lab is Ready!</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #10b981; padding: 40px 30px; text-align: center;">
+                            <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0; color: white;">
+                                🚀 Your Lab is Ready!
+                            </h1>
+                            <p style="font-size: 16px; margin: 0; color: white; opacity: 0.9;">
+                                Time to start your hands-on learning experience
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 30px 0 30px;">
+                            <div style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{userName}},
+                            </div>
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 25px 0;">
+                                Great news! Your lab environment has been successfully provisioned and is now ready for you to access.
+                                Everything has been set up according to the lab specifications, and you can begin immediately.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Lab Info Card -->
+                    <tr>
+                        <td style="padding: 0 30px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #ecfdf5; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <div style="font-size: 20px; font-weight: 700; color: #047857; margin-bottom: 8px;">
+                                            {{labName}}
+                                        </div>
+                                        <div style="font-size: 16px; color: #374151; margin-bottom: 15px;">
+                                            {{labDescription}}
+                                        </div>
+
+                                        <!-- Lab Details Grid -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+                                            <tr>
+                                                <td style="width: 48%; vertical-align: top; padding-right: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Lab Environment
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{environment}}
+                                                    </div>
+                                                </td>
+                                                <td style="width: 48%; vertical-align: top; padding-left: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Session Duration
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{duration}}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        {{#if accessUrl}}
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-top: 15px;">
+                                            <tr>
+                                                <td style="width: 48%; vertical-align: top; padding-right: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Access Method
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        Web Terminal
+                                                    </div>
+                                                </td>
+                                                <td style="width: 48%; vertical-align: top; padding-left: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Ready Time
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{readyTime}}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Section -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="background-color: #10b981; border-radius: 8px; padding: 15px 30px;">
+                                        <a href="{{accessUrl}}" style="display: inline-block; color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+                                            🖥️ Launch Lab Environment
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Instructions Section -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 20px 0;">
+                                <strong>Getting Started:</strong><br>
+                                1. Click the "Launch Lab Environment" button above<br>
+                                2. You'll be taken directly to your web-based terminal<br>
+                                3. Follow the lab instructions to complete the exercises<br>
+                                4. Your progress will be automatically saved
+                            </p>
+
+                            <!-- Divider -->
+                            <div style="height: 1px; background-color: #e5e7eb; margin: 25px 0;"></div>
+
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0;">
+                                <strong>Need Help?</strong> Our support team is available to assist you if you encounter any issues accessing your lab environment.
+                                Contact us at <a href="mailto:{{supportEmail}}" style="color: #10b981; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 800; color: #10b981; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0 0 15px 0;">
+                                Hands-on learning that accelerates your technical skills.
+                            </p>
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">
+                                Questions? Reach out at <a href="mailto:{{supportEmail}}" style="color: #10b981; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #6b7280; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

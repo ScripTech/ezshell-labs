@@ -1,0 +1,56 @@
+🎉 Congratulations - Lab Completed!
+
+Hi {{userName}},
+
+Outstanding work! You have successfully completed your lab and demonstrated excellent skills in hands-on learning.
+
+✅ LAB COMPLETED: {{labName}}
+{{#if labDescription}}
+Description: {{labDescription}}
+{{/if}}
+
+{{#if score}}
+📊 YOUR RESULTS
+• Final Score: {{score}}%
+{{#if timeSpent}}
+• Time Spent: {{timeSpent}}
+{{/if}}
+{{#if tasksCompleted}}
+• Tasks Completed: {{tasksCompleted}}
+{{/if}}
+{{/if}}
+
+{{#if achievements}}
+🏆 YOUR ACHIEVEMENTS
+{{#each achievements}}
+• {{this}}
+{{/each}}
+{{/if}}
+
+{{#if certificate}}
+📜 CERTIFICATE AVAILABLE
+Your completion certificate is ready! Download it to showcase your newly acquired skills.
+Download: {{certificate.downloadUrl}}
+{{/if}}
+
+{{#if feedback}}
+💭 INSTRUCTOR FEEDBACK
+"{{feedback}}"
+{{/if}}
+
+🚀 WHAT'S NEXT?
+Ready to continue your learning journey? Explore our other labs and courses to further develop your skills.
+
+{{#if nextRecommendedLab}}
+Recommended next lab: {{nextRecommendedLab}}
+{{/if}}
+
+Explore more labs: {{dashboardUrl}}
+
+Thank you for choosing {{companyName}} for your learning journey. We're proud of your accomplishment!
+
+---
+Share your achievement and inspire others!
+Need support? Contact us at {{supportEmail}}
+
+© {{currentYear}} {{companyName}}. All rights reserved.

@@ -1,0 +1,60 @@
+👨‍🏫 New Assignment - {{#if cohortName}}{{cohortName}}{{else}}{{labName}}{{/if}}
+
+Hi {{instructorName}},
+
+You have been assigned to mentor new students in their learning journey. Below are the details of your assignment.
+
+📚 ASSIGNMENT DETAILS
+• Type: {{assignmentType}}
+• Title: {{#if cohortName}}{{cohortName}}{{else}}{{labName}}{{/if}}
+• Students: {{studentCount}} student{{#if (gt studentCount 1)}}s{{/if}} assigned
+
+📅 SCHEDULE
+{{#if startDate}}
+• Start Date: {{formatDate startDate}}
+{{/if}}
+{{#if endDate}}
+• End Date: {{formatDate endDate}}
+{{/if}}
+{{#if duration}}
+• Duration: {{duration}}
+{{/if}}
+{{#if labType}}
+• Lab Type: {{labType}}
+{{/if}}
+
+{{#if students}}
+👥 ASSIGNED STUDENTS
+{{#each students}}
+• {{name}} ({{email}}) - Status: {{status}}
+{{/each}}
+{{/if}}
+
+🔗 QUICK ACCESS
+• Instructor Dashboard: {{dashboardUrl}}
+{{#if labAccessUrl}}
+• Lab Environment: {{labAccessUrl}}
+{{/if}}
+
+{{#if responsibilities}}
+📋 YOUR RESPONSIBILITIES
+{{#each responsibilities}}
+• {{this}}
+{{/each}}
+{{/if}}
+
+{{#if resources}}
+📚 AVAILABLE RESOURCES
+{{#each resources}}
+• {{name}}: {{url}}
+{{/each}}
+{{/if}}
+
+📌 IMPORTANT: Please review the assigned students and lab materials before the start date. If you have any questions or concerns about this assignment, contact our support team immediately.
+
+Thank you for your dedication to educating and mentoring the next generation of cloud professionals!
+
+---
+Questions about this assignment? Contact us at {{supportEmail}}
+
+© {{currentYear}} {{companyName}}. All rights reserved.
