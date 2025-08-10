@@ -587,6 +587,7 @@ export function LabDetails() {
           callbackIsEnrolling={setIsEnrolling}
           labId={lab?.id || ''}
           labName={lab?.name || ''}
+          enrollId={lab?.enrollment?.id || null}
           onProvisioningComplete={handleProvisioningComplete}
         />
       )}

@@ -49,6 +49,7 @@ const adminNavItems = [
     items: [
       { title: "All Users", url: "/admin/users" },
       { title: "Invite User", url: "/admin/users/invite" },
+      { title: "Enrollments", url: "/admin/enrollments" },
     ],
   },
   {
