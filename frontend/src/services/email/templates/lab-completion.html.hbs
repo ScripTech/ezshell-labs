@@ -4,50 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lab Completed - Congratulations!</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 10px;
-        }
-        .title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 20px;
-        }
-        .celebration-banner {
-            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin: 25px 0;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .celebration-banner::before {
-            content: '🎉';
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #7c3aed; padding: 40px 30px; text-align: center; position: relative;">
+                            <h1 style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0; color: white;">
+                                🎉 Congratulations!
+                            </h1>
+                            <p style="font-size: 18px; margin: 0; color: white; opacity: 0.9;">
+                                You've successfully completed your lab
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 30px 0 30px;">
+                            <div style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{userName}},
+                            </div>
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 25px 0;">
+                                Excellent work! You have successfully completed <strong>{{labName}}</strong>.
+                                Your dedication to hands-on learning and problem-solving has paid off.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Lab Results Card -->
+                    <tr>
+                        <td style="padding: 0 30px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 0 8px 8px 0;">
+                                <tr>
+                                    <td style="padding: 25px;">
+                                        <div style="font-size: 20px; font-weight: 700; color: #16a34a; margin-bottom: 8px;">
+                                            Lab Completion Summary
+                                        </div>
+                                        <div style="font-size: 16px; color: #374151; margin-bottom: 15px;">
+                                            {{labDescription}}
+                                        </div>
+
+                                        <!-- Results Grid -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+                                            <tr>
+                                                <td style="width: 48%; vertical-align: top; padding-right: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Completion Date
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{completionDate}}
+                                                    </div>
+                                                </td>
+                                                <td style="width: 48%; vertical-align: top; padding-left: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Time Spent
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{timeSpent}}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        {{#if score}}
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-top: 15px;">
+                                            <tr>
+                                                <td style="width: 48%; vertical-align: top; padding-right: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Score
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{score}}%
+                                                    </div>
+                                                </td>
+                                                <td style="width: 48%; vertical-align: top; padding-left: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Status
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #16a34a;">
+                                                        ✅ Completed
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Certificate/Achievement Section -->
+                    {{#if certificateUrl}}
+                    <tr>
+                        <td style="padding: 30px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="background-color: #7c3aed; border-radius: 8px; padding: 15px 30px;">
+                                        <a href="{{certificateUrl}}" style="display: inline-block; color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+                                            📜 Download Certificate
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    {{/if}}
+
+                    <!-- Next Steps Section -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 20px 0;">
+                                <strong>What's Next?</strong><br>
+                                • Review your lab notes and solutions<br>
+                                • Explore related labs to build on your skills<br>
+                                • Share your achievement with your network<br>
+                                {{#if nextLabSuggestion}}
+                                • Consider trying "{{nextLabSuggestion}}" for your next challenge
+                                {{/if}}
+                            </p>
+
+                            <!-- Divider -->
+                            <div style="height: 1px; background-color: #e5e7eb; margin: 25px 0;"></div>
+
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0;">
+                                <strong>Share Your Success:</strong> Don't forget to add this accomplishment to your professional profile
+                                and share your learning journey with colleagues and friends!
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 800; color: #7c3aed; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0 0 15px 0;">
+                                Celebrating your commitment to continuous learning and growth.
+                            </p>
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">
+                                Questions? Contact us at <a href="mailto:{{supportEmail}}" style="color: #7c3aed; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #6b7280; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
             position: absolute;
             top: 15px;
             left: 20px;

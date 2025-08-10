@@ -4,50 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lab Environment Being Prepared</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 10px;
-        }
-        .title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 20px;
-        }
-        .lab-info {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 10px;
-            margin: 25px 0;
-            text-align: center;
-        }
-        .lab-name {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 10px;
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px 40px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">
+                                Lab Environment Being Prepared
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Lab Info Section -->
+                    <tr>
+                        <td style="padding: 0 40px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #667eea; border-radius: 10px;">
+                                <tr>
+                                    <td style="padding: 25px; text-align: center;">
+                                        <div style="font-size: 22px; font-weight: bold; color: white; margin-bottom: 10px;">
+                                            {{labName}}
+                                        </div>
+                                        <div style="font-size: 16px; color: white; opacity: 0.9;">
+                                            {{labDescription}}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Progress Section -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <div style="font-size: 18px; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{userName}},
+                            </div>
+
+                            <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 25px 0;">
+                                We're currently setting up your lab environment. This process typically takes a few minutes
+                                while we configure all the necessary tools and resources for your learning experience.
+                            </p>
+
+                            <!-- Progress Steps -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 25px 0;">
+                                <tr>
+                                    <td style="width: 30px; vertical-align: top; padding: 5px 15px 5px 0;">
+                                        <div style="width: 20px; height: 20px; background-color: #10b981; border-radius: 50%; display: inline-block;"></div>
+                                    </td>
+                                    <td style="vertical-align: top; padding: 5px 0;">
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 5px;">Environment Allocation</div>
+                                        <div style="font-size: 14px; color: #6b7280;">Securing compute resources</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 30px; vertical-align: top; padding: 15px 15px 5px 0;">
+                                        <div style="width: 20px; height: 20px; background-color: #f59e0b; border-radius: 50%; display: inline-block;"></div>
+                                    </td>
+                                    <td style="vertical-align: top; padding: 15px 0 5px 0;">
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 5px;">Software Installation</div>
+                                        <div style="font-size: 14px; color: #6b7280;">Installing required tools and dependencies</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 30px; vertical-align: top; padding: 15px 15px 5px 0;">
+                                        <div style="width: 20px; height: 20px; background-color: #e5e7eb; border-radius: 50%; display: inline-block;"></div>
+                                    </td>
+                                    <td style="vertical-align: top; padding: 15px 0 5px 0;">
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 5px;">Final Configuration</div>
+                                        <div style="font-size: 14px; color: #6b7280;">Applying lab-specific settings</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Estimated Time -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <div style="font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+                                            ⏱️ Estimated Setup Time
+                                        </div>
+                                        <div style="color: #374151;">
+                                            {{estimatedTime}} - We'll notify you as soon as your lab is ready!
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 25px 0 0 0;">
+                                You'll receive another email with access instructions once your environment is fully prepared.
+                                In the meantime, you might want to review any pre-lab materials or documentation.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">
+                                Questions about your lab setup? Contact us at
+                                <a href="mailto:{{supportEmail}}" style="color: #2563eb; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
         }
         .status-indicator {
             background-color: #fbbf24;

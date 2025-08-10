@@ -4,122 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to EZShell Labs</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 10px;
-        }
-        .title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 20px;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #2563eb;
-            color: white;
-            padding: 14px 28px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .button:hover {
-            background-color: #1d4ed8;
-        }
-        .info-box {
-            background-color: #f3f4f6;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #2563eb;
-        }
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            font-size: 14px;
-            color: #6b7280;
-            text-align: center;
-        }
-        .verification-token {
-            font-family: 'Courier New', monospace;
-            background-color: #f9fafb;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 18px;
-            letter-spacing: 2px;
-            text-align: center;
-            margin: 15px 0;
-        }
-    </style>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">🚀 {{companyName}}</div>
-            <h1 class="title">Welcome to EZShell Labs!</h1>
-        </div>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px 40px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">
+                                Welcome Aboard! 🎉
+                            </h1>
+                        </td>
+                    </tr>
 
-        <div class="content">
-            <p>Hi {{userName}},</p>
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px;">
+                            <p style="font-size: 16px; color: #374151; line-height: 1.6; margin: 0 0 20px 0;">
+                                Hi {{userName}},
+                            </p>
+                            <p style="font-size: 16px; color: #374151; line-height: 1.6; margin: 0 0 25px 0;">
+                                Welcome to {{companyName}}! We're excited to have you join our community of learners and tech enthusiasts.
+                            </p>
+                            <p style="font-size: 16px; color: #374151; line-height: 1.6; margin: 0 0 30px 0;">
+                                To get started with your hands-on learning journey, please verify your email address by clicking the button below:
+                            </p>
+                        </td>
+                    </tr>
 
-            <p>Welcome to EZShell Labs! We're excited to have you join our community of developers and DevOps enthusiasts.</p>
+                    <!-- CTA Button -->
+                    <tr>
+                        <td style="padding: 0 40px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="background-color: #2563eb; border-radius: 8px; padding: 18px 36px;">
+                                        <a href="{{verificationUrl}}" style="display: inline-block; color: white; text-decoration: none; font-weight: bold; font-size: 18px;">
+                                            ✅ Verify Email Address
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-            <p>To get started with your hands-on labs and learning journey, please verify your email address by clicking the button below:</p>
+                    <!-- Alternative Link -->
+                    <tr>
+                        <td style="padding: 25px 40px;">
+                            <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 0 0 15px 0;">
+                                Or copy and paste this link into your browser:
+                            </p>
+                            <p style="font-size: 12px; color: #2563eb; text-align: center; margin: 0; word-break: break-all;">
+                                {{verificationUrl}}
+                            </p>
+                        </td>
+                    </tr>
 
-            <div style="text-align: center;">
-                <a href="{{verificationUrl}}" class="button">Verify Email Address</a>
-            </div>
+                    <!-- Security Info -->
+                    <tr>
+                        <td style="padding: 0 40px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="font-size: 16px; font-weight: 600; color: #1e40af; margin: 0 0 10px 0;">
+                                            🔒 Security Information
+                                        </h3>
+                                        <p style="font-size: 14px; color: #1e40af; margin: 0 0 10px 0;">
+                                            This verification link will expire in 24 hours for security purposes.
+                                        </p>
+                                        <p style="font-size: 14px; color: #1e40af; margin: 0;">
+                                            If you didn't create an account with us, please ignore this email.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-            <div class="info-box">
-                <p><strong>Alternatively, you can use this verification code:</strong></p>
-                <div class="verification-token">{{verificationToken}}</div>
-                <p><small>This code expires in {{expiresIn}}.</small></p>
-            </div>
+                    <!-- What's Next -->
+                    <tr>
+                        <td style="padding: 30px 40px 0 40px;">
+                            <h3 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 15px 0;">
+                                🎯 What's Next?
+                            </h3>
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+                                <tr><td style="font-size: 14px; color: #6b7280; padding: 3px 0;">📚 Explore our hands-on labs and courses</td></tr>
+                                <tr><td style="font-size: 14px; color: #6b7280; padding: 3px 0;">🔧 Practice with real-world scenarios</td></tr>
+                                <tr><td style="font-size: 14px; color: #6b7280; padding: 3px 0;">🏆 Track your progress and achievements</td></tr>
+                                <tr><td style="font-size: 14px; color: #6b7280; padding: 3px 0;">🤝 Connect with fellow learners</td></tr>
+                            </table>
+                        </td>
+                    </tr>
 
-            <p>Once verified, you'll be able to:</p>
-            <ul>
-                <li>🔬 Access our interactive DevOps labs</li>
-                <li>🏗️ Practice with real AWS environments</li>
-                <li>📊 Track your learning progress</li>
-                <li>🏆 Earn certificates of completion</li>
-                <li>👥 Connect with fellow learners</li>
-            </ul>
-        </div>
-
-        <div class="footer">
-            <p>If you didn't create an account with EZShell Labs, you can safely ignore this email.</p>
-            <p>Need help? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
-            <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
-        </div>
-    </div>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px 40px; border-top: 1px solid #e5e7eb;">
+                            <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 0 0 10px 0;">
+                                Need help? Contact us at <a href="mailto:{{supportEmail}}" style="color: #2563eb; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
