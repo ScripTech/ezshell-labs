@@ -264,6 +264,7 @@ export class AWSProvisionerService {
     publicIp?: string;
     privateIp?: string;
     publicDnsName?: string;
+    launchTime?: Date;
   }> {
     try {
       const params: AWS.EC2.DescribeInstancesRequest = {
@@ -287,6 +288,7 @@ export class AWSProvisionerService {
         publicIp: instance.PublicIpAddress,
         privateIp: instance.PrivateIpAddress,
         publicDnsName: instance.PublicDnsName,
+        launchTime: instance.LaunchTime,
       };
     } catch (error) {
       const awsError = error as AWS.AWSError;
@@ -480,6 +482,7 @@ export class AWSProvisionerService {
     userId?: string;
     labId?: string;
     enrollmentId?: string;
+    launchTime?: Date;
   }>> {
     try {
       const params: AWS.EC2.DescribeInstancesRequest = {
@@ -508,11 +511,12 @@ export class AWSProvisionerService {
 
               instances.push({
                 instanceId: instance.InstanceId!,
-                state: parseInstanceState(instance.State?.Name || 'unknown'),
+                state: parseInstanceState(instance.State?.Name || "unknown"),
                 publicIp: instance.PublicIpAddress,
-                userId: getTagValue('UserId'),
-                labId: getTagValue('LabId'),
-                enrollmentId: getTagValue('EnrollmentId'),
+                userId: getTagValue("UserId"),
+                labId: getTagValue("LabId"),
+                enrollmentId: getTagValue("EnrollmentId"),
+                launchTime: instance.LaunchTime
               });
             }
           }

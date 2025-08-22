@@ -96,6 +96,15 @@ const adminNavItems = [
     items: [],
   },
   {
+    title: "AWS Instances",
+    url: "/admin/aws-instances",
+    isActive: true,
+    items: [
+      { title: "All Instances", url: "/admin/aws-instances" },
+      { title: "Instance Monitor", url: "/admin/aws-instances/monitor" },
+    ],
+  },
+  {
     title: "Settings",
     url: "/admin/settings",
     isActive: true,

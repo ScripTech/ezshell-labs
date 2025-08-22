@@ -9,6 +9,7 @@ import { kafkaConsumerService } from './services/kafka-consumer';
 import { kafkaProducerService } from './services/kafka-producer';
 import { statusMonitorService } from './services/status-monitor';
 import { enrollmentRouter } from './controllers/enrollment';
+import { instancesRouter } from './controllers/instances';
 
 // Load environment variables
 dotenv.config();
@@ -69,6 +70,7 @@ app.get('/health', async (req, res) => {
 
 // API routes
 app.use('/api/enrollment', enrollmentRouter);
+app.use('/api/instances', instancesRouter);
 
 // Root endpoint
 app.get('/', (req, res) => {
