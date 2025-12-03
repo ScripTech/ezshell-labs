@@ -7,6 +7,9 @@ import {
   integer,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { organizations } from "./OrganizationSchema";
+import { labEnrollments } from "./LabSchema";
 
 
 export const userBuiltRoleEnum = pgEnum("user_role", [
@@ -24,6 +27,7 @@ export const users = pgTable("user", {
   image: text("image"),
   role: userBuiltRoleEnum("role").default("user").notNull(),
   password: text("password"), // For credential-based authentication
+  organizationId: text("organization_id"), // Foreign key to organizations
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -83,3 +87,22 @@ export const verificationTokens = pgTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 );
+
+// Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  accounts: many(accounts),
+  sessions: many(sessions),
+  labEnrollments: many(labEnrollments),
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+}));

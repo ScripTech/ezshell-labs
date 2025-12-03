@@ -71,6 +71,15 @@ const adminNavItems = [
     ],
   },
   {
+    title: "Organizations",
+    url: "/admin/organizations",
+    isActive: true,
+    items: [
+      { title: "All Organizations", url: "/admin/organizations" },
+      { title: "Create Organization", url: "/admin/organizations#create" },
+    ],
+  },
+  {
     title: "Content",
     url: "/admin/content",
     isActive: true,

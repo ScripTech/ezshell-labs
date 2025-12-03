@@ -6,12 +6,11 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, Plus, User, Shield, AlertCircle, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import CreateForm, { FormField } from '@/components/shared/CreateForm'
 
 interface User {
   id: string
@@ -28,15 +27,6 @@ export default function AdminUserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    role: 'user' as 'admin' | 'manager' | 'user' | 'clientUser',
-  })
-  const [createLoading, setCreateLoading] = useState(false)
-  const [errors, setErrors] = useState<string[]>([])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -65,27 +55,7 @@ export default function AdminUserManagementPage() {
     }
   }
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setCreateLoading(true)
-    setErrors([])
-
-    // Validate form
-    const newErrors: string[] = []
-
-    if (!formData.email) newErrors.push('Email is required')
-    if (!formData.password) newErrors.push('Password is required')
-    if (!formData.confirmPassword) newErrors.push('Confirm password is required')
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.push('Passwords do not match')
-    }
-
-    if (newErrors.length > 0) {
-      setErrors(newErrors)
-      setCreateLoading(false)
-      return
-    }
-
+  const handleCreateUser = async (data: Record<string, any>) => {
     try {
       const response = await fetch('/api/admin/auth/users', {
         method: 'POST',
@@ -93,48 +63,92 @@ export default function AdminUserManagementPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
-          role: formData.role,
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          role: data.role,
         }),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (!response.ok) {
-        if (data.details) {
-          setErrors(data.details)
-        } else {
-          setErrors([data.error || 'Failed to create user'])
+        return {
+          success: false,
+          error: result.error || 'Failed to create user',
+          details: result.details,
         }
-        return
       }
 
-      toast.success('User created successfully!')
-      setShowCreateForm(false)
-      setFormData({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        name: '',
-        role: 'user',
-      })
       fetchUsers() // Refresh user list
+      return { success: true }
 
     } catch (error) {
       console.error('Error creating user:', error)
-      setErrors(['Failed to create user'])
-    } finally {
-      setCreateLoading(false)
+      return {
+        success: false,
+        error: 'Failed to create user',
+      }
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+  // Define form fields for CreateForm component
+  const userFormFields: FormField[] = [
+    {
+      name: 'name',
+      label: 'Full Name',
+      type: 'text',
+      placeholder: 'Enter full name',
+      required: false,
+    },
+    {
+      name: 'email',
+      label: 'Email Address',
+      type: 'email',
+      placeholder: 'user@example.com',
+      required: true,
+    },
+    {
+      name: 'password',
+      label: 'Password',
+      type: 'password',
+      placeholder: 'Enter secure password',
+      required: true,
+    },
+    {
+      name: 'confirmPassword',
+      label: 'Confirm Password',
+      type: 'password',
+      placeholder: 'Confirm password',
+      required: true,
+    },
+    {
+      name: 'role',
+      label: 'User Role',
+      type: 'select',
+      required: true,
+      options: [
+        { value: 'user', label: 'User' },
+        { value: 'manager', label: 'Manager' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'clientUser', label: 'Client User' },
+      ],
+    },
+  ]
+
+  // Custom validation for password confirmation
+  const validateUserForm = (data: Record<string, any>): string[] => {
+    const errors: string[] = []
+
+    if (data.password !== data.confirmPassword) {
+      errors.push('Passwords do not match')
+    }
+
+    if (data.password && data.password.length < 6) {
+      errors.push('Password must be at least 6 characters long')
+    }
+
+    return errors
   }
 
   const getRoleBadge = (role: string) => {
@@ -176,135 +190,16 @@ export default function AdminUserManagementPage() {
         </Button>
       </div>
 
-      {showCreateForm && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Create New User</CardTitle>
-            <CardDescription>
-              Add a new user to the system with specified role and permissions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              {errors.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <ul className="list-disc list-inside space-y-1">
-                      {errors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name (Optional)</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="Enter full name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="Enter secure password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Confirm password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="role">User Role</Label>
-                  <Select
-                    value={formData.role}
-                    onValueChange={(value: 'admin' | 'manager' | 'user' | 'clientUser') =>
-                      setFormData({ ...formData, role: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="clientUser">Client User</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={createLoading}>
-                  {createLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create User'
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setErrors([])
-                    setFormData({
-                      email: '',
-                      password: '',
-                      confirmPassword: '',
-                      name: '',
-                      role: 'user',
-                    })
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <CreateForm
+        title="Create New User"
+        description="Add a new user to the system with specified role and permissions"
+        fields={userFormFields}
+        onSubmit={handleCreateUser}
+        onCancel={() => setShowCreateForm(false)}
+        submitLabel="Create User"
+        isVisible={showCreateForm}
+        customValidation={validateUserForm}
+      />
 
       <Card>
         <CardHeader>
