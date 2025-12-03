@@ -15,11 +15,12 @@ interface UserLabsProps {
   labs: LabSession[]
 }
 
-export function UserLabs({ labs }: UserLabsProps) {
+export function UserLabsComponent({ labs }: UserLabsProps) {
+  console.log('Rendering UserLabs with labs:', labs)
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {labs.map((lab) => (
-        <Card key={lab.id}>
+        <Card key={lab.id} className='shadow-none rounded-md'>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Lab Session</CardTitle>

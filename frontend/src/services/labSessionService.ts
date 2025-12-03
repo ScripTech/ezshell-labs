@@ -65,7 +65,7 @@ export class LabSessionService {
         .limit(1)
 
       if (!enrollment.length) {
-        throw new Error("User is not enrolled in this lab")
+        throw new Error(`User is not enrolled in this lab: ${labId}`);
       }
 
       // Get lab info for duration
@@ -89,12 +89,13 @@ export class LabSessionService {
         return existingSession
       }
 
+      const hr = labInfo[0].duration / 60;
       // Calculate expiration time based on lab duration
       const now = new Date()
-      const expiresAt = new Date(now.getTime() + (labInfo[0].duration * 60 * 1000))
+      const expiresAt = new Date(now.getTime() + hr * 60 * 60 * 1000); // convert minutes to milliseconds
 
       const sessionId = nanoid()
-      const sessionName = `${labInfo[0].name}-Session-${Date.now()}`
+      const sessionName = `${labInfo[0].labId}-Session-${Date.now()}`
 
       // Create new session
       const [newSession] = await db

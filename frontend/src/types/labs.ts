@@ -1,3 +1,5 @@
+import { Instructor } from './instructors'
+
 export type LabExercise = {
   id: string;
   labId: string;
@@ -20,11 +22,13 @@ export type Lab = {
   enrolledCount?: number;
   isEnrolled?: boolean;
   exercises?: LabExercise[];
+  instructor?: Instructor;
   progress: {
     completed: number;
     total: number;
     exercises: LabExercise[];
   };
+  enrollment?: LabEnrollment | null;
 };
 
 export interface LabEnrollment {

@@ -4,6 +4,7 @@
 /node_modules
 /frontend/node_modules
 /backend/node_modules
+/lab-provisioner/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -40,8 +41,12 @@ next-env.d.ts
 backend/.env
 snyk-macos-arm64
 .vscode/settings.json
-frontend/src/components/login-form.tsx
 frontend/drizzle/*
 frontend/storage/generate_ex280_files.sh
 backend/dist/*
 test-jwt.js
+scripts/get-from-build.sh
+lab-provisioner/dist/*
+lab-provisioner/logs/*
+logs/
+docs/ENHANCED_DOCKER_BUILDS.md

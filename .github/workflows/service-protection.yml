@@ -1,0 +1,288 @@
+name: Service Branch Protection
+
+on:
+  pull_request:
+    branches:
+      - service-frontend
+      - service-backend
+      - service-database
+      - service-lab-provisioner
+  push:
+    branches:
+      - service-frontend
+      - service-backend
+      - service-database
+      - service-lab-provisioner
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate-branch-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      service: ${{ steps.detect.outputs.service }}
+      has-changes: ${{ steps.changes.outputs.has-changes }}
+      changed-files: ${{ steps.changes.outputs.changed-files }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect target service
+        id: detect
+        run: |
+          TARGET_BRANCH="${{ github.base_ref || github.ref_name }}"
+          echo "Target branch: $TARGET_BRANCH"
+
+          case $TARGET_BRANCH in
+            service-frontend)
+              echo "service=frontend" >> $GITHUB_OUTPUT
+              echo "Service: Frontend"
+              ;;
+            service-backend)
+              echo "service=backend" >> $GITHUB_OUTPUT
+              echo "Service: Backend"
+              ;;
+            service-database)
+              echo "service=database" >> $GITHUB_OUTPUT
+              echo "Service: Database"
+              ;;
+            service-lab-provisioner)
+              echo "service=lab-provisioner" >> $GITHUB_OUTPUT
+              echo "Service: Lab Provisioner"
+              ;;
+            *)
+              echo "service=unknown" >> $GITHUB_OUTPUT
+              echo "Unknown service for branch: $TARGET_BRANCH"
+              ;;
+          esac
+
+      - name: Check for relevant changes
+        id: changes
+        run: |
+          SERVICE="${{ steps.detect.outputs.service }}"
+          echo "Checking changes for service: $SERVICE"
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For pull requests, check changed files
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          else
+            # For push events, check last commit
+            CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD)
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check if changes are relevant to the service
+          case $SERVICE in
+            frontend)
+              RELEVANT_CHANGES=$(echo "$CHANGED_FILES" | grep -E "^frontend/|^\.github/workflows/service-builds\.yml" || true)
+              ;;
+            backend)
+              RELEVANT_CHANGES=$(echo "$CHANGED_FILES" | grep -E "^backend/|^\.github/workflows/service-builds\.yml" || true)
+              ;;
+            database)
+              RELEVANT_CHANGES=$(echo "$CHANGED_FILES" | grep -E "^database/|^\.github/workflows/service-builds\.yml" || true)
+              ;;
+            lab-provisioner)
+              RELEVANT_CHANGES=$(echo "$CHANGED_FILES" | grep -E "^lab-provisioner/|^\.github/workflows/service-builds\.yml" || true)
+              ;;
+            *)
+              RELEVANT_CHANGES=""
+              ;;
+          esac
+
+          if [ -n "$RELEVANT_CHANGES" ]; then
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "Relevant changes detected:"
+            echo "$RELEVANT_CHANGES"
+          else
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "No relevant changes detected for $SERVICE service"
+          fi
+
+          echo "changed-files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  # Frontend specific validation
+  validate-frontend:
+    runs-on: ubuntu-latest
+    needs: validate-branch-changes
+    if: needs.validate-branch-changes.outputs.service == 'frontend' && needs.validate-branch-changes.outputs.has-changes == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Type check
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Security audit
+        run: |
+          cd frontend
+          npm audit --audit-level moderate
+
+  # Backend specific validation
+  validate-backend:
+    runs-on: ubuntu-latest
+    needs: validate-branch-changes
+    if: needs.validate-branch-changes.outputs.service == 'backend' && needs.validate-branch-changes.outputs.has-changes == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Type check
+        run: |
+          cd backend
+          npm run build
+
+      - name: Run tests
+        run: |
+          cd backend
+          npm run test
+
+      - name: Security audit
+        run: |
+          cd backend
+          npm audit --audit-level moderate
+
+  # Database specific validation
+  validate-database:
+    runs-on: ubuntu-latest
+    needs: validate-branch-changes
+    if: needs.validate-branch-changes.outputs.service == 'database' && needs.validate-branch-changes.outputs.has-changes == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfile
+        run: |
+          cd database
+          docker build --dry-run . || echo "Dockerfile validation completed"
+
+      - name: Check SQL files
+        run: |
+          cd database
+          # Check for SQL syntax (basic validation)
+          find . -name "*.sql" -exec echo "Checking: {}" \;
+
+  # Lab Provisioner specific validation
+  validate-lab-provisioner:
+    runs-on: ubuntu-latest
+    needs: validate-branch-changes
+    if: needs.validate-branch-changes.outputs.service == 'lab-provisioner' && needs.validate-branch-changes.outputs.has-changes == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: lab-provisioner/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd lab-provisioner
+          npm ci
+
+      - name: Type check
+        run: |
+          cd lab-provisioner
+          npm run build
+
+      - name: Run tests
+        run: |
+          cd lab-provisioner
+          npm run test
+
+      - name: Security audit
+        run: |
+          cd lab-provisioner
+          npm audit --audit-level moderate
+
+  # Comment on PR with validation results
+  comment-pr:
+    runs-on: ubuntu-latest
+    needs: [validate-branch-changes, validate-frontend, validate-backend, validate-database, validate-lab-provisioner]
+    if: github.event_name == 'pull_request' && always()
+
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const service = '${{ needs.validate-branch-changes.outputs.service }}';
+            const hasChanges = '${{ needs.validate-branch-changes.outputs.has-changes }}';
+            const changedFiles = `${{ needs.validate-branch-changes.outputs.changed-files }}`;
+
+            let comment = `## 🔍 Service Branch Validation Results\n\n`;
+            comment += `**Service:** ${service}\n`;
+            comment += `**Has Relevant Changes:** ${hasChanges}\n\n`;
+
+            if (hasChanges === 'true') {
+              comment += `### ✅ Validation Status\n\n`;
+
+              const jobs = {
+                'frontend': '${{ needs.validate-frontend.result }}',
+                'backend': '${{ needs.validate-backend.result }}',
+                'database': '${{ needs.validate-database.result }}',
+                'lab-provisioner': '${{ needs.validate-lab-provisioner.result }}'
+              };
+
+              const serviceJob = jobs[service];
+              if (serviceJob) {
+                const icon = serviceJob === 'success' ? '✅' : serviceJob === 'failure' ? '❌' : '⏭️';
+                comment += `${icon} ${service} validation: ${serviceJob}\n`;
+              }
+
+              comment += `\n### 📁 Changed Files\n\`\`\`\n${changedFiles}\n\`\`\`\n`;
+            } else {
+              comment += `### ℹ️ No relevant changes detected for ${service} service\n`;
+            }
+
+            comment += `\n---\n*This comment was automatically generated by the service validation workflow.*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

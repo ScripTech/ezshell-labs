@@ -90,7 +90,7 @@ export class EnhancedLabService {
   private currentAttempt: TaskAttempt | null = null;
   private listeners = new Map<string, Function[]>();
 
-  constructor(private serverUrl: string = 'http://localhost:3001') {
+  constructor(private serverUrl: string = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/ws') {
     this.connect();
   }
 

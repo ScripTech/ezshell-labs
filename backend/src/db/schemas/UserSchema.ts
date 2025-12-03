@@ -1,4 +1,3 @@
-import { AdapterAccount } from 'next-auth/adapters';
 import {
   timestamp,
   pgTable,
@@ -25,27 +24,13 @@ export const users = pgTable("user", {
   role: userBuiltRoleEnum("role").default("user").notNull(),
 });
 
-interface Account {
-  userId: string;
-  type: AdapterAccount["type"];
-  provider: string;
-  providerAccountId: string;
-  refresh_token?: string;
-  access_token?: string;
-  expires_at?: number;
-  token_type?: string;
-  scope?: string;
-  id_token?: string;
-  session_state?: string;
-}
-
 export const accounts = pgTable(
   "account",
   {
     userId: text("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").$type<AdapterAccount["type"]>().notNull(),
+    type: text("type").notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
     refresh_token: text("refresh_token"),

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Enrollment Notification</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #667eea; padding: 40px 30px; text-align: center;">
+                            <h1 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0; color: white;">
+                                🎉 Lab Enrollment Confirmed
+                            </h1>
+                            <p style="font-size: 16px; margin: 0; color: white; opacity: 0.9;">
+                                You've been enrolled in a new lab
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 30px 0 30px;">
+                            <div style="font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{userName}},
+                            </div>
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 25px 0;">
+                                Great news! You have been enrolled in a new lab by <strong style="background-color: #fef3c7; padding: 2px 6px; border-radius: 4px;">{{enrolledBy}}</strong>.
+                                This lab has been carefully selected to enhance your learning experience and advance your skills.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Lab Info Card -->
+                    <tr>
+                        <td style="padding: 0 30px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <div style="font-size: 20px; font-weight: 700; color: #1e40af; margin-bottom: 8px;">
+                                            {{labName}}
+                                        </div>
+                                        <div style="font-size: 16px; color: #374151; margin-bottom: 15px;">
+                                            {{labDescription}}
+                                        </div>
+
+                                        <!-- Enrollment Details Grid -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+                                            <tr>
+                                                <td style="width: 48%; vertical-align: top; padding-right: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Enrolled By
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{enrolledBy}}
+                                                    </div>
+                                                </td>
+                                                <td style="width: 48%; vertical-align: top; padding-left: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Enrollment Date
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{enrollmentDate}}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-top: 15px;">
+                                            <tr>
+                                                <td style="width: 48%; vertical-align: top; padding-right: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Duration
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{duration}}
+                                                    </div>
+                                                </td>
+                                                {{#if dueDate}}
+                                                <td style="width: 48%; vertical-align: top; padding-left: 7px;">
+                                                    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: #6b7280; margin-bottom: 4px;">
+                                                        Due Date
+                                                    </div>
+                                                    <div style="font-size: 14px; font-weight: 600; color: #1f2937;">
+                                                        {{dueDate}}
+                                                    </div>
+                                                </td>
+                                                {{/if}}
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Section -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="background-color: #10b981; border-radius: 8px; padding: 15px 30px;">
+                                        <a href="{{accessUrl}}" style="display: inline-block; color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+                                            🚀 Access Lab Now
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- What's Next Section -->
+                    <tr>
+                        <td style="padding: 0 30px 30px 30px;">
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 20px 0;">
+                                <strong>What's Next?</strong><br>
+                                Click the button above to access your lab environment. The lab is ready for you to start immediately.
+                                Make sure to complete it by the due date to get the most out of this learning opportunity.
+                            </p>
+
+                            <!-- Divider -->
+                            <div style="height: 1px; background-color: #e5e7eb; margin: 25px 0;"></div>
+
+                            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0;">
+                                If you have any questions about this lab or need technical support, don't hesitate to reach out to our support team.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 800; color: #667eea; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0 0 15px 0;">
+                                Empowering your learning journey through hands-on labs and practical experience.
+                            </p>
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">
+                                Need help? Contact us at <a href="mailto:{{supportEmail}}" style="color: #667eea; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #6b7280; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

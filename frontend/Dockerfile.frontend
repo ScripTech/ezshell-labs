@@ -1,5 +1,5 @@
 # Install dependencies and build Next.js app
-FROM node:current-alpine3.22 AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -11,16 +11,31 @@ RUN \
   else npm install; fi
 
 COPY . .
+# Ensure storage directory is included for import-tasks functionality
+COPY storage/ ./storage/
+
+# Build-time environment variables for Next.js
+ARG NEXT_PUBLIC_BACKEND_URL
+ARG NEXT_PUBLIC_BACKEND_WS
+ARG NEXTAUTH_URL
+
+# Set environment variables for the build
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_BACKEND_WS=$NEXT_PUBLIC_BACKEND_WS
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+
 RUN npm run build
 
 # Production image
-FROM node:current-alpine3.22
+FROM node:18-alpine
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
 COPY --from=builder /app .
+# Ensure storage directory is available in production
+COPY --from=builder /app/storage ./storage
 
 RUN apk update && apk upgrade
 

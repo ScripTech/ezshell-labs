@@ -14,7 +14,7 @@ export default function BillingOverviewPage() {
       </div>
       <h2 className="text-2xl font-bold mb-4">Overview</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
+        <Card className="shadow-none rounded-md">
           <CardHeader>
             <CardTitle>Current metered usage</CardTitle>
           </CardHeader>
@@ -23,7 +23,7 @@ export default function BillingOverviewPage() {
             <div className="text-muted-foreground text-sm mt-2">Showing gross metered usage for your account.</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-none rounded-md">
           <CardHeader>
             <CardTitle>
               Current included usage
@@ -35,7 +35,7 @@ export default function BillingOverviewPage() {
             <div className="text-muted-foreground text-sm mt-2">Showing currently applied discounts for your account.</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-none rounded-md">
           <CardHeader>
             <CardTitle>
               Next payment due
@@ -50,7 +50,7 @@ export default function BillingOverviewPage() {
 
       <h3 className="text-lg font-semibold mb-2">Subscriptions</h3>
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-8">
-        <Card>
+        <Card className="shadow-none rounded-md">
           <CardHeader>
             <CardTitle>Free Plan</CardTitle>
           </CardHeader>
@@ -64,7 +64,7 @@ export default function BillingOverviewPage() {
       </div>
 
       <h3 className="text-lg font-semibold mb-2">Metered usage</h3>
-      <Card>
+      <Card className="shadow-none rounded-md">
         <CardHeader>
           <CardTitle>Jul 1 - Jul 31, 2025</CardTitle>
           <div className="mt-2">

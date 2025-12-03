@@ -1,0 +1,166 @@
+---
+services:
+
+  nginx:
+    image: nginx:alpine
+    container_name: ezshell-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:8443"  # Dedicated WebSocket port
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/ssl-validation:/var/www/ssl-validation:ro
+    depends_on:
+      - frontend-service
+      - backend-service
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+
+  postgres-db:
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/database:latest
+    container_name: ezshell-postgres-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5438:5432"
+    networks:
+      - ezshell-network-dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend-service:
+    depends_on:
+      - postgres-db
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/backend:latest
+    container_name: backend-service
+    hostname: backend-service
+    env_file:
+      - ./backend/.env
+    expose:
+      - "3001"
+    restart: unless-stopped
+    networks:
+      - ezshell-network-dev
+
+  frontend-service:
+    depends_on:
+      - postgres-db
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/frontend:latest
+    container_name: frontend-service
+    hostname: frontend
+    env_file:
+      - ./frontend/.env.local
+    expose:
+      - "3000"
+    restart: unless-stopped
+    networks:
+      - ezshell-network-dev
+    volumes:
+      - /opt/application/ezshell-labs/frontend/storage:/app/storage:Z
+
+  # Lab Provisioner Service
+  lab-provisioner:
+    image: 625572953030.dkr.ecr.us-west-2.amazonaws.com/ezshell/lab-provisioner:latest
+    container_name: lab-provisioner
+    hostname: lab-provisioner
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_CLIENT_ID=lab-provisioner
+      - KAFKA_TOPIC=lab-enrollment
+      - KAFKA_CONSUMER_GROUP=lab-provisioner-group
+      - KAFKA_ENABLED=false  # Disable Kafka by default since service is not available
+      - LOG_LEVEL=info
+      - PORT=3002
+    env_file:
+      - ./lab-provisioner/.env
+    expose:
+      - "3002"
+    volumes:
+      - ssh_keys_volume:/tmp/ssh-keys
+      - ./logs:/app/logs
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Kafka Infrastructure
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: ezshell-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: ezshell-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_DELETE_TOPIC_ENABLE: true
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - ezshell-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  ezshell-network-dev:
+
+volumes:
+  postgres_data:
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+  ssh_keys_volume:
+    driver: local

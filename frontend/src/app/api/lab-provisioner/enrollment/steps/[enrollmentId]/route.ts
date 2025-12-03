@@ -1,0 +1,37 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { enrollmentId: string } }
+) {
+  try {
+    const { enrollmentId } = params
+
+    const labProvisionerUrl = process.env.LAB_PROVISIONER_URL || 'http://localhost:3002'
+
+    const response = await fetch(`${labProvisionerUrl}/api/enrollment/steps/${enrollmentId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('Lab provisioner steps error:', errorData)
+      return NextResponse.json(
+        { error: 'Failed to fetch provisioning steps' },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json()
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Error fetching provisioning steps:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

@@ -1,11 +1,54 @@
 # Edilson Mucanze
-# Backend
-FROM node:16-alpine
+# Backend - Multi-stage build for better compatibility with native modules
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies for native modules like node-pty
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    linux-headers \
+    musl-dev \
+    libc-dev \
+    git
+
+# Copy package files
 COPY package*.json ./
-RUN npm ci
+
+# Install all dependencies first (including devDependencies for build)
+RUN npm cache clean --force && \
+    npm ci && \
+    npm rebuild node-pty
+
+# Copy source code and build
 COPY . .
 RUN npm run build
+
+# Clean up and install only production dependencies
+RUN npm prune --production
+
+# Production stage
+FROM node:18-alpine AS production
+
+WORKDIR /app
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    musl \
+    libc6-compat
+
+# Copy built application and dependencies from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+EXPOSE 3001
+
+# Run as non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+USER nodejs
+
 CMD ["node", "dist/server.js"]

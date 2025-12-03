@@ -1,0 +1,66 @@
+{{campaignName}}
+{{#if subtitle}}{{subtitle}}{{/if}}
+
+Hi {{#if userName}}{{userName}}{{else}}there{{/if}},
+
+{{content}}
+
+{{#if urgencyMessage}}
+⚡ URGENT: {{urgencyMessage}}
+{{/if}}
+
+{{#if primaryCTA}}
+🎯 {{primaryCTA.title}}
+{{#if primaryCTA.description}}{{primaryCTA.description}}{{/if}}
+
+👉 {{primaryCTA.buttonText}}: {{primaryCTA.url}}
+
+{{#if primaryCTA.note}}{{primaryCTA.note}}{{/if}}
+{{/if}}
+
+{{#if features}}
+✨ FEATURES & BENEFITS:
+{{#each features}}
+{{icon}} {{title}}
+   {{description}}
+{{/each}}
+{{/if}}
+
+{{#if statistics}}
+📊 {{companyName}} BY THE NUMBERS:
+{{#each statistics}}
+• {{label}}: {{value}}
+{{/each}}
+{{/if}}
+
+{{#if testimonial}}
+💬 TESTIMONIAL:
+"{{testimonial.text}}"
+— {{testimonial.author}}{{#if testimonial.title}}, {{testimonial.title}}{{/if}}
+{{/if}}
+
+{{#if secondaryCTA}}
+🔗 {{secondaryCTA.text}}: {{secondaryCTA.url}}
+{{/if}}
+
+{{#if socialLinks}}
+🌐 STAY CONNECTED:
+Follow us for updates, tips, and learning resources
+{{#each socialLinks}}
+• {{platform}}: {{url}}
+{{/each}}
+{{/if}}
+
+---
+Thank you for being part of the {{companyName}} community!
+
+{{#if unsubscribeUrl}}
+Unsubscribe: {{unsubscribeUrl}}
+{{#if preferencesUrl}}
+Update Preferences: {{preferencesUrl}}
+{{/if}}
+{{/if}}
+
+Questions? Contact us at {{supportEmail}}
+
+© {{currentYear}} {{companyName}}. All rights reserved.

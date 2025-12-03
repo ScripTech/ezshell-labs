@@ -18,11 +18,20 @@ import { NavMain } from "@/components/nav-main"
 const pathLabels: Record<string, string> = {
   labs: "Labs",
   billing: "Billing",
-  system: "System Config",
 }
 
 // Define admin and user menu items
 const adminNavItems = [
+  {
+    title: "Dashboard",
+    url: "/admin",
+    isActive: true,
+    items: [
+      { title: "Overview", url: "/admin" },
+      { title: "Enrollments", url: "/admin#enrollments" },
+      { title: "Analytics", url: "/admin#analytics" },
+    ],
+  },
   {
     title: "Labs",
     url: "/admin/labs",
@@ -30,6 +39,7 @@ const adminNavItems = [
     items: [
       { title: "All Labs", url: "/admin/labs" },
       { title: "Create Lab", url: "/admin/labs/create" },
+      { title: "Lab Assignments", url: "/admin/lab-assignments" },
     ],
   },
   {
@@ -39,6 +49,25 @@ const adminNavItems = [
     items: [
       { title: "All Users", url: "/admin/users" },
       { title: "Invite User", url: "/admin/users/invite" },
+      { title: "Enrollments", url: "/admin/users/enrollments" },
+    ],
+  },
+  {
+    title: "Instructors",
+    url: "/admin/instructors",
+    isActive: true,
+    items: [
+      { title: "All Instructors", url: "/admin/instructors" },
+      { title: "Add Instructor", url: "/admin/instructors/create" },
+    ],
+  },
+  {
+    title: "Authentication",
+    url: "/admin/auth",
+    isActive: true,
+    items: [
+      { title: "User Management", url: "/admin/auth/users" },
+      { title: "Role Management", url: "/admin/auth/roles" },
     ],
   },
   {
@@ -63,12 +92,6 @@ const adminNavItems = [
   {
     title: "Billing",
     url: "/admin/billing",
-    isActive: true,
-    items: [],
-  },
-  {
-    title: "System Config",
-    url: "/admin/system",
     isActive: true,
     items: [],
   },

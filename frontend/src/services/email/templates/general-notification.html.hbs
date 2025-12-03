@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{subject}}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f8f9fa;">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px; background-color: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px 40px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2563eb; margin-bottom: 10px;">
+                                🚀 {{companyName}}
+                            </div>
+                            <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">
+                                {{subject}}
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+                            {{#if userName}}
+                            <div style="font-size: 18px; color: #1f2937; margin-bottom: 20px;">
+                                Hello {{userName}},
+                            </div>
+                            {{/if}}
+
+                            <div style="font-size: 16px; color: #4b5563; line-height: 1.6;">
+                                {{{message}}}
+                            </div>
+
+                            {{#if actionUrl}}
+                            <!-- CTA Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; text-align: center; margin: 30px 0;">
+                                <tr>
+                                    <td>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="background-color: #2563eb; border-radius: 8px; padding: 15px 30px;">
+                                                    <a href="{{actionUrl}}" style="display: inline-block; color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+                                                        {{actionText}}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            {{#if additionalInfo}}
+                            <!-- Additional Info Section -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <div style="font-weight: 600; color: #1e40af; margin-bottom: 8px;">
+                                            ℹ️ Additional Information
+                                        </div>
+                                        <div style="color: #374151; font-size: 14px;">
+                                            {{{additionalInfo}}}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 25px 0 0 0;">
+                                If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 10px 0;">
+                                Need help? Contact us at
+                                <a href="mailto:{{supportEmail}}" style="color: #2563eb; text-decoration: none;">{{supportEmail}}</a>
+                            </p>
+                            <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                                © {{currentYear}} {{companyName}}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .priority-banner {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .priority-high {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+        .priority-medium {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .priority-low {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .priority-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+        .content-section {
+            margin: 25px 0;
+        }
+        .content-section h2 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .highlight-box {
+            background-color: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .action-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .info-card {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .info-card p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .list-section ul {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .list-section li {
+            margin-bottom: 8px;
+            color: #4b5563;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+        }
+        .attachment-section {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-decoration: none;
+            color: #374151;
+        }
+        .attachment-item:hover {
+            background-color: #f9fafb;
+        }
+        .attachment-icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚀 {{companyName}}</div>
+            <h1 class="title">{{subject}}</h1>
+        </div>
+
+        <div class="content">
+            <p>Hi {{#if userName}}{{userName}}{{else}}there{{/if}},</p>
+
+            {{#if priority}}
+            <div class="priority-banner priority-{{priority}}">
+                {{#if (eq priority "high")}}🚨 HIGH PRIORITY{{/if}}
+                {{#if (eq priority "medium")}}⚠️ MEDIUM PRIORITY{{/if}}
+                {{#if (eq priority "low")}}ℹ️ LOW PRIORITY{{/if}}
+                {{#if (eq priority "info")}}📢 INFORMATION{{/if}}
+            </div>
+            {{/if}}
+
+            {{#if previewText}}
+            <div class="highlight-box">
+                <strong>{{previewText}}</strong>
+            </div>
+            {{/if}}
+
+            <div class="content-section">
+                {{{message}}}
+            </div>
+
+            {{#if actionButton}}
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{actionButton.url}}" class="action-button">{{actionButton.text}}</a>
+            </div>
+            {{/if}}
+
+            {{#if highlights}}
+            <div class="info-grid">
+                {{#each highlights}}
+                <div class="info-card">
+                    <h3>{{title}}</h3>
+                    <p>{{description}}</p>
+                    {{#if url}}
+                    <p><a href="{{url}}" style="color: #2563eb; text-decoration: none;">Learn more →</a></p>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            {{#if listItems}}
+            <div class="list-section">
+                <ul>
+                    {{#each listItems}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            {{#if attachments}}
+            <div class="attachment-section">
+                <h3 style="margin-top: 0; color: #1f2937;">📎 Attachments</h3>
+                {{#each attachments}}
+                <a href="{{url}}" class="attachment-item" target="_blank">
+                    <span class="attachment-icon">📄</span>
+                    <span>{{name}}</span>
+                    {{#if size}}<span style="margin-left: auto; font-size: 12px; color: #6b7280;">({{size}})</span>{{/if}}
+                </a>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            {{#if customFooterMessage}}
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <p style="margin: 0; color: #4b5563; font-style: italic;">{{customFooterMessage}}</p>
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from {{companyName}}.</p>
+            {{#if unsubscribeUrl}}
+            <p><a href="{{unsubscribeUrl}}" style="color: #6b7280;">Unsubscribe from these notifications</a></p>
+            {{/if}}
+            <p>Need assistance? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

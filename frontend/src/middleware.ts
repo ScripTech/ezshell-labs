@@ -17,8 +17,26 @@ const publicRoutes = [
 
 // Define exact public routes that require exact match
 const exactPublicRoutes = [
-  '/'
-]
+  "/",
+  "/about",
+  "/contact",
+  "/careers",
+  "/partners",
+  "/help",
+  "/status",
+  "/support",
+  "/enterprise-support",
+
+  "/docs",
+  "/getting-started",
+  "/guides",
+  "/blog",
+  "/community",
+
+  "/privacy",
+  "/security",
+  "/terms",
+];
 
 // Define auth-related pages
 const authPublicPages = [
@@ -26,7 +44,8 @@ const authPublicPages = [
   '/auth/signup',
   '/auth/forgot-password',
   '/auth/reset-password',
-  '/auth/error'
+  '/auth/error',
+  '/auth/setup'
 ]
 
 // Define admin-only routes
@@ -61,7 +80,15 @@ export default async function middleware(req: NextRequestWithAuth) {
     // Handle auth pages
     if (isAuthPage) {
       console.log(`✅ Allowing access to auth page: ${path}`)
-      // If we have a valid token, redirect authenticated users away from auth pages
+
+      // Special handling for setup page - allow access even if authenticated
+      // The setup page itself will check if admin exists and redirect accordingly
+      if (path === '/auth/setup') {
+        console.log(`✅ Allowing access to setup page: ${path}`)
+        return NextResponse.next()
+      }
+
+      // If we have a valid token, redirect authenticated users away from other auth pages
       if (token?.sub && token?.email) {
         console.log(`🔄 Redirecting authenticated user away from auth page: ${path}`)
         const redirectUrl = token.role === 'admin'

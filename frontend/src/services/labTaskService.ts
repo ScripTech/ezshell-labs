@@ -73,6 +73,9 @@ export const labTaskRepository = {
   async getTasksByLab(labId: string) {
     return db.select().from(labTasks).where(sql`${labTasks.labId} = ${labId}`).orderBy(labTasks.order)
   },
+  async getEnabledTasksByLab(labId: string) {
+    return db.select().from(labTasks).where(sql`${labTasks.labId} = ${labId} AND ${labTasks.isEnabled} = true AND ${labTasks.status} = 'active'`).orderBy(labTasks.order)
+  },
   async getTaskById(id: string) {
     return db.select().from(labTasks).where(sql`${labTasks.id} = ${id}`).limit(1)
   },
@@ -80,11 +83,22 @@ export const labTaskRepository = {
     return db.insert(labTasks).values(task)
   },
   async updateTask(id: string, updates: any) {
-    return db.update(labTasks).set(updates).where(sql`${labTasks.id} = ${id}`)
+    return db.update(labTasks).set({
+      ...updates,
+      updatedAt: new Date()
+    }).where(sql`${labTasks.id} = ${id}`)
   },
   async deleteTask(id: string) {
     return db.delete(labTasks).where(sql`${labTasks.id} = ${id}`)
   },
+  async updateTaskStatus(id: string, status: string, isEnabled: boolean, maintenanceMessage?: string) {
+    return db.update(labTasks).set({
+      status,
+      isEnabled,
+      maintenanceMessage,
+      updatedAt: new Date()
+    }).where(sql`${labTasks.id} = ${id}`)
+  }
 }
 
 // Service to get user progress for enrolled lab
@@ -135,7 +149,7 @@ export async function updateUserTaskScore({ userId, labTaskId, labEnrollmentId, 
     // Update existing progress
     await db.update(labTaskProgress)
       .set({
-        score,
+        score: score.toString(),
         completed,
         completedAt: completed ? new Date() : null,
       })
@@ -149,7 +163,7 @@ export async function updateUserTaskScore({ userId, labTaskId, labEnrollmentId, 
         userId,
         labTaskId,
         labEnrollmentId,
-        score,
+        score: score.toString(),
         completed,
         completedAt: completed ? new Date() : null,
         createdAt: new Date(),
